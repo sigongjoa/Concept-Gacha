@@ -6,6 +6,12 @@ const API = {
         return res.json();
     },
 
+    async getStudent(id) {
+        const res = await fetch(`${API_BASE}/api/students/${id}`);
+        if (!res.ok) throw new Error('학생을 찾을 수 없습니다');
+        return res.json();
+    },
+
     async addStudent(name) {
         const res = await fetch(`${API_BASE}/api/students`, {
             method: 'POST',

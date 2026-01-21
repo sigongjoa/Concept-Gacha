@@ -69,6 +69,17 @@ app.get('/api/students', (req, res) => {
   res.json(data.students);
 });
 
+// 특정 학생 정보
+app.get('/api/students/:id', (req, res) => {
+  const { id } = req.params;
+  const data = loadData();
+  const student = data.students.find(s => s.id === id);
+  if (!student) {
+    return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
+  }
+  res.json(student);
+});
+
 // 학생 추가
 app.post('/api/students', (req, res) => {
   const { name } = req.body;
