@@ -185,10 +185,10 @@ app.post('/api/students/:studentId/cards', (req, res) => {
   res.json(newCard);
 });
 
-// 카드 업데이트 (성공/실패)
+// 카드 업데이트 (성공/실패 또는 내용 수정)
 app.patch('/api/cards/:id', (req, res) => {
   const { id } = req.params;
-  const { success } = req.body;
+  const { success, question, answer, type, questionImage } = req.body;
   const data = loadData();
 
   const card = data.cards.find(c => c.id === id);
@@ -196,14 +196,23 @@ app.patch('/api/cards/:id', (req, res) => {
     return res.status(404).json({ error: '카드를 찾을 수 없습니다' });
   }
 
-  if (success) {
-    card.box = Math.min(card.box + 1, 4);
-    card.successCount++;
-  } else {
-    card.box = 1;
-    card.failCount++;
+  // 성공/실패 여부에 따른 상자 이동
+  if (success !== undefined) {
+    if (success) {
+      card.box = Math.min(card.box + 1, 4);
+      card.successCount++;
+    } else {
+      card.box = 1;
+      card.failCount++;
+    }
+    card.lastReview = new Date().toISOString();
   }
-  card.lastReview = new Date().toISOString();
+
+  // 내용 업데이트
+  if (question !== undefined) card.question = question;
+  if (answer !== undefined) card.answer = answer;
+  if (type !== undefined) card.type = type;
+  if (questionImage !== undefined) card.questionImage = questionImage;
 
   saveData(data);
   res.json(card);

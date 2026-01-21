@@ -71,6 +71,19 @@ const API = {
         return res.json();
     },
 
+    async updateCard(cardId, data) {
+        const res = await fetch(`${API_BASE}/api/cards/${cardId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || '업데이트 실패');
+        }
+        return res.json();
+    },
+
     async addCard(studentId, cardData) {
         const res = await fetch(`${API_BASE}/api/students/${studentId}/cards`, {
             method: 'POST',

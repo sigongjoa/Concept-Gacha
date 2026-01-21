@@ -86,9 +86,9 @@
 
                 // Update Student List
                 list.innerHTML = students.map(s => `
-                    <div class="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                    <div class="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 group">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center font-bold">${s.name.charAt(0)}</div>
+                            <div onclick="selectStudentForCards('${s.id}')" class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center font-bold cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-sm group-hover:bg-orange-200 dark:group-hover:bg-orange-900/40">${s.name.charAt(0)}</div>
                             <input type="text" value="${s.name}" onblur="renameStudent('${s.id}', this.value)" class="bg-transparent font-bold border-none outline-none focus:ring-1 focus:ring-orange-500 rounded px-2"/>
                         </div>
                         <button onclick="deleteStudent('${s.id}')" class="text-slate-300 hover:text-red-500 transition-colors">
@@ -105,6 +105,12 @@
             } catch (e) {
                 list.innerHTML = '<div class="text-center py-10 text-red-400">로드 실패</div>';
             }
+        }
+
+        async function selectStudentForCards(sid) {
+            const filter = document.getElementById('studentFilter');
+            filter.value = sid;
+            loadStudentCards(sid);
         }
 
         async function renameStudent(id, newName) {
@@ -124,6 +130,7 @@
                 await API.deleteStudent(id);
                 Layout.showToast('삭제되었습니다');
                 loadAllStudents();
+                document.getElementById('adminCardList').innerHTML = '<div class="text-center py-10 text-slate-400">학생을 선택하여 카드를 관리하세요.</div>';
             } catch (e) {
                 Layout.showToast('삭제 실패', true);
             }
@@ -141,9 +148,15 @@
 
                 list.innerHTML = cards.map(c => `
                     <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                        <div class="flex-1 min-w-0">
-                            <p class="font-bold truncate">${c.type === 'text' ? Layout.escapeHtml(c.question) : '이미지 질문'}</p>
-                            <p class="text-sm text-slate-500 truncate">정답: ${Layout.escapeHtml(c.answer)}</p>
+                        <div class="flex-1 min-w-0 space-y-2">
+                            ${c.type === 'text'
+                        ? `<input type="text" value="${c.question}" onblur="updateCardContent('${c.id}', '${sid}', {question: this.value})" class="w-full bg-transparent font-bold border-none outline-none focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="질문 입력"/>`
+                        : `<div class="flex items-center gap-2 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-500 font-bold"><span class="material-symbols-outlined text-xs">image</span> 이미지 질문</div>`
+                    }
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-slate-400 font-bold px-2">정답:</span>
+                                <input type="text" value="${c.answer}" onblur="updateCardContent('${c.id}', '${sid}', {answer: this.value})" class="flex-1 bg-transparent text-sm border-none outline-none focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="정답 입력"/>
+                            </div>
                         </div>
                         <button onclick="deleteCard('${c.id}', '${sid}')" class="text-slate-300 hover:text-red-500 transition-colors">
                             <span class="material-symbols-outlined text-xl">delete</span>
@@ -152,6 +165,15 @@
                 `).join('');
             } catch (e) {
                 list.innerHTML = '<div class="text-center py-10 text-red-400">로드 실패</div>';
+            }
+        }
+
+        async function updateCardContent(cid, sid, data) {
+            try {
+                await API.updateCard(cid, data);
+                Layout.showToast('카드가 업데이트되었습니다');
+            } catch (e) {
+                Layout.showToast('업데이트 실패', true);
             }
         }
 
