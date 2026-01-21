@@ -24,6 +24,24 @@ const API = {
         return res.json();
     },
 
+    async updateStudent(id, name) {
+        const res = await fetch(`${API_BASE}/api/students/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || '업데이트 실패');
+        }
+        return res.json();
+    },
+
+    async deleteStudent(id) {
+        const res = await fetch(`${API_BASE}/api/students/${id}`, { method: 'DELETE' });
+        return res.json();
+    },
+
     async getRandomCard(studentId) {
         const res = await fetch(`${API_BASE}/api/students/${studentId}/cards/random`);
         if (!res.ok) {

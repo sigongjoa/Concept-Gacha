@@ -57,6 +57,10 @@ const Layout = {
                     <span class="material-symbols-outlined">grid_view</span>
                     전체 목록
                 </a>
+                <a class="nav-link flex items-center gap-4 px-5 py-4 rounded-2xl font-medium transition-all korean-text border" href="admin.html">
+                    <span class="material-symbols-outlined">settings</span>
+                    관리자
+                </a>
             </nav>
         </div>
         <div class="p-8 border-t border-slate-100 dark:border-slate-800">

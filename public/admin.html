@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>개념 가챠 - 관리자</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 h-screen flex overflow-hidden">
+
+    <aside
+        class="w-72 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col justify-between z-20 hidden lg:flex">
+    </aside>
+
+    <main class="flex-1 p-6 lg:p-12 overflow-y-auto">
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-3xl font-black">관리자 대시보드</h1>
+            <button class="p-3 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800"
+                onclick="document.documentElement.classList.toggle('dark')">
+                <span class="material-symbols-outlined">dark_mode</span>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            <!-- Student Management -->
+            <section
+                class="bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-2xl border border-slate-100 dark:border-slate-800">
+                <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-orange-500">group</span> 학생 관리
+                </h2>
+                <div class="space-y-4" id="adminStudentList">
+                    <div class="text-center py-10 text-slate-400">학생 목록을 불러오는 중...</div>
+                </div>
+            </section>
+
+            <!-- Card Management for Selected Student -->
+            <section
+                class="bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-2xl border border-slate-100 dark:border-slate-800">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold flex items-center gap-2">
+                        <span class="material-symbols-outlined text-teal-500">style</span> 카드 관리
+                    </h2>
+                    <select id="studentFilter"
+                        class="bg-slate-50 dark:bg-slate-950 border-none rounded-lg text-sm p-2 outline-none">
+                        <option value="">학생 선택</option>
+                    </select>
+                </div>
+                <div class="space-y-4" id="adminCardList">
+                    <div class="text-center py-10 text-slate-400">학생을 선택하여 카드를 관리하세요.</div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            Layout.init();
+            loadAllStudents();
+
+            document.getElementById('studentFilter').onchange = (e) => {
+                const sid = e.target.value;
+                if (sid) loadStudentCards(sid);
+                else document.getElementById('adminCardList').innerHTML = '<div class="text-center py-10 text-slate-400">학생을 선택하여 카드를 관리하세요.</div>';
+            };
+        });
+
+        async function loadAllStudents() {
+            const list = document.getElementById('adminStudentList');
+            const filter = document.getElementById('studentFilter');
+            try {
+                const students = await API.getStudents();
+
+                // Update Student List
+                list.innerHTML = students.map(s => `
+                    <div class="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center font-bold">${s.name.charAt(0)}</div>
+                            <input type="text" value="${s.name}" onblur="renameStudent('${s.id}', this.value)" class="bg-transparent font-bold border-none outline-none focus:ring-1 focus:ring-orange-500 rounded px-2"/>
+                        </div>
+                        <button onclick="deleteStudent('${s.id}')" class="text-slate-300 hover:text-red-500 transition-colors">
+                            <span class="material-symbols-outlined text-xl">delete</span>
+                        </button>
+                    </div>
+                `).join('');
+
+                // Update Filter
+                filter.innerHTML = '<option value="">학생 선택</option>' + students.map(s => `
+                    <option value="${s.id}">${s.name}</option>
+                `).join('');
+
+            } catch (e) {
+                list.innerHTML = '<div class="text-center py-10 text-red-400">로드 실패</div>';
+            }
+        }
+
+        async function renameStudent(id, newName) {
+            if (!newName.trim()) return;
+            try {
+                await API.updateStudent(id, newName);
+                Layout.showToast('이름이 변경되었습니다');
+                loadAllStudents();
+            } catch (e) {
+                Layout.showToast(e.message, true);
+            }
+        }
+
+        async function deleteStudent(id) {
+            if (!confirm('학생을 삭제하면 모든 데이터가 사라집니다. 정말 삭제하시겠습니까?')) return;
+            try {
+                await API.deleteStudent(id);
+                Layout.showToast('삭제되었습니다');
+                loadAllStudents();
+            } catch (e) {
+                Layout.showToast('삭제 실패', true);
+            }
+        }
+
+        async function loadStudentCards(sid) {
+            const list = document.getElementById('adminCardList');
+            list.innerHTML = '<div class="text-center py-10 text-slate-400">카드를 불러오는 중...</div>';
+            try {
+                const cards = await API.getCards(sid);
+                if (cards.length === 0) {
+                    list.innerHTML = '<div class="text-center py-10 text-slate-400">등록된 카드가 없습니다.</div>';
+                    return;
+                }
+
+                list.innerHTML = cards.map(c => `
+                    <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold truncate">${c.type === 'text' ? Layout.escapeHtml(c.question) : '이미지 질문'}</p>
+                            <p class="text-sm text-slate-500 truncate">정답: ${Layout.escapeHtml(c.answer)}</p>
+                        </div>
+                        <button onclick="deleteCard('${c.id}', '${sid}')" class="text-slate-300 hover:text-red-500 transition-colors">
+                            <span class="material-symbols-outlined text-xl">delete</span>
+                        </button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                list.innerHTML = '<div class="text-center py-10 text-red-400">로드 실패</div>';
+            }
+        }
+
+        async function deleteCard(cid, sid) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+            try {
+                await API.deleteCard(cid);
+                Layout.showToast('삭제되었습니다');
+                loadStudentCards(sid);
+            } catch (e) {
+                Layout.showToast('삭제 실패', true);
+            }
+        }
+
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
+    </script>
+</body>
+
+</html>

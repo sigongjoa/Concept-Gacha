@@ -106,6 +106,29 @@ app.delete('/api/students/:id', (req, res) => {
   res.json({ success: true });
 });
 
+// 학생 업데이트
+app.patch('/api/students/:id', (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  const data = loadData();
+
+  const student = data.students.find(s => s.id === id);
+  if (!student) {
+    return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
+  }
+
+  if (name && name.trim()) {
+    // 중복 체크 (자신 제외)
+    if (data.students.find(s => s.id !== id && s.name === name.trim())) {
+      return res.status(400).json({ error: '이미 존재하는 이름입니다' });
+    }
+    student.name = name.trim();
+  }
+
+  saveData(data);
+  res.json(student);
+});
+
 // ============ 카드 API ============
 
 // 특정 학생의 모든 카드
