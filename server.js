@@ -2,11 +2,44 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+
+// 이미지 업로드 설정
+const ASSETS_DIR = path.join(__dirname, 'public', 'assets');
+if (!fs.existsSync(ASSETS_DIR)) {
+  fs.mkdirSync(ASSETS_DIR, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, ASSETS_DIR);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, uniqueName + ext);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const ext = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mime = allowedTypes.test(file.mimetype);
+    if (ext && mime) {
+      cb(null, true);
+    } else {
+      cb(new Error('이미지 파일만 업로드 가능합니다'));
+    }
+  }
+});
 
 // 데이터 파일 경로
 const DATA_FILE = path.join(__dirname, 'data.json');
@@ -85,16 +118,26 @@ app.get('/api/students/:studentId/cards', (req, res) => {
   res.json(cards);
 });
 
+// 이미지 업로드 API
+app.post('/api/upload', upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: '이미지가 없습니다' });
+  }
+  res.json({ filename: req.file.filename });
+});
+
 // 카드 추가
 app.post('/api/students/:studentId/cards', (req, res) => {
   const { studentId } = req.params;
-  const { question, answer } = req.body;
+  const { question, answer, type, questionImage } = req.body;
   const data = loadData();
 
   const newCard = {
     id: Date.now().toString(),
     studentId,
-    question,
+    type: type || 'text', // 'text' 또는 'image'
+    question: question || '',
+    questionImage: questionImage || null, // 이미지 파일명
     answer: answer || '',
     box: 1,
     successCount: 0,

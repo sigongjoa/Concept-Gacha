@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>개념 가챠 - 카드 추가</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 h-screen flex overflow-hidden">
+
+    <aside
+        class="w-72 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col justify-between z-20 hidden lg:flex">
+    </aside>
+
+    <main class="flex-1 p-6 lg:p-12 overflow-y-auto flex flex-col items-center justify-center">
+        <!-- Top Bar -->
+        <div class="absolute top-6 left-6 right-6 flex justify-between lg:justify-end items-center z-30">
+            <button
+                class="lg:hidden p-3 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800"
+                id="mobileMenuBtn">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+            <button class="p-3 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800"
+                onclick="document.documentElement.classList.toggle('dark')">
+                <span class="material-symbols-outlined">dark_mode</span>
+            </button>
+        </div>
+
+        <div class="w-full max-w-xl">
+            <div
+                class="bg-white dark:bg-slate-900 rounded-[2rem] p-10 shadow-2xl border border-slate-100 dark:border-slate-800">
+                <h2 class="text-2xl font-black mb-6">새 카드 추가</h2>
+
+                <!-- Type Tabs -->
+                <div class="flex gap-2 mb-6" id="typeTabs">
+                    <button
+                        class="flex-1 py-3 px-4 rounded-xl font-bold border-2 border-orange-500 bg-orange-50 dark:bg-orange-900/10 text-orange-600"
+                        data-type="text">
+                        <span class="material-symbols-outlined align-middle mr-1">text_fields</span> 텍스트
+                    </button>
+                    <button
+                        class="flex-1 py-3 px-4 rounded-xl font-bold border-2 border-slate-100 dark:border-slate-800 text-slate-400 hover:border-orange-200"
+                        data-type="image">
+                        <span class="material-symbols-outlined align-middle mr-1">image</span> 이미지
+                    </button>
+                </div>
+
+                <div class="space-y-6">
+                    <div id="textInput">
+                        <label class="block text-sm font-bold text-slate-400 uppercase mb-2">질문 (텍스트)</label>
+                        <textarea id="inputQuestion"
+                            class="w-full p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:ring-2 focus:ring-orange-500 outline-none resize-none"
+                            rows="3" placeholder="예: 광합성에서 물이 분해되면?"></textarea>
+                    </div>
+
+                    <div id="imageInput" class="hidden">
+                        <label class="block text-sm font-bold text-slate-400 uppercase mb-2">질문 (이미지)</label>
+                        <div class="w-full p-8 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center cursor-pointer hover:border-orange-400"
+                            id="dropZone">
+                            <input type="file" id="fileInput" class="hidden" accept="image/*" />
+                            <div id="previewBox" class="hidden">
+                                <img src="" id="imgPreview" class="max-h-48 mx-auto rounded-lg mb-3" />
+                                <button class="text-sm text-red-500 font-bold" id="removeImgBtn">제거</button>
+                            </div>
+                            <div id="placeholder">
+                                <span class="material-symbols-outlined text-4xl text-slate-300 mb-2">cloud_upload</span>
+                                <p class="text-slate-400">이미지를 선택하거나 드래그하세요</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-400 uppercase mb-2">정답 (개념명)</label>
+                        <input type="text" id="inputAnswer"
+                            class="w-full p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:ring-2 focus:ring-orange-500 outline-none"
+                            placeholder="예: 산소" />
+                    </div>
+
+                    <button id="addCardBtn"
+                        class="w-full py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold hover:opacity-90 shadow-xl shadow-orange-500/20 transition-all">카드
+                        추가</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script>
+        let cardType = 'text';
+        let uploadedFilename = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            Layout.init();
+            setupTabs();
+            setupUpload();
+            document.getElementById('addCardBtn').onclick = addCard;
+        });
+
+        function setupTabs() {
+            const tabs = document.querySelectorAll('#typeTabs button');
+            tabs.forEach(tab => {
+                tab.onclick = () => {
+                    cardType = tab.dataset.type;
+                    tabs.forEach(t => t.className = 'flex-1 py-3 px-4 rounded-xl font-bold border-2 border-slate-100 dark:border-slate-800 text-slate-400 hover:border-orange-200');
+                    tab.className = 'flex-1 py-3 px-4 rounded-xl font-bold border-2 border-orange-500 bg-orange-50 dark:bg-orange-900/10 text-orange-600';
+
+                    document.getElementById('textInput').classList.toggle('hidden', cardType !== 'text');
+                    document.getElementById('imageInput').classList.toggle('hidden', cardType !== 'image');
+                };
+            });
+        }
+
+        function setupUpload() {
+            const dz = document.getElementById('dropZone');
+            const fi = document.getElementById('fileInput');
+            dz.onclick = () => fi.click();
+            fi.onchange = (e) => handleUpload(e.target.files[0]);
+
+            document.getElementById('removeImgBtn').onclick = (e) => {
+                e.stopPropagation();
+                uploadedFilename = null;
+                document.getElementById('previewBox').classList.add('hidden');
+                document.getElementById('placeholder').classList.remove('hidden');
+                fi.value = '';
+            };
+        }
+
+        async function handleUpload(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('imgPreview').src = e.target.result;
+                document.getElementById('previewBox').classList.remove('hidden');
+                document.getElementById('placeholder').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+
+            try {
+                const res = await API.uploadImage(file);
+                uploadedFilename = res.filename;
+                Layout.showToast('업로드 성공!');
+            } catch (e) {
+                Layout.showToast('업로드 실패', true);
+            }
+        }
+
+        async function addCard() {
+            if (!Layout.currentStudent) return;
+            const answer = document.getElementById('inputAnswer').value.trim();
+            const question = document.getElementById('inputQuestion').value.trim();
+
+            if (cardType === 'text' && !question) return Layout.showToast('질문을 입력하세요', true);
+            if (cardType === 'image' && !uploadedFilename) return Layout.showToast('이미지를 올려주세요', true);
+            if (!answer) return Layout.showToast('정답을 입력하세요', true);
+
+            try {
+                const data = {
+                    type: cardType,
+                    answer,
+                    question: cardType === 'text' ? question : '',
+                    questionImage: cardType === 'image' ? uploadedFilename : null
+                };
+                await API.addCard(Layout.currentStudent.id, data);
+                Layout.showToast('추가되었습니다!');
+                document.getElementById('inputAnswer').value = '';
+                document.getElementById('inputQuestion').value = '';
+                uploadedFilename = null;
+                document.getElementById('previewBox').classList.add('hidden');
+                document.getElementById('placeholder').classList.remove('hidden');
+                Layout.loadStats();
+            } catch (e) {
+                Layout.showToast('추가 실패', true);
+            }
+        }
+
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
+    </script>
+</body>
+
+</html>
