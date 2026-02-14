@@ -96,13 +96,50 @@
         </div>
     </main>
 
-    <script src="js/api.js"></script>
+    <script type="module" src="js/supabase-client.js"></script>
+    <script type="module" src="js/api.js"></script>
     <script src="js/layout.js"></script>
-    <script>
+    <script type="module">
+        import { requireAuth } from './js/auth.js'
+        import { supabase } from './js/supabase-client.js'
+
+        // 로그인 체크
+        await requireAuth()
+
+        let currentStudentId = null;
+
+        // 현재 사용자의 student_id 자동 로드
+        async function loadCurrentStudent() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser()
+                const { data: student } = await supabase
+                    .from('students')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .single()
+
+                if (!student) {
+                    alert('학생 정보를 찾을 수 없습니다.')
+                    window.location.href = '/login.html'
+                    return null
+                }
+
+                return student.id
+            } catch (error) {
+                console.error('Error loading student:', error)
+                alert('학생 정보 로드 실패')
+                return null
+            }
+        }
+
         let cardType = 'text';
         let uploadedFilename = null;
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 학생 ID 로드
+            currentStudentId = await loadCurrentStudent()
+            if (!currentStudentId) return
+
             Layout.init();
             setupTabs();
             setupUpload();
@@ -158,7 +195,11 @@
         }
 
         async function addCard() {
-            if (!Layout.currentStudent) return;
+            if (!currentStudentId) {
+                alert('학생 정보가 없습니다.')
+                return
+            }
+
             const answer = document.getElementById('inputAnswer').value.trim();
             const question = document.getElementById('inputQuestion').value.trim();
 
@@ -173,7 +214,7 @@
                     question: cardType === 'text' ? question : '',
                     questionImage: cardType === 'image' ? uploadedFilename : null
                 };
-                await API.addCard(Layout.currentStudent.id, data);
+                await API.addCard(currentStudentId, data);
                 Layout.showToast('추가되었습니다!');
                 document.getElementById('inputAnswer').value = '';
                 document.getElementById('inputQuestion').value = '';

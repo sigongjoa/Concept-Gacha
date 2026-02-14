@@ -1,91 +1,148 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>개념 가챠 - 학생 선택</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대시보드 - Concept Gacha</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', 'Noto Sans KR', sans-serif; }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 min-h-screen flex items-center justify-center p-6">
 
-    <div class="w-full max-w-md">
-        <div class="text-center mb-10">
-            <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 mb-3">개념 가챠</h1>
-            <p class="text-slate-500 dark:text-slate-400">학습을 시작할 학생을 선택하세요</p>
+<body class="bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- 사용자 정보 헤더 -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800" id="userName">로딩 중...</h1>
+                    <p class="text-gray-600 mt-1">학습 카드 관리 시스템</p>
+                </div>
+                <button onclick="handleSignOut()"
+                    class="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition transform hover:scale-105">
+                    로그아웃
+                </button>
+            </div>
         </div>
 
-        <div class="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-2xl border border-slate-100 dark:border-slate-800">
-            <h3 class="text-sm font-bold text-slate-400 uppercase mb-4">등록된 학생</h3>
-            <div class="space-y-3 max-h-64 overflow-y-auto mb-8" id="studentList">
-                <div class="text-center text-slate-400 py-4">로딩 중...</div>
-            </div>
+        <!-- 액션 버튼 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <a href="gacha.html"
+                class="block bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-2xl p-8 text-center transition transform hover:scale-105 shadow-lg">
+                <div class="text-5xl mb-3">🎴</div>
+                <h3 class="text-2xl font-bold mb-2">가챠 시작</h3>
+                <p class="text-sm opacity-90">랜덤 카드 뽑기</p>
+            </a>
 
-            <div class="relative my-8">
-                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-100 dark:border-slate-800"></div></div>
-                <div class="relative flex justify-center text-xs"><span class="px-3 bg-white dark:bg-slate-900 text-slate-400">또는</span></div>
-            </div>
+            <a href="add.html"
+                class="block bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl p-8 text-center transition transform hover:scale-105 shadow-lg">
+                <div class="text-5xl mb-3">➕</div>
+                <h3 class="text-2xl font-bold mb-2">카드 추가</h3>
+                <p class="text-sm opacity-90">새로운 학습 카드 만들기</p>
+            </a>
 
-            <h3 class="text-sm font-bold text-slate-400 uppercase mb-4">새 학생 등록</h3>
-            <div class="flex gap-3">
-                <input type="text" id="newStudentName" class="flex-1 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:ring-2 focus:ring-orange-500 outline-none transition-all" placeholder="이름 입력"/>
-                <button id="addStudentBtn" class="px-6 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold hover:opacity-90 shadow-lg shadow-orange-500/20 transition-all">등록</button>
+            <a href="list.html"
+                class="block bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-2xl p-8 text-center transition transform hover:scale-105 shadow-lg">
+                <div class="text-5xl mb-3">📋</div>
+                <h3 class="text-2xl font-bold mb-2">카드 목록</h3>
+                <p class="text-sm opacity-90">내 카드 관리하기</p>
+            </a>
+        </div>
+
+        <!-- 통계 -->
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">📊 학습 통계</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="text-center p-4 bg-purple-50 rounded-xl">
+                    <div class="text-4xl font-bold text-purple-600" id="totalCards">-</div>
+                    <div class="text-sm text-gray-600 mt-2 font-medium">총 카드</div>
+                </div>
+                <div class="text-center p-4 bg-blue-50 rounded-xl">
+                    <div class="text-4xl font-bold text-blue-600" id="box1Cards">-</div>
+                    <div class="text-sm text-gray-600 mt-2 font-medium">Box 1</div>
+                </div>
+                <div class="text-center p-4 bg-green-50 rounded-xl">
+                    <div class="text-4xl font-bold text-green-600" id="box2Cards">-</div>
+                    <div class="text-sm text-gray-600 mt-2 font-medium">Box 2</div>
+                </div>
+                <div class="text-center p-4 bg-yellow-50 rounded-xl">
+                    <div class="text-4xl font-bold text-yellow-600" id="box3Cards">-</div>
+                    <div class="text-sm text-gray-600 mt-2 font-medium">Box 3</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="js/api.js"></script>
-    <script src="js/layout.js"></script>
-    <script>
-        async function loadStudents() {
-            const list = document.getElementById('studentList');
-            try {
-                const students = await API.getStudents();
-                if (students.length === 0) {
-                    list.innerHTML = '<div class="text-center text-slate-400 py-4">등록된 학생이 없습니다</div>';
-                    return;
-                }
+    <script type="module">
+        import { requireAuth, displayUserInfo, signOut } from './js/auth.js'
+        import { supabase } from './js/supabase-client.js'
 
-                list.innerHTML = students.map(s => `
-                    <button onclick="selectStudent('${s.id}', '${s.name}')" class="w-full flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/10 transition-all group">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold">${s.name.charAt(0)}</div>
-                            <span class="font-bold">${s.name}</span>
-                        </div>
-                        <span class="material-symbols-outlined text-slate-300 group-hover:text-orange-500">arrow_forward</span>
-                    </button>
-                `).join('');
-            } catch (e) {
-                list.innerHTML = '<div class="text-center text-red-400 py-4">로드 실패</div>';
+        // 로그인 체크
+        const isAuth = await requireAuth()
+        if (!isAuth) {
+            throw new Error('Not authenticated')
+        }
+
+        // 사용자 정보 표시
+        await displayUserInfo('userName')
+
+        // 로그아웃 핸들러
+        window.handleSignOut = async () => {
+            if (confirm('로그아웃하시겠습니까?')) {
+                await signOut()
             }
         }
 
-        function selectStudent(id, name) {
-            localStorage.setItem('currentStudent', JSON.stringify({ id, name }));
-            window.location.href = 'gacha.html';
+        // 통계 로드
+        async function loadStats() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser()
+                if (!user) return
+
+                // 본인 학생 ID 가져오기
+                const { data: student } = await supabase
+                    .from('students')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .single()
+
+                if (!student) return
+
+                // 카드 통계 가져오기
+                const { data: cards } = await supabase
+                    .from('cards')
+                    .select('box')
+                    .eq('student_id', student.id)
+
+                if (!cards) return
+
+                // 통계 계산
+                const total = cards.length
+                const box1 = cards.filter(c => c.box === 1).length
+                const box2 = cards.filter(c => c.box === 2).length
+                const box3 = cards.filter(c => c.box === 3).length
+
+                // UI 업데이트
+                document.getElementById('totalCards').textContent = total
+                document.getElementById('box1Cards').textContent = box1
+                document.getElementById('box2Cards').textContent = box2
+                document.getElementById('box3Cards').textContent = box3
+
+            } catch (error) {
+                console.error('Error loading stats:', error)
+            }
         }
 
-        document.getElementById('addStudentBtn').onclick = async () => {
-            const nameEl = document.getElementById('newStudentName');
-            const name = nameEl.value.trim();
-            if (!name) return Layout.showToast('이름을 입력해주세요', true);
-
-            try {
-                const student = await API.addStudent(name);
-                nameEl.value = '';
-                Layout.showToast('등록되었습니다!');
-                selectStudent(student.id, student.name);
-            } catch (e) {
-                Layout.showToast(e.message, true);
-            }
-        };
-
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
-        loadStudents();
+        // 통계 로드
+        loadStats()
     </script>
 </body>
+
 </html>

@@ -1,10 +1,17 @@
 # Dependencies
 node_modules/
-
-# Environment variables
+.DS_Store
+*.log
 .env
 .env.local
+.env.*.local
 .env.production
+
+# Supabase credentials (use template instead)
+public/js/supabase-client.js
+
+# Build output (if using Vite)
+dist/duction
 
 # Database / Data files
 data.json

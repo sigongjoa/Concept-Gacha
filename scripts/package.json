@@ -1,0 +1,13 @@
+{
+    "name": "concept-gacha-migration",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "Migration scripts for Concept-Gacha to Supabase",
+    "scripts": {
+        "migrate": "node scripts/migrate-to-supabase.js"
+    },
+    "dependencies": {
+        "@supabase/supabase-js": "^2.39.0"
+    },
+    "devDependencies": {}
+}
