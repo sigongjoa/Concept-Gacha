@@ -104,10 +104,10 @@
         import { supabase } from './js/supabase-client.js'
         import { getCurrentUser } from './js/auth.js'
 
-        // 이미 로그인된 경우 리다이렉트
+        // 이미 로그인된 경우 리다이렉트 (상대 경로)
         const user = await getCurrentUser()
         if (user) {
-            window.location.href = '/gacha.html'
+            window.location.href = './gacha.html'
         }
 
         const signupForm = document.getElementById('signupForm')
@@ -170,9 +170,9 @@
                 // 성공 메시지 표시
                 showSuccess('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다...')
 
-                // 2초 후 로그인 페이지로 리다이렉트
+                // 2초 후 로그인 페이지로 리다이렉트 (상대 경로)
                 setTimeout(() => {
-                    window.location.href = '/login.html'
+                    window.location.href = './login.html'
                 }, 2000)
 
             } catch (error) {

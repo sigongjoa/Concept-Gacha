@@ -28,7 +28,8 @@ export async function requireAuth() {
     if (!user) {
         // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
         const currentPath = window.location.pathname
-        window.location.href = `/login.html?redirect=${encodeURIComponent(currentPath)}`
+        // 상대 경로 사용 (GitHub Pages 호환)
+        window.location.href = `./login.html?redirect=${encodeURIComponent(currentPath)}`
         return false
     }
 
@@ -47,8 +48,8 @@ export async function signOut() {
         return false
     }
 
-    // 로그인 페이지로 리다이렉트
-    window.location.href = '/login.html'
+    // 로그인 페이지로 리다이렉트 (상대 경로)
+    window.location.href = './login.html'
     return true
 }
 
