@@ -1,51 +1,58 @@
 // ============================================================
-// 개념 가챠 - 플래시카드 학습 시트  (Typst 0.11 호환)
-// 시험지 스타일 헤더/푸터 + 2영역 카드 셀 (상: 문제 / 하: 공란·정답)
+// 개념 가챠 - 통합 학습 시트  (Typst 0.11 호환)
+// 개념 카드 빈칸 + 공식 적용 연습 문제 한 장 통합
 // ============================================================
 
-#set page(paper: "a4", margin: (top: 15mm, bottom: 15mm, left: 18mm, right: 18mm))
+#set page(paper: "a4", margin: (top: 13mm, bottom: 13mm, left: 18mm, right: 18mm))
 #set text(font: ("Noto Sans CJK KR", "Noto Sans KR", "Arial"), lang: "ko", size: 10pt)
 
-#let black  = rgb("#000000")
-#let dark   = rgb("#1a1a1a")
-#let mid    = rgb("#555555")
-#let light  = rgb("#aaaaaa")
-#let subtle = rgb("#f4f4f4")
-#let white  = rgb("#ffffff")
+#let black        = rgb("#000000")
+#let dark         = rgb("#1a1a1a")
+#let mid          = rgb("#555555")
+#let light        = rgb("#aaaaaa")
+#let subtle       = rgb("#f4f4f4")
+#let white        = rgb("#ffffff")
+#let indigo       = rgb("#6366f1")
+#let indigo-light = rgb("#e0e7ff")
+#let indigo-bg    = rgb("#f5f3ff")
 
 // ── 등급 색상 ────────────────────────────────────────────
 #let gi = (
-  (c: rgb("#ef4444"), bg: rgb("#fff5f5"), lbl: "C", nm: "기초"),
-  (c: rgb("#f97316"), bg: rgb("#fff7ed"), lbl: "B", nm: "초급"),
-  (c: rgb("#3b82f6"), bg: rgb("#eff6ff"), lbl: "A", nm: "중급"),
-  (c: rgb("#10b981"), bg: rgb("#f0fdf4"), lbl: "S", nm: "고급"),
-  (c: rgb("#f59e0b"), bg: rgb("#fffbeb"), lbl: "SS", nm: "마스터"),
+  (c: rgb("#ef4444"), lbl: "C", nm: "기초"),
+  (c: rgb("#f97316"), lbl: "B", nm: "초급"),
+  (c: rgb("#3b82f6"), lbl: "A", nm: "중급"),
+  (c: rgb("#10b981"), lbl: "S", nm: "고급"),
+  (c: rgb("#f59e0b"), lbl: "SS", nm: "마스터"),
 )
 #let gc(lvl) = gi.at(lvl - 1)
 
 // ════════════════════════════════════════════════════════════
-//  데이터: (문제, 정답, 등급1~5, 성공, 실패)
+//  데이터
 // ════════════════════════════════════════════════════════════
 #let cards = (
-  ("소수란?",                    "1보다 큰 자연수 중에서 1과 자기자신만을 약수로 가지는 수",           3, 2, 1),
-  ("합성수란?",                  "1보다 큰 자연수 중에서 1과 자기자신 이외의 수를 약수로 가지는 수",   3, 2, 0),
-  ("거듭제곱이란?",              "같은 수나 문자를 거듭하여 곱한 것을 간단히 나타낸 것",              1, 1, 1),
-  ("역수란?",                    "두 수를 곱해서 1이 되는 수",                                       1, 0, 0),
-  ("동류항이란?",                "문자와 차수가 각각 같은 항",                                        1, 0, 0),
-  ("서로소란?",                  "최대공약수가 1인 자연수",                                           1, 0, 0),
-  ("지수란?",                    "거듭제곱에서 거듭하여 곱해진 수 또는 문자의 개수",                   1, 0, 0),
-  ("유한소수를 다르게 표현하면?", "10의 거듭제곱으로 나타낼 수 있는 분수",                             2, 1, 0),
+// ─── AUTO_CARDS_START
+  ("소수란?", "1보다 큰 자연수 중에서 1과 자기자신만을 약수로 가지는 수", 3, 2, 1, ""),
+  ("합성수란?", "1보다 큰 자연수 중에서 1과 자기자신 이외의 수를 약수로 가지는 수", 3, 2, 0, ""),
+// ─── AUTO_CARDS_END
 )
 
-#let aname   = "매씨스 학원"
+#let problems = (
+// ─── AUTO_PROBLEMS_START
+  ("예시 문제", "예시 답"),
+// ─── AUTO_PROBLEMS_END
+)
+
+#let aname   = "와와 학습코칭센터 알파시티점"
 #let subj    = "중1 수학"
 #let chapter = "수와 연산"
 #let rdate   = "2026. 02. 26."
 #let n       = cards.len()
 #let half    = calc.ceil(n / 2)
+#let np      = problems.len()
+#let phalf   = calc.ceil(np / 2)
 
 // ════════════════════════════════════════════════════════════
-//  헤더 (quiz-sheet 스타일)
+//  헤더
 // ════════════════════════════════════════════════════════════
 #let sheet-header(is-answer) = {
   line(length: 100%, stroke: 2.5pt + black)
@@ -56,8 +63,8 @@
   grid(columns: (auto, 1fr, auto), gutter: 0mm, align: center + horizon,
     text(size: 8pt, fill: mid)[🎴 #aname],
     align(center)[
-      #text(size: 17pt, weight: "black", tracking: 4pt)[
-        #if is-answer [개  념  정  답  확  인] else [개  념  플  래  시  카  드]
+      #text(size: 16pt, weight: "black", tracking: 3pt)[
+        #if is-answer [정  답  확  인] else [개  념  +  연  습  시  트]
       ]
       #linebreak()
       #text(size: 8pt, fill: mid)[#subj · #chapter]
@@ -71,10 +78,27 @@
   line(length: 100%, stroke: 2.5pt + black)
   v(1.5mm)
 
-  grid(columns: (1fr, auto), gutter: 3mm, align: center + horizon,
-    text(size: 8pt, fill: mid)[#if is-answer [📋 각 카드 하단에서 정답을 확인하세요.] else [✏ 각 카드 하단 빈칸에 개념의 뜻을 직접 써보세요.]],
-    text(size: 8pt, weight: "bold")[■ #str(n)문항],
-  )
+  if is-answer {
+    grid(columns: (1fr, auto), gutter: 3mm, align: center + horizon,
+      text(size: 8pt, fill: mid)[📋 채점 후 틀린 개념은 개념 가챠에서 반복 복습하세요.],
+      text(size: 8pt, weight: "bold")[개념 #str(n)문항 + 연습 #str(np)문항],
+    )
+  } else {
+    grid(
+      columns: (auto, 44mm, 6mm, auto, 6mm, 1fr, 5mm, 22mm),
+      gutter: 0mm, align: bottom + left,
+      text(size: 9pt, weight: "bold")[이름],
+      pad(bottom: 1.5mm, left: 3mm)[#line(length: 100%, stroke: 0.8pt + black)],
+      [],
+      text(size: 9pt, weight: "bold")[날짜],
+      [],
+      pad(bottom: 1.5mm, left: 3mm)[#line(length: 100%, stroke: 0.8pt + black)],
+      [],
+      rect(width: 100%, height: 8mm, stroke: 1pt + black, fill: none, inset: 0mm)[
+        #align(center + horizon)[#text(size: 7pt, fill: light)[점수]]
+      ],
+    )
+  }
 
   v(1mm)
   line(length: 100%, stroke: 1pt + black)
@@ -82,65 +106,115 @@
 }
 
 // ════════════════════════════════════════════════════════════
-//  카드 셀 — 상단: 문제 / 하단: 공란(문제지) 또는 정답(답지)
+//  섹션 구분 헤더
 // ════════════════════════════════════════════════════════════
-#let card-cell(num, q, a, lvl, show-answer) = {
-  let g = gc(lvl)
+#let section-bar(label, color) = {
+  v(2.5mm)
+  block(width: 100%, fill: color, inset: (x: 6mm, y: 2mm), radius: 1.5mm)[
+    #text(size: 8.5pt, weight: "black", fill: if color == indigo-light { indigo } else { dark })[#label]
+  ]
+  v(2mm)
+}
 
-  rect(width: 100%, stroke: 1.5pt + g.c, fill: white, inset: 0pt, radius: 2mm)[
-    // ── 상단 헤더 바 ───────────────────────────────────
-    #block(
-      width: 100%, fill: g.c, inset: 0pt,
-      radius: (top-left: 1.5mm, top-right: 1.5mm, bottom-left: 0mm, bottom-right: 0mm),
-    )[
-      #pad(x: 3.5mm, y: 1.2mm)[
+// ════════════════════════════════════════════════════════════
+//  카드 셀
+// ════════════════════════════════════════════════════════════
+#let card-cell(num, q, a, lvl, show-answer, img) = {
+  let g = gc(lvl)
+  rect(width: 100%, stroke: 1.2pt + g.c, fill: white, inset: 0pt, radius: 2mm)[
+    #block(width: 100%, fill: g.c, inset: 0pt,
+      radius: (top-left: 1.5mm, top-right: 1.5mm, bottom-left: 0mm, bottom-right: 0mm))[
+      #pad(x: 3mm, y: 1mm)[
         #grid(columns: (auto, 1fr, auto), gutter: 2mm, align: center + horizon,
-          text(size: 8.5pt, weight: "black", fill: white)[#str(num)],
-          text(size: 7pt, fill: white.transparentize(30%))[#g.nm 등급],
-          rect(fill: white.transparentize(20%), radius: 1.5mm, inset: (x: 2.5mm, y: 0.8mm))[
-            #text(size: 7pt, fill: g.c, weight: "black")[#g.lbl]
+          text(size: 8pt, weight: "black", fill: white)[#str(num)],
+          text(size: 6.5pt, fill: white.transparentize(30%))[#g.nm 등급],
+          rect(fill: white.transparentize(20%), radius: 1.5mm, inset: (x: 2mm, y: 0.5mm))[
+            #text(size: 6.5pt, fill: g.c, weight: "black")[#g.lbl]
           ],
         )
       ]
     ]
-    // ── 문제 영역 ─────────────────────────────────────
-    #pad(x: 4mm, top: 2.5mm, bottom: 2mm)[
-      #text(size: 10.5pt, weight: "bold", fill: dark)[#q]
-    ]
-    // ── 구분선 ────────────────────────────────────────
-    #line(length: 100%, stroke: (paint: g.c, dash: "dashed", thickness: 0.8pt))
-    // ── 정답/공란 영역 ────────────────────────────────
-    #pad(x: 4mm, top: 2.5mm, bottom: 3mm)[
-      #if show-answer [
-        #text(size: 9.5pt, weight: "bold", fill: g.c)[#a]
+    #pad(x: 4mm, top: 2mm, bottom: 1.5mm)[
+      #if img != "" [
+        #image(img, width: 100%, fit: "contain")
+        #if q != "" [ #v(1mm) #text(size: 9pt, fill: mid)[#q] ]
       ] else [
-        #line(length: 100%, stroke: 0.7pt + rgb("#bbbbbb"))
+        #text(size: 10pt, weight: "bold", fill: dark)[#q]
+      ]
+    ]
+    #line(length: 100%, stroke: (paint: g.c, dash: "dashed", thickness: 0.7pt))
+    #pad(x: 4mm, top: 2mm, bottom: 2.5mm)[
+      #if show-answer [
+        #text(size: 9pt, weight: "bold", fill: g.c)[#a]
+      ] else [
+        #line(length: 100%, stroke: 0.7pt + rgb("#cccccc"))
         #v(4mm)
-        #line(length: 100%, stroke: 0.7pt + rgb("#bbbbbb"))
+        #line(length: 100%, stroke: 0.7pt + rgb("#cccccc"))
       ]
     ]
   ]
 }
 
 // ════════════════════════════════════════════════════════════
-//  카드 그리드 렌더러
+//  연습 문제 셀
+// ════════════════════════════════════════════════════════════
+#let prob-cell(num, prob, show-answer, is-even) = {
+  block(width: 100%, fill: if is-even { indigo-bg } else { white },
+        stroke: 0.5pt + indigo-light, radius: 1.5mm, inset: 0pt)[
+    #grid(columns: (7mm, 1fr, 38mm), gutter: 0mm, align: horizon + left,
+      pad(y: 3.5mm, left: 2mm)[
+        #text(size: 9pt, weight: "black", fill: indigo)[#str(num).]
+      ],
+      pad(y: 3.5mm, left: 2mm, right: 1mm)[
+        #text(size: 9pt, weight: "bold")[#prob.at(0)]
+      ],
+      pad(y: 3mm, left: 2mm, right: 2.5mm)[
+        #if show-answer [
+          #text(size: 9pt, weight: "bold", fill: indigo)[▶ #prob.at(1)]
+          #line(length: 100%, stroke: 0.5pt + indigo-light)
+        ] else [
+          #align(bottom)[#line(length: 100%, stroke: 0.8pt + black)]
+        ]
+      ],
+    )
+  ]
+}
+
+// ════════════════════════════════════════════════════════════
+//  렌더러
 // ════════════════════════════════════════════════════════════
 #let render-cards(show-answer) = {
   for row in range(half) {
     let li     = cards.at(row)
     let ri-idx = row + half
     let ri     = if ri-idx < n { cards.at(ri-idx) } else { none }
-
     grid(
       columns: (1fr, 4mm, 1fr),
       column-gutter: 0mm, row-gutter: 0mm, align: top,
-      card-cell(row + 1,    li.at(0), li.at(1), li.at(2), show-answer),
+      card-cell(row + 1, li.at(0), li.at(1), li.at(2), show-answer, li.at(5)),
       [],
       if ri != none {
-        card-cell(ri-idx + 1, ri.at(0), ri.at(1), ri.at(2), show-answer)
+        card-cell(ri-idx + 1, ri.at(0), ri.at(1), ri.at(2), show-answer, ri.at(5))
       } else { [] },
     )
     v(1.5mm)
+  }
+}
+
+#let render-problems(show-answer) = {
+  for row in range(phalf) {
+    let li     = problems.at(row)
+    let ri-idx = row + phalf
+    let ri     = if ri-idx < np { problems.at(ri-idx) } else { none }
+    let even   = calc.rem(row, 2) == 0
+    grid(
+      columns: (1fr, 4mm, 1fr),
+      column-gutter: 0mm, row-gutter: 0mm, align: top,
+      prob-cell(row + 1, li, show-answer, even),
+      [],
+      if ri != none { prob-cell(ri-idx + 1, ri, show-answer, even) } else { [] },
+    )
+    v(1mm)
   }
 }
 
@@ -150,8 +224,7 @@
 #let sheet-footer(is-answer) = {
   v(1mm)
   line(length: 100%, stroke: 1pt + black)
-  v(2mm)
-
+  v(1.5mm)
   if is-answer {
     align(center)[
       #text(size: 7pt, fill: light)[🎴 개념 가챠 학습 시스템 · #aname · 자동 생성된 문서입니다]
@@ -159,7 +232,7 @@
   } else {
     grid(columns: (1fr, auto), gutter: 5mm, align: center + horizon,
       [
-        #text(size: 8.5pt, weight: "bold")[채점]
+        #text(size: 8pt, weight: "bold")[채점]
         #h(3mm)
         #for i in range(n) {
           box(width: 5.5mm, height: 5.5mm, stroke: 0.7pt + black, baseline: -0.5mm)[]
@@ -167,28 +240,34 @@
           h(1mm)
         }
       ],
-      text(size: 8pt)[총 #str(n)문항],
+      text(size: 7.5pt)[개념 #str(n) + 연습 #str(np)문항],
     )
-    v(1.5mm)
+    v(1mm)
     align(center)[
-      #text(size: 7.5pt, fill: light)[💡 틀린 개념은 🎴 개념 가챠에서 반복 복습하세요!]
+      #text(size: 7pt, fill: light)[💡 틀린 개념은 🎴 개념 가챠에서 반복 복습하세요!]
     ]
   }
-  v(1.5mm)
+  v(1mm)
   line(length: 100%, stroke: 2.5pt + black)
 }
 
 // ════════════════════════════════════════════════════════════
-//  PAGE 1 — 문제지 (하단 공란)
+//  PAGE 1 — 문제지
 // ════════════════════════════════════════════════════════════
 #sheet-header(false)
+#section-bar("📚  개념 카드 — 빈칸에 뜻을 써보세요", rgb("#f1f5f9"))
 #render-cards(false)
+#section-bar("✏  공식 적용 연습 — 계산해서 답을 쓰세요", indigo-light)
+#render-problems(false)
 #sheet-footer(false)
 
 // ════════════════════════════════════════════════════════════
-//  PAGE 2 — 정답지 (하단 정답 표시)
+//  PAGE 2 — 정답지
 // ════════════════════════════════════════════════════════════
 #pagebreak()
 #sheet-header(true)
+#section-bar("📚  개념 카드 정답", rgb("#f1f5f9"))
 #render-cards(true)
+#section-bar("✏  공식 적용 연습 정답", indigo-light)
+#render-problems(true)
 #sheet-footer(true)

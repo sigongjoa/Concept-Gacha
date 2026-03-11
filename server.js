@@ -3,6 +3,14 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const { execFile } = require('child_process');
+const { promisify } = require('util');
+const archiver = require('archiver');
+const execFileAsync = promisify(execFile);
+
+const PRINT_DIR = path.join(__dirname, 'print');
+const PRINT_TMP = path.join(PRINT_DIR, 'tmp');
+if (!fs.existsSync(PRINT_TMP)) fs.mkdirSync(PRINT_TMP, { recursive: true });
 
 const app = express();
 app.use(cors());
@@ -48,12 +56,34 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 function loadData() {
   try {
     if (fs.existsSync(DATA_FILE)) {
-      return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      // 새 필드 기본값 보장 (하위 호환)
+      if (!data.curricula) data.curricula = [];
+      if (!data.progress)  data.progress  = [];
+      data.students.forEach(s => { if (!s.enrolledCurricula) s.enrolledCurricula = []; });
+      return data;
     }
   } catch (e) {
     console.error('데이터 로드 실패:', e);
   }
-  return { students: [], cards: [] };
+  return { students: [], cards: [], curricula: [], progress: [] };
+}
+
+// 커리큘럼 카드의 학생별 진도 조회/생성 헬퍼
+function getProgress(data, studentId, cardId) {
+  return data.progress.find(p => p.studentId === studentId && p.cardId === cardId);
+}
+
+function mergeProgress(card, studentId, data) {
+  if (!card.curriculumId) return card; // 개인 카드 → 진도가 카드 자체에 있음
+  const p = getProgress(data, studentId, card.id);
+  return {
+    ...card,
+    box:          p?.box          ?? 1,
+    successCount: p?.successCount ?? 0,
+    failCount:    p?.failCount    ?? 0,
+    lastReview:   p?.lastReview   ?? null,
+  };
 }
 
 // 데이터 저장
@@ -140,16 +170,108 @@ app.patch('/api/students/:id', (req, res) => {
   res.json(student);
 });
 
+// ============ 커리큘럼 API ============
+
+// 전체 커리큘럼 목록
+app.get('/api/curricula', (req, res) => {
+  const data = loadData();
+  res.json(data.curricula);
+});
+
+// 커리큘럼 생성
+app.post('/api/curricula', (req, res) => {
+  const { grade, semester, label } = req.body;
+  if (!grade || !semester) return res.status(400).json({ error: 'grade, semester 필수' });
+  const data = loadData();
+  const id = `${grade}-${semester}학기`.replace(/\s/g, '');
+  if (data.curricula.find(c => c.id === id))
+    return res.status(400).json({ error: '이미 존재하는 커리큘럼입니다' });
+  const cur = { id, grade, semester, label: label || `${grade} ${semester}학기`, createdAt: new Date().toISOString() };
+  data.curricula.push(cur);
+  saveData(data);
+  res.json(cur);
+});
+
+// 커리큘럼 삭제 (카드도 함께 삭제)
+app.delete('/api/curricula/:id', (req, res) => {
+  const data = loadData();
+  const cardIds = data.cards.filter(c => c.curriculumId === req.params.id).map(c => c.id);
+  data.curricula = data.curricula.filter(c => c.id !== req.params.id);
+  data.cards     = data.cards.filter(c => c.curriculumId !== req.params.id);
+  data.progress  = data.progress.filter(p => !cardIds.includes(p.cardId));
+  saveData(data);
+  res.json({ success: true });
+});
+
+// 커리큘럼 카드 목록
+app.get('/api/curricula/:id/cards', (req, res) => {
+  const data = loadData();
+  res.json(data.cards.filter(c => c.curriculumId === req.params.id)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+});
+
+// 커리큘럼에 카드 추가
+app.post('/api/curricula/:id/cards', (req, res) => {
+  const { question, answer, type, questionImage, topic } = req.body;
+  const data = loadData();
+  if (!data.curricula.find(c => c.id === req.params.id))
+    return res.status(404).json({ error: '커리큘럼을 찾을 수 없습니다' });
+  const newCard = {
+    id: Date.now().toString(),
+    studentId: null,
+    curriculumId: req.params.id,
+    type: type || 'text',
+    question: question || '',
+    questionImage: questionImage || null,
+    answer: answer || '',
+    topic: topic || null,
+    createdAt: new Date().toISOString(),
+  };
+  data.cards.push(newCard);
+  saveData(data);
+  res.json(newCard);
+});
+
+// 학생 커리큘럼 등록/해제
+app.post('/api/students/:id/curricula', (req, res) => {
+  const { curriculumId } = req.body;
+  const data = loadData();
+  const student = data.students.find(s => s.id === req.params.id);
+  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
+  if (!data.curricula.find(c => c.id === curriculumId))
+    return res.status(404).json({ error: '커리큘럼을 찾을 수 없습니다' });
+  if (!student.enrolledCurricula.includes(curriculumId))
+    student.enrolledCurricula.push(curriculumId);
+  saveData(data);
+  res.json(student);
+});
+
+app.delete('/api/students/:id/curricula/:curriculumId', (req, res) => {
+  const data = loadData();
+  const student = data.students.find(s => s.id === req.params.id);
+  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
+  student.enrolledCurricula = student.enrolledCurricula.filter(c => c !== req.params.curriculumId);
+  saveData(data);
+  res.json(student);
+});
+
 // ============ 카드 API ============
 
-// 특정 학생의 모든 카드
+// 특정 학생의 모든 카드 (개인 카드 + 등록된 커리큘럼 카드)
 app.get('/api/students/:studentId/cards', (req, res) => {
   const { studentId } = req.params;
   const data = loadData();
-  const cards = data.cards
-    .filter(c => c.studentId === studentId)
+  const student = data.students.find(s => s.id === studentId);
+  const enrolled = student?.enrolledCurricula ?? [];
+
+  const personalCards = data.cards.filter(c => c.studentId === studentId);
+  const curriculumCards = data.cards
+    .filter(c => c.curriculumId && enrolled.includes(c.curriculumId))
+    .map(c => mergeProgress(c, studentId, data));
+
+  const all = [...personalCards, ...curriculumCards]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  res.json(cards);
+  res.json(all);
 });
 
 // 이미지 업로드 API
@@ -163,7 +285,7 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
 // 카드 추가
 app.post('/api/students/:studentId/cards', (req, res) => {
   const { studentId } = req.params;
-  const { question, answer, type, questionImage } = req.body;
+  const { question, answer, type, questionImage, topic } = req.body;
   const data = loadData();
 
   const newCard = {
@@ -173,6 +295,7 @@ app.post('/api/students/:studentId/cards', (req, res) => {
     question: question || '',
     questionImage: questionImage || null, // 이미지 파일명
     answer: answer || '',
+    topic: topic || null, // 연습 문제 생성용 개념 태그
     box: 1,
     successCount: 0,
     failCount: 0,
@@ -227,37 +350,46 @@ app.delete('/api/cards/:id', (req, res) => {
   res.json({ success: true });
 });
 
-// 랜덤 카드 뽑기 (특정 학생)
+// 랜덤 카드 뽑기 (개인 카드 + 커리큘럼 카드 통합)
 app.get('/api/students/:studentId/cards/random', (req, res) => {
   const { studentId } = req.params;
   const data = loadData();
-  const cards = data.cards.filter(c => c.studentId === studentId);
+  const student = data.students.find(s => s.id === studentId);
+  const enrolled = student?.enrolledCurricula ?? [];
 
-  if (cards.length === 0) {
-    return res.status(404).json({ error: '카드가 없습니다' });
-  }
+  const personalCards = data.cards.filter(c => c.studentId === studentId);
+  const curriculumCards = data.cards
+    .filter(c => c.curriculumId && enrolled.includes(c.curriculumId))
+    .map(c => mergeProgress(c, studentId, data));
+  const cards = [...personalCards, ...curriculumCards];
+
+  if (cards.length === 0) return res.status(404).json({ error: '카드가 없습니다' });
 
   // 가중치 기반 랜덤 (상자1=4, 상자4=1)
   const weighted = [];
   cards.forEach(card => {
-    const weight = 5 - card.box;
-    for (let i = 0; i < weight; i++) {
-      weighted.push(card);
-    }
+    const weight = 5 - (card.box || 1);
+    for (let i = 0; i < weight; i++) weighted.push(card);
   });
 
-  const randomCard = weighted[Math.floor(Math.random() * weighted.length)];
-  res.json(randomCard);
+  res.json(weighted[Math.floor(Math.random() * weighted.length)]);
 });
 
-// 특정 학생 통계
+// 특정 학생 통계 (개인 + 커리큘럼 카드 통합)
 app.get('/api/students/:studentId/stats', (req, res) => {
   const { studentId } = req.params;
   const data = loadData();
-  const cards = data.cards.filter(c => c.studentId === studentId);
+  const student = data.students.find(s => s.id === studentId);
+  const enrolled = student?.enrolledCurricula ?? [];
+
+  const personalCards = data.cards.filter(c => c.studentId === studentId);
+  const curriculumCards = data.cards
+    .filter(c => c.curriculumId && enrolled.includes(c.curriculumId))
+    .map(c => mergeProgress(c, studentId, data));
+  const cards = [...personalCards, ...curriculumCards];
 
   const stats = { total: cards.length, box1: 0, box2: 0, box3: 0, box4: 0 };
-  cards.forEach(c => stats[`box${c.box}`]++);
+  cards.forEach(c => { const b = Math.min(c.box || 1, 4); stats[`box${b}`]++; });
   res.json(stats);
 });
 
@@ -276,7 +408,407 @@ app.get('/api/stats/all', (req, res) => {
   res.json(studentStats);
 });
 
-const PORT = process.env.PORT || 3000;
+// PUT 별칭 (api.js에서 PUT 사용)
+app.put('/api/students/:id', (req, res) => {
+  req.method = 'PATCH';
+  const { id } = req.params;
+  const { name } = req.body;
+  const data = loadData();
+  const student = data.students.find(s => s.id === id);
+  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
+  if (name && name.trim()) {
+    if (data.students.find(s => s.id !== id && s.name === name.trim()))
+      return res.status(400).json({ error: '이미 존재하는 이름입니다' });
+    student.name = name.trim();
+  }
+  saveData(data);
+  res.json(student);
+});
+
+app.put('/api/cards/:id', (req, res) => {
+  const { id } = req.params;
+  const { question, answer, type, questionImage, box, successCount, failCount } = req.body;
+  const data = loadData();
+  const card = data.cards.find(c => c.id === id);
+  if (!card) return res.status(404).json({ error: '카드를 찾을 수 없습니다' });
+  if (question !== undefined) card.question = question;
+  if (answer !== undefined) card.answer = answer;
+  if (type !== undefined) card.type = type;
+  if (questionImage !== undefined) card.questionImage = questionImage;
+  if (box !== undefined) card.box = box;
+  if (successCount !== undefined) card.successCount = successCount;
+  if (failCount !== undefined) card.failCount = failCount;
+  saveData(data);
+  res.json(card);
+});
+
+// 피드백 (Leitner 박스 이동)
+app.post('/api/cards/:id/feedback', (req, res) => {
+  const { id } = req.params;
+  const { success, studentId } = req.body;
+  const data = loadData();
+  const card = data.cards.find(c => c.id === id);
+  if (!card) return res.status(404).json({ error: '카드를 찾을 수 없습니다' });
+
+  if (card.curriculumId && studentId) {
+    // 커리큘럼 카드: progress 배열에서 진도 관리
+    let p = getProgress(data, studentId, id);
+    if (!p) {
+      p = { id: Date.now().toString(), studentId, cardId: id, box: 1, successCount: 0, failCount: 0, lastReview: null };
+      data.progress.push(p);
+    }
+    if (success) { p.box = Math.min(p.box + 1, 5); p.successCount++; }
+    else          { p.box = 1; p.failCount++; }
+    p.lastReview = new Date().toISOString();
+    saveData(data);
+    return res.json({ ...card, ...p });
+  }
+
+  // 개인 카드: 기존 방식
+  if (success) { card.box = Math.min(card.box + 1, 5); card.successCount = (card.successCount || 0) + 1; }
+  else         { card.box = 1; card.failCount = (card.failCount || 0) + 1; }
+  card.lastReview = new Date().toISOString();
+  saveData(data);
+  res.json(card);
+});
+
+// ============ 인쇄 API ============
+
+function escapeTypst(str) {
+  if (!str) return '';
+  return String(str).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, ' ');
+}
+
+async function buildPDF(templateFile, replacer) {
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+  const typFile = path.join(PRINT_TMP, `${id}.typ`);
+  const pdfFile = path.join(PRINT_TMP, `${id}.pdf`);
+  try {
+    const template = fs.readFileSync(templateFile, 'utf8');
+    const content = replacer(template);
+    fs.writeFileSync(typFile, content, 'utf8');
+    await execFileAsync('typst', ['compile', '--root', __dirname, typFile, pdfFile]);
+    const buf = fs.readFileSync(pdfFile);
+    return buf;
+  } finally {
+    fs.unlink(typFile, () => {});
+    fs.unlink(pdfFile, () => {});
+  }
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function todayString() {
+  const d = new Date();
+  return `${d.getFullYear()}. ${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getDate()).padStart(2, '0')}.`;
+}
+
+function injectDate(template) {
+  return template.replace(/rdate\s*=\s*"[^"]*"/, `rdate   = "${todayString()}"`);
+}
+
+function injectCards(template, cards) {
+  const lines = shuffle(cards).slice(0, 8).map(c => {
+    const imgPath = c.questionImage ? `/public/assets/${c.questionImage}` : '';
+    return `  ("${escapeTypst(c.question)}", "${escapeTypst(c.answer)}", ${c.box || 1}, ${c.successCount || 0}, ${c.failCount || 0}, "${imgPath}"),`;
+  }).join('\n');
+  let out = template.replace(
+    /\/\/ ─── AUTO_CARDS_START[\s\S]*?\/\/ ─── AUTO_CARDS_END/,
+    `// ─── AUTO_CARDS_START\n${lines}\n// ─── AUTO_CARDS_END`
+  );
+  return injectDate(out);
+}
+
+function injectItems(template, cards) {
+  const lines = shuffle(cards).slice(0, 10).map(c =>
+    `  ("${escapeTypst(c.question)}", "${escapeTypst(c.answer)}", "", none),`
+  ).join('\n');
+  let out = template.replace(
+    /\/\/ ─── AUTO_ITEMS_START[\s\S]*?\/\/ ─── AUTO_ITEMS_END/,
+    `// ─── AUTO_ITEMS_START\n${lines}\n// ─── AUTO_ITEMS_END`
+  );
+  return injectDate(out);
+}
+
+// POST /api/print/flashcard-sheet
+app.post('/api/print/flashcard-sheet', async (req, res) => {
+  const { studentId, boxFilter } = req.body;
+  const data = loadData();
+  const student = data.students.find(s => s.id === studentId);
+  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
+
+  let cards = data.cards.filter(c => c.studentId === studentId);
+  if (boxFilter && boxFilter.length > 0) cards = cards.filter(c => boxFilter.includes(c.box));
+  if (cards.length === 0) return res.status(400).json({ error: '카드가 없습니다' });
+
+  // 카드의 topic 필드를 보고 관련 연습 문제 자동 생성
+  const topicSet = new Set(cards.filter(c => c.topic && TOPIC_GENERATORS[c.topic]).map(c => c.topic));
+  let problemTopics = [...topicSet];
+  if (problemTopics.length === 0) problemTopics = Object.keys(TOPIC_GENERATORS);
+
+  const practiceProblems = [];
+  const perTopic = Math.ceil(6 / problemTopics.length);
+  for (const topic of problemTopics) {
+    for (let i = 0; i < perTopic && practiceProblems.length < 6; i++) {
+      practiceProblems.push(TOPIC_GENERATORS[topic]());
+    }
+  }
+
+  try {
+    const buf = await buildPDF(
+      path.join(PRINT_DIR, 'flashcard-sheet.typ'),
+      (t) => injectCardsAndProblems(t, cards, practiceProblems)
+    );
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${date}_${encodeURIComponent(student.name)}-flashcard.pdf`);
+    res.send(buf);
+  } catch (e) {
+    console.error('PDF 오류:', e.message);
+    res.status(500).json({ error: 'PDF 생성 실패', detail: e.message });
+  }
+});
+
+// POST /api/print/quiz-sheet
+app.post('/api/print/quiz-sheet', async (req, res) => {
+  const { studentId, chapter } = req.body;
+  const data = loadData();
+  const student = data.students.find(s => s.id === studentId);
+  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
+
+  const cards = data.cards.filter(c => c.studentId === studentId);
+  if (cards.length === 0) return res.status(400).json({ error: '카드가 없습니다' });
+
+  try {
+    const buf = await buildPDF(
+      path.join(PRINT_DIR, 'quiz-sheet.typ'),
+      (t) => {
+        let out = injectItems(t, cards);
+        if (chapter) out = out.replace(/chapter\s*=\s*"[^"]*"/, `chapter = "${escapeTypst(chapter)}"`);
+        return out;
+      }
+    );
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${date}_${encodeURIComponent(student.name)}-quiz.pdf`);
+    res.send(buf);
+  } catch (e) {
+    console.error('PDF 오류:', e.message);
+    res.status(500).json({ error: 'PDF 생성 실패', detail: e.message });
+  }
+});
+
+// ─── 서버 측 문제 생성기 (problem-generators.js와 동일한 로직) ───
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+function simplify(n, d) { const g = gcd(Math.abs(n), Math.abs(d)); return [n/g, d/g]; }
+
+function generateRepeatingDecimalProblem() {
+  const pick = Math.random();
+  if (pick < 0.34) {
+    const d = Math.floor(Math.random() * 9) + 1;
+    const [n, de] = simplify(d, 9);
+    return [`0.${d}${d}${d}…  (순환마디: ${d})`, `${n}/${de}`];
+  }
+  if (pick < 0.67) {
+    const d1 = Math.floor(Math.random() * 9) + 1;
+    const d2 = Math.floor(Math.random() * 10);
+    const raw = d1 * 10 + d2;
+    const [n, de] = simplify(raw, 99);
+    return [`0.${d1}${d2}${d1}${d2}…  (순환마디: ${d1}${d2})`, `${n}/${de}`];
+  }
+  const a = Math.floor(Math.random() * 8) + 1;
+  const b = Math.floor(Math.random() * 9) + 1;
+  const raw_n = 9 * a + b;
+  const [n, de] = simplify(raw_n, 90);
+  return [`0.${a}${b}${b}${b}…  (순환마디: ${b})`, `${n}/${de}`];
+}
+
+function generateSpeedProblem() {
+  const SPEEDS = [40, 50, 60, 80, 100, 120];
+  const TIMES  = [1, 2, 3, 4, 5];
+  const s = SPEEDS[Math.floor(Math.random() * SPEEDS.length)];
+  const t = TIMES[Math.floor(Math.random() * TIMES.length)];
+  const d = s * t;
+  const type = Math.floor(Math.random() * 3);
+  if (type === 0) return [`시속 ${s}km로 ${t}시간 달린 거리는?  (거리=속력×시간)`, `${d}km`];
+  if (type === 1) return [`${d}km를 시속 ${s}km/h로 달리면 몇 시간?  (시간=거리÷속력)`, `${t}시간`];
+  return [`${d}km를 ${t}시간 만에 달렸을 때 평균 속력은?  (속력=거리÷시간)`, `시속 ${s}km`];
+}
+
+function generateLikeTermsProblem() {
+  const coef = (c, v) => c === 1 ? v : c === -1 ? `-${v}` : `${c}${v}`;
+  const VARS = ['x', 'y', 'a', 'n'];
+  const v = VARS[Math.floor(Math.random() * VARS.length)];
+  const type = Math.floor(Math.random() * 4);
+  if (type === 0) {
+    const a = Math.floor(Math.random() * 8) + 2, b = Math.floor(Math.random() * 7) + 2;
+    return [`${coef(a,v)} + ${coef(b,v)}  을 동류항끼리 정리하면?`, coef(a+b,v)];
+  }
+  if (type === 1) {
+    const b = Math.floor(Math.random() * 4) + 1, a = b + Math.floor(Math.random() * 5) + 1;
+    return [`${coef(a,v)} - ${coef(b,v)}  을 동류항끼리 정리하면?`, coef(a-b,v)];
+  }
+  if (type === 2) {
+    const a = Math.floor(Math.random()*5)+2, b = Math.floor(Math.random()*5)+2;
+    const c = Math.floor(Math.random()*Math.min(a+b-1,5))+1;
+    return [`${coef(a,v)} + ${coef(b,v)} - ${coef(c,v)}  을 동류항끼리 정리하면?`, coef(a+b-c,v)];
+  }
+  const w = v === 'x' ? 'y' : 'x';
+  const [a,b,c,d] = Array.from({length:4}, ()=>Math.floor(Math.random()*5)+1);
+  return [
+    `${coef(a,v)} + ${coef(b,w)} + ${coef(c,v)} + ${coef(d,w)}  을 동류항끼리 정리하면?`,
+    `${coef(a+c,v)} + ${coef(b+d,w)}`
+  ];
+}
+
+const TOPIC_GENERATORS = {
+  '순환소수': generateRepeatingDecimalProblem,
+  '속력':     generateSpeedProblem,
+  '동류항':   generateLikeTermsProblem,
+};
+
+function injectCardsAndProblems(template, cards, problems) {
+  let out = injectCards(template, cards);
+  const plines = problems.map(([q, a]) =>
+    `  ("${escapeTypst(q)}", "${escapeTypst(a)}"),`
+  ).join('\n');
+  out = out.replace(
+    /\/\/ ─── AUTO_PROBLEMS_START[\s\S]*?\/\/ ─── AUTO_PROBLEMS_END/,
+    `// ─── AUTO_PROBLEMS_START\n${plines}\n// ─── AUTO_PROBLEMS_END`
+  );
+  return out;
+}
+
+function injectProblems(template, problems, topic) {
+  const lines = problems.map(([q, a]) =>
+    `  ("${escapeTypst(q)}", "${escapeTypst(a)}"),`
+  ).join('\n');
+  let out = template.replace(
+    /\/\/ ─── AUTO_PROBLEMS_START[\s\S]*?\/\/ ─── AUTO_PROBLEMS_END/,
+    `// ─── AUTO_PROBLEMS_START\n${lines}\n// ─── AUTO_PROBLEMS_END`
+  );
+  out = injectDate(out);
+  if (topic) out = out.replace(/topic\s*=\s*"[^"]*"/, `topic   = "${escapeTypst(topic)}"`);
+  return out;
+}
+
+// POST /api/print/practice-sheet
+app.post('/api/print/practice-sheet', async (req, res) => {
+  const { studentId, topic = '순환소수', count = 10 } = req.body;
+  const data = loadData();
+  const student = data.students.find(s => s.id === studentId);
+  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
+
+  // 수체계는 트리 전용 PDF
+  if (topic === '수체계') {
+    const candidates = ['integer', 'pos_int', 'zero', 'neg_int', 'non_int', 'finite', 'repeating'];
+    const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+    const blankCount = Math.random() < 0.45 ? 1 : 2;
+    const blanks = shuffled.slice(0, blankCount);
+    try {
+      const buf = await buildPDF(
+        path.join(PRINT_DIR, 'practice-tree-sheet.typ'),
+        (t) => {
+          const lines = blanks.map(b => `"${b}"`).join('\n');
+          let out = t.replace(
+            /\/\/ ─── AUTO_BLANKS_START[\s\S]*?\/\/ ─── AUTO_BLANKS_END/,
+            `// ─── AUTO_BLANKS_START\n${lines}\n// ─── AUTO_BLANKS_END`
+          );
+          return injectDate(out);
+        }
+      );
+      const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${date}_${encodeURIComponent(student.name)}-tree.pdf`);
+      res.send(buf);
+    } catch (e) {
+      console.error('PDF 오류:', e.message);
+      res.status(500).json({ error: 'PDF 생성 실패', detail: e.message });
+    }
+    return;
+  }
+
+  const generator = TOPIC_GENERATORS[topic];
+  if (!generator) return res.status(400).json({ error: `지원하지 않는 topic: ${topic}` });
+
+  const n = Math.min(Math.max(parseInt(count) || 10, 1), 20);
+  const problems = Array.from({ length: n }, () => generator());
+
+  try {
+    const buf = await buildPDF(
+      path.join(PRINT_DIR, 'practice-sheet.typ'),
+      (t) => injectProblems(t, problems, topic)
+    );
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${date}_${encodeURIComponent(student.name)}-practice.pdf`);
+    res.send(buf);
+  } catch (e) {
+    console.error('PDF 오류:', e.message);
+    res.status(500).json({ error: 'PDF 생성 실패', detail: e.message });
+  }
+});
+
+// POST /api/print/bulk → ZIP
+app.post('/api/print/bulk', async (req, res) => {
+  const { studentIds, type, boxFilter } = req.body;
+  if (!studentIds || studentIds.length === 0) return res.status(400).json({ error: '학생을 선택하세요' });
+
+  const data = loadData();
+  const date = new Date().toISOString().slice(0, 10);
+  const typLabel = type === 'quiz' ? '퀴즈' : '플래시카드';
+
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(typLabel)}-${date}.zip`);
+
+  const zip = archiver('zip', { zlib: { level: 6 } });
+  zip.pipe(res);
+
+  const templateFile = path.join(PRINT_DIR, type === 'quiz' ? 'quiz-sheet.typ' : 'flashcard-sheet.typ');
+
+  for (const sid of studentIds) {
+    const student = data.students.find(s => s.id === sid);
+    if (!student) continue;
+
+    let cards = data.cards.filter(c => c.studentId === sid);
+    if (boxFilter && boxFilter.length > 0) cards = cards.filter(c => boxFilter.includes(c.box));
+    if (cards.length === 0) continue;
+
+    try {
+      let pdfBuf;
+      if (type === 'quiz') {
+        pdfBuf = await buildPDF(templateFile, (t) => injectItems(t, cards));
+      } else {
+        const topicSet = new Set(cards.filter(c => c.topic && TOPIC_GENERATORS[c.topic]).map(c => c.topic));
+        let problemTopics = [...topicSet];
+        if (problemTopics.length === 0) problemTopics = Object.keys(TOPIC_GENERATORS);
+        const practiceProblems = [];
+        const perTopic = Math.ceil(6 / problemTopics.length);
+        for (const topic of problemTopics) {
+          for (let i = 0; i < perTopic && practiceProblems.length < 6; i++) {
+            practiceProblems.push(TOPIC_GENERATORS[topic]());
+          }
+        }
+        pdfBuf = await buildPDF(templateFile, (t) => injectCardsAndProblems(t, cards, practiceProblems));
+      }
+      const buf = pdfBuf;
+      zip.append(buf, { name: `${student.name}-${typLabel}.pdf` });
+    } catch (e) {
+      console.error(`${student.name} PDF 실패:`, e.message);
+    }
+  }
+
+  zip.finalize();
+});
+
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🎴 개념 가챠 서버: http://localhost:${PORT}`);
 });
