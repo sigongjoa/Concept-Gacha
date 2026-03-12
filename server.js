@@ -1032,7 +1032,14 @@ app.post('/api/print/bulk', async (req, res) => {
       if (type === 'quiz') {
         pdfBuf = await buildPDF(templateFile, (t) => injectItems(t, cards));
       } else {
-        const topicSet = new Set(cards.filter(c => c.topic && TOPIC_GENERATORS[c.topic]).map(c => c.topic));
+        const topicSet = new Set(
+          cards
+            .map(c => {
+              const t = c.topic && TOPIC_GENERATORS[c.topic] ? c.topic : inferTopic(c);
+              return t && TOPIC_GENERATORS[t] ? t : null;
+            })
+            .filter(Boolean)
+        );
         let problemTopics = [...topicSet];
         if (problemTopics.length === 0) problemTopics = Object.keys(TOPIC_GENERATORS);
         const practiceProblems = [];
