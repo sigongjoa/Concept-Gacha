@@ -247,6 +247,148 @@ const PROBLEM_GENERATORS = {
         },
     },
 
+    '거듭제곱': {
+        label: '거듭제곱 계산',
+        checkAnswer(u, c) { return u.trim() === c.trim(); },
+        generate() {
+            const BASE = [2,3,4,5,6,7];
+            const EXP  = [2,3,4];
+            const base = BASE[Math.floor(Math.random()*BASE.length)];
+            const exp  = EXP[Math.floor(Math.random()*EXP.length)];
+            const val  = Math.pow(base, exp);
+            const type = Math.floor(Math.random()*3);
+            if (type === 0) return { question: `${base}^${exp}`, questionSub: '거듭제곱 값을 계산하세요', answer: `${val}`, steps: [`${base}를 ${exp}번 곱하면`, `${Array(exp).fill(base).join(' × ')} = ${val}`] };
+            if (type === 1) return { question: `${val} = ${base}^□`, questionSub: '□에 알맞은 수(지수)를 구하세요', answer: `${exp}`, steps: [`${base}^? = ${val}`, `${base}를 ${exp}번 곱하면 ${val}`] };
+            return { question: `${val} = □^${exp}`, questionSub: '□에 알맞은 수(밑)를 구하세요', answer: `${base}`, steps: [`?^${exp} = ${val}`, `${val}의 ${exp}제곱근 = ${base}`] };
+        },
+    },
+
+    '역수': {
+        label: '역수 구하기',
+        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        generate() {
+            const type = Math.floor(Math.random()*3);
+            if (type === 0) {
+                const n = Math.floor(Math.random()*7)+2, d = Math.floor(Math.random()*7)+2;
+                return { question: `${n}/${d}의 역수`, questionSub: '분자와 분모를 바꾸세요', answer: `${d}/${n}`, steps: [`역수 = 분자↔분모`, `${n}/${d} → ${d}/${n}`] };
+            }
+            if (type === 1) {
+                const n = Math.floor(Math.random()*8)+2;
+                return { question: `${n}의 역수`, questionSub: '정수를 분수로 나타낸 뒤 뒤집으세요', answer: `1/${n}`, steps: [`${n} = ${n}/1`, `역수 = 1/${n}`] };
+            }
+            const n = Math.floor(Math.random()*7)+2, d = Math.floor(Math.random()*7)+2;
+            return { question: `${n}/${d} × □ = 1`, questionSub: '□에 역수를 넣으세요', answer: `${d}/${n}`, steps: [`역수 = ${d}/${n}`, `${n}/${d} × ${d}/${n} = 1`] };
+        },
+    },
+
+    '약분': {
+        label: '약분 / 기약분수',
+        checkAnswer: checkFractionAnswer,
+        generate() {
+            const GCDS = [2,3,4,5,6];
+            const g = GCDS[Math.floor(Math.random()*GCDS.length)];
+            let n, d;
+            do { n = Math.floor(Math.random()*7)+2; d = Math.floor(Math.random()*7)+2; } while(n===d);
+            const [rn,rd] = simplify(n*g, d*g);
+            return { question: `${n*g}/${d*g}`, questionSub: '기약분수로 나타내세요', answer: `${rn}/${rd}`, steps: [`GCD(${n*g},${d*g}) = ${g}`, `${n*g}÷${g} / ${d*g}÷${g} = ${rn}/${rd}`] };
+        },
+    },
+
+    '서로소': {
+        label: '서로소 판별',
+        checkAnswer(u, c) { return u.trim().startsWith(c.trim().split(' ')[0]); },
+        generate() {
+            const pairs = [[8,15,'서로소'],[4,9,'서로소'],[7,12,'서로소'],[5,13,'서로소'],[4,6,'서로소 아님'],[9,12,'서로소 아님'],[10,15,'서로소 아님']];
+            const [a,b,ans] = pairs[Math.floor(Math.random()*pairs.length)];
+            return { question: `${a}과 ${b}는 서로소?`, questionSub: '최대공약수가 1이면 서로소', answer: ans, steps: [`GCD(${a},${b}) = ${gcd(a,b)}`, gcd(a,b)===1?'서로소 ○':'서로소 ✕'] };
+        },
+    },
+
+    '소수': {
+        label: '소수 / 합성수 판별',
+        checkAnswer(u, c) { return u.trim() === c.trim(); },
+        generate() {
+            const PRIMES = [2,3,5,7,11,13,17,19,23,29,31,37];
+            const COMPOS = [4,6,8,9,10,12,14,15,16,18,20,21,22,24,25];
+            const all = [...PRIMES.slice(0,8), ...COMPOS.slice(0,8)];
+            const n = all[Math.floor(Math.random()*all.length)];
+            const isPrime = PRIMES.includes(n);
+            return { question: `${n}은 소수? 합성수?`, questionSub: '1과 자기 자신만을 약수로 가지면 소수', answer: isPrime?'소수':'합성수', steps: isPrime?[`약수: 1, ${n}`,`약수가 2개 → 소수`]:[`${n} = ${n}의 소인수분해`, `약수 2개 초과 → 합성수`] };
+        },
+    },
+
+    '제곱근': {
+        label: '제곱근 계산',
+        checkAnswer(u, c) { return u.trim() === c.trim(); },
+        generate() {
+            const PERFECT = [1,4,9,16,25,36,49,64,81,100,121,144];
+            const n = PERFECT[Math.floor(Math.random()*PERFECT.length)];
+            const sq = Math.sqrt(n);
+            const type = Math.floor(Math.random()*2);
+            if (type === 0) return { question: `√${n}`, questionSub: '양의 제곱근을 구하세요', answer: `${sq}`, steps: [`${sq}² = ${n}`, `∴ √${n} = ${sq}`] };
+            return { question: `제곱해서 ${n}이 되는 양수는?`, questionSub: '양의 제곱근을 구하세요', answer: `${sq}`, steps: [`□² = ${n}`, `□ = ${sq}`] };
+        },
+    },
+
+    '대소관계': {
+        label: '분수 대소관계',
+        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        generate() {
+            const fracs = [[1,2],[1,3],[2,3],[3,4],[1,4],[3,5],[2,5],[4,5],[1,6],[5,6]];
+            let [n1,d1], [n2,d2];
+            do {
+                [n1,d1] = fracs[Math.floor(Math.random()*fracs.length)];
+                [n2,d2] = fracs[Math.floor(Math.random()*fracs.length)];
+            } while(n1===n2 && d1===d2);
+            const v1=n1/d1, v2=n2/d2;
+            const sym = v1>v2 ? '>' : v1<v2 ? '<' : '=';
+            return { question: `${n1}/${d1}  ○  ${n2}/${d2}`, questionSub: '○ 안에 >, <, = 를 쓰세요', answer: sym, steps: [`통분: ${n1*d2}/${d1*d2}  vs  ${n2*d1}/${d1*d2}`, `${n1*d2} ${sym} ${n2*d1}  →  ${sym}`] };
+        },
+    },
+
+    '삼각형': {
+        label: '삼각형 넓이',
+        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        generate() {
+            const b = Math.floor(Math.random()*8)+2, h = Math.floor(Math.random()*8)+2;
+            const area = b*h/2;
+            return { question: `밑변 ${b}cm, 높이 ${h}cm인 삼각형의 넓이는?`, questionSub: '넓이 = 밑변×높이÷2', answer: `${area}cm²`, steps: [`${b} × ${h} ÷ 2 = ${area}`, `넓이 = ${area}cm²`] };
+        },
+    },
+
+    '직사각형': {
+        label: '직사각형 둘레/넓이',
+        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        generate() {
+            const w = Math.floor(Math.random()*8)+2, h = Math.floor(Math.random()*8)+2;
+            const type = Math.floor(Math.random()*2);
+            if (type===0) return { question: `가로 ${w}cm, 세로 ${h}cm 직사각형의 둘레는?`, questionSub: '둘레 = (가로+세로)×2', answer: `${2*(w+h)}cm`, steps: [`(${w}+${h}) × 2 = ${2*(w+h)}`] };
+            return { question: `가로 ${w}cm, 세로 ${h}cm 직사각형의 넓이는?`, questionSub: '넓이 = 가로×세로', answer: `${w*h}cm²`, steps: [`${w} × ${h} = ${w*h}cm²`] };
+        },
+    },
+
+    '마름모': {
+        label: '마름모 넓이',
+        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        generate() {
+            const d1 = (Math.floor(Math.random()*5)+2)*2;
+            const d2 = (Math.floor(Math.random()*5)+2)*2;
+            return { question: `대각선이 ${d1}cm, ${d2}cm인 마름모의 넓이는?`, questionSub: '넓이 = 대각선×대각선÷2', answer: `${d1*d2/2}cm²`, steps: [`${d1} × ${d2} ÷ 2 = ${d1*d2/2}`, `넓이 = ${d1*d2/2}cm²`] };
+        },
+    },
+
+    '사다리꼴': {
+        label: '사다리꼴 넓이',
+        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        generate() {
+            const top = Math.floor(Math.random()*5)+2;
+            const bot = top + Math.floor(Math.random()*5)+1;
+            const h   = Math.floor(Math.random()*6)+2;
+            const area = (top+bot)*h/2;
+            return { question: `윗변 ${top}cm, 아랫변 ${bot}cm, 높이 ${h}cm인 사다리꼴의 넓이는?`, questionSub: '넓이 = (윗변+아랫변)×높이÷2', answer: `${area}cm²`, steps: [`(${top}+${bot}) × ${h} ÷ 2 = ${area}`, `넓이 = ${area}cm²`] };
+        },
+    },
+
 };
 
 // ─── 내보내기 (module 환경과 전역 둘 다 지원) ───────────────

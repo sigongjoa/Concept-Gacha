@@ -518,10 +518,21 @@ function injectDate(template) {
 function inferTopic(card) {
   if (card.topic && TOPIC_GENERATORS[card.topic]) return card.topic;
   const text = ((card.question || '') + ' ' + (card.answer || '')).toLowerCase();
-  if (/속력|거리.+시간|시간.+거리|km\/h|속도/.test(text)) return '속력';
-  if (/순환소수|순환마디|순환 소수/.test(text))             return '순환소수';
-  if (/동류항/.test(text))                                  return '동류항';
-  return null; // 매칭 없으면 연습문제 없음
+  if (/속력|거리.+시간|시간.+거리|km\/h|속도/.test(text))   return '속력';
+  if (/순환소수|순환마디/.test(text))                        return '순환소수';
+  if (/동류항/.test(text))                                   return '동류항';
+  if (/거듭제곱|밑|지수/.test(text))                        return '거듭제곱';
+  if (/역수/.test(text))                                     return '역수';
+  if (/약분|기약분수|통분/.test(text))                       return '약분';
+  if (/서로소|최대공약수/.test(text))                        return '서로소';
+  if (/소수.*(자연수|약수)|합성수/.test(text))               return '소수';
+  if (/제곱근|√/.test(text))                                 return '제곱근';
+  if (/대소관계|크다|작다/.test(text))                       return '대소관계';
+  if (/삼각형.*(넓이|공식)|넓이.*삼각형/.test(text))         return '삼각형';
+  if (/직사각형|정사각형/.test(text))                        return '직사각형';
+  if (/마름모/.test(text))                                   return '마름모';
+  if (/사다리꼴/.test(text))                                 return '사다리꼴';
+  return null;
 }
 
 function injectCards(template, cards) {
@@ -668,10 +679,149 @@ function generateLikeTermsProblem() {
   ];
 }
 
+// ── 거듭제곱 ──────────────────────────────────────────────
+function generateExponentProblem() {
+  const BASE = [2, 3, 4, 5, 6, 7];
+  const EXP  = [2, 3, 4];
+  const base = BASE[Math.floor(Math.random() * BASE.length)];
+  const exp  = EXP[Math.floor(Math.random() * EXP.length)];
+  const val  = Math.pow(base, exp);
+  const type = Math.floor(Math.random() * 3);
+  if (type === 0) return [`${base}^${exp} = ?`, `${val}`];
+  if (type === 1) return [`${val} = ${base}^□  □ 에 알맞은 수는?`, `${exp}`];
+  return [`${val} = □^${exp}  □ 에 알맞은 수는?`, `${base}`];
+}
+
+// ── 역수 ──────────────────────────────────────────────────
+function generateReciprocalProblem() {
+  const type = Math.floor(Math.random() * 3);
+  if (type === 0) {
+    const n = Math.floor(Math.random() * 7) + 2;
+    const d = Math.floor(Math.random() * 7) + 2;
+    if (n === d) return generateReciprocalProblem();
+    return [`${n}/${d}의 역수는?`, `${d}/${n}`];
+  }
+  if (type === 1) {
+    const n = Math.floor(Math.random() * 8) + 2;
+    return [`${n}의 역수는?`, `1/${n}`];
+  }
+  const n = Math.floor(Math.random() * 7) + 2;
+  const d = Math.floor(Math.random() * 7) + 2;
+  if (n === d) return generateReciprocalProblem();
+  return [`${n}/${d} × □ = 1  □ 에 알맞은 수는?`, `${d}/${n}`];
+}
+
+// ── 약분/기약분수 ─────────────────────────────────────────
+function generateSimplifyFractionProblem() {
+  const GCDS = [2, 3, 4, 5, 6];
+  const g = GCDS[Math.floor(Math.random() * GCDS.length)];
+  let n, d;
+  do {
+    n = Math.floor(Math.random() * 7) + 2;
+    d = Math.floor(Math.random() * 7) + 2;
+  } while (n === d);
+  const [rn, rd] = simplify(n * g, d * g);
+  return [`${n * g}/${d * g}를 기약분수로 나타내면?`, `${rn}/${rd}`];
+}
+
+// ── 서로소 ────────────────────────────────────────────────
+function generateCoprimeProblem() {
+  const pairs = [
+    [8,15,'서로소'], [4,9,'서로소'], [7,12,'서로소'], [5,13,'서로소'],
+    [3,11,'서로소'], [6,35,'서로소'], [4,6,'서로소 아님 (GCD=2)'],
+    [9,12,'서로소 아님 (GCD=3)'], [10,15,'서로소 아님 (GCD=5)'],
+    [8,12,'서로소 아님 (GCD=4)'],
+  ];
+  const [a, b, ans] = pairs[Math.floor(Math.random() * pairs.length)];
+  return [`${a}과 ${b}는 서로소인가?`, ans];
+}
+
+// ── 소수/합성수 ───────────────────────────────────────────
+function generatePrimeProblem() {
+  const PRIMES    = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47];
+  const COMPOSITES = [4,6,8,9,10,12,14,15,16,18,20,21,22,24,25,26,27,28];
+  const type = Math.floor(Math.random() * 2);
+  if (type === 0) {
+    const n = [...PRIMES, ...COMPOSITES][Math.floor(Math.random() * (PRIMES.length + COMPOSITES.length))];
+    return [`${n}은 소수인가, 합성수인가?`, PRIMES.includes(n) ? '소수' : '합성수'];
+  }
+  const p = PRIMES[Math.floor(Math.random() * 8)];
+  return [`1과 ${p} 사이에서 ${p}의 약수를 모두 구하면?`, `1, ${p}`];
+}
+
+// ── 제곱근 ────────────────────────────────────────────────
+function generateSquareRootProblem() {
+  const PERFECT = [1,4,9,16,25,36,49,64,81,100,121,144];
+  const n = PERFECT[Math.floor(Math.random() * PERFECT.length)];
+  const type = Math.floor(Math.random() * 2);
+  if (type === 0) return [`√${n} = ?`, `${Math.sqrt(n)}`];
+  return [`제곱해서 ${n}이 되는 수 중 양수는?`, `${Math.sqrt(n)}`];
+}
+
+// ── 대소관계 ─────────────────────────────────────────────
+function generateComparisonProblem() {
+  const fractions = [[1,2],[1,3],[2,3],[3,4],[1,4],[3,5],[2,5],[4,5],[1,6],[5,6]];
+  const [n1,d1] = fractions[Math.floor(Math.random() * fractions.length)];
+  let idx2;
+  do { idx2 = Math.floor(Math.random() * fractions.length); } while (fractions[idx2][0]===n1 && fractions[idx2][1]===d1);
+  const [n2,d2] = fractions[idx2];
+  const v1 = n1/d1, v2 = n2/d2;
+  const bigger = v1 > v2 ? `${n1}/${d1}` : v2 > v1 ? `${n2}/${d2}` : '같다';
+  return [`${n1}/${d1}와 ${n2}/${d2} 중 큰 수는?`, bigger];
+}
+
+// ── 삼각형 넓이 ──────────────────────────────────────────
+function generateTriangleAreaProblem() {
+  const base = Math.floor(Math.random() * 8) + 2;
+  const height = Math.floor(Math.random() * 8) + 2;
+  const area = base * height / 2;
+  return [`밑변 ${base}cm, 높이 ${height}cm인 삼각형의 넓이는?`, `${area}cm²`];
+}
+
+// ── 직사각형 둘레 ─────────────────────────────────────────
+function generateRectangleProblem() {
+  const w = Math.floor(Math.random() * 8) + 2;
+  const h = Math.floor(Math.random() * 8) + 2;
+  const type = Math.floor(Math.random() * 2);
+  if (type === 0) return [`가로 ${w}cm, 세로 ${h}cm인 직사각형의 둘레는?`, `${2*(w+h)}cm`];
+  return [`가로 ${w}cm, 세로 ${h}cm인 직사각형의 넓이는?`, `${w*h}cm²`];
+}
+
+// ── 마름모 넓이 ──────────────────────────────────────────
+function generateRhombusAreaProblem() {
+  const d1 = (Math.floor(Math.random() * 5) + 2) * 2; // 짝수
+  const d2 = (Math.floor(Math.random() * 5) + 2) * 2;
+  return [`대각선이 ${d1}cm, ${d2}cm인 마름모의 넓이는?`, `${d1*d2/2}cm²`];
+}
+
+// ── 사다리꼴 넓이 ─────────────────────────────────────────
+function generateTrapezoidAreaProblem() {
+  const top    = Math.floor(Math.random() * 5) + 2;
+  const bottom = top + Math.floor(Math.random() * 5) + 1;
+  const h      = Math.floor(Math.random() * 6) + 2;
+  return [`윗변 ${top}cm, 아랫변 ${bottom}cm, 높이 ${h}cm인 사다리꼴의 넓이는?`, `${(top+bottom)*h/2}cm²`];
+}
+
 const TOPIC_GENERATORS = {
   '순환소수': generateRepeatingDecimalProblem,
   '속력':     generateSpeedProblem,
   '동류항':   generateLikeTermsProblem,
+  '거듭제곱': generateExponentProblem,
+  '밑':       generateExponentProblem,
+  '지수':     generateExponentProblem,
+  '역수':     generateReciprocalProblem,
+  '약분':     generateSimplifyFractionProblem,
+  '통분':     generateSimplifyFractionProblem,
+  '서로소':   generateCoprimeProblem,
+  '소수':     generatePrimeProblem,
+  '합성수':   generatePrimeProblem,
+  '제곱근':   generateSquareRootProblem,
+  '대소관계': generateComparisonProblem,
+  '삼각형':   generateTriangleAreaProblem,
+  '직사각형': generateRectangleProblem,
+  '정사각형': generateRectangleProblem,
+  '마름모':   generateRhombusAreaProblem,
+  '사다리꼴': generateTrapezoidAreaProblem,
 };
 
 function injectCardsAndProblems(template, cards, problems) {
