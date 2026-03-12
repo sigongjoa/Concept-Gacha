@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>개념 가챠 - 제네레이터 디버그</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <style>
+        body { font-family: 'Inter', 'Noto Sans KR', sans-serif; }
+        .topic-btn { @apply px-3 py-1.5 rounded-lg text-xs font-bold border-2 cursor-pointer transition-all; }
+        .topic-btn.active { @apply bg-violet-500 border-violet-500 text-white; }
+        .topic-btn:not(.active) { @apply bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-violet-300; }
+        .prob-card { @apply bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm; }
+        .label { @apply text-xs font-bold text-slate-400 uppercase tracking-wide mb-1; }
+        .value { @apply text-slate-800 dark:text-slate-100; }
+        .step { @apply text-sm py-1.5 px-3 bg-slate-50 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300; }
+    </style>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 h-screen flex overflow-hidden">
+
+    <aside class="w-72 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col justify-between z-20 hidden lg:flex"></aside>
+
+    <main class="flex-1 p-6 lg:p-10 overflow-y-auto">
+
+        <!-- 헤더 -->
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-2xl font-black flex items-center gap-3">
+                    <span class="material-symbols-outlined text-violet-500">bug_report</span>
+                    제네레이터 디버그
+                </h1>
+                <p class="text-sm text-slate-400 mt-1">각 topic 문제 생성기 실시간 확인 — 클라이언트(브라우저) 기준</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="toggleBatch()" id="batchToggle"
+                    class="px-4 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm font-bold hover:border-violet-400 transition-all">
+                    배치 10개 보기
+                </button>
+                <button onclick="document.documentElement.classList.toggle('dark')"
+                    class="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                    <span class="material-symbols-outlined text-sm">dark_mode</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Topic 선택 -->
+        <section class="mb-6">
+            <p class="label mb-3">Topic 선택 <span id="topicCount" class="text-violet-500"></span></p>
+            <div id="topicList" class="flex flex-wrap gap-2"></div>
+        </section>
+
+        <!-- 단일 문제 뷰 -->
+        <div id="singleView">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-bold text-lg" id="currentTopicLabel">—</h2>
+                <button onclick="regenerate()"
+                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-500 hover:bg-violet-600 text-white font-bold text-sm transition-all shadow shadow-violet-500/20">
+                    <span class="material-symbols-outlined text-base">refresh</span>
+                    새 문제 생성
+                </button>
+            </div>
+
+            <div id="singleProblem" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="prob-card col-span-full flex items-center justify-center h-40 text-slate-300">
+                    위에서 topic을 선택하세요
+                </div>
+            </div>
+        </div>
+
+        <!-- 배치 뷰 -->
+        <div id="batchView" class="hidden">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-bold text-lg">배치 생성 — <span id="batchTopicLabel" class="text-violet-500">—</span></h2>
+                <button onclick="generateBatch()"
+                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-500 hover:bg-violet-600 text-white font-bold text-sm transition-all shadow shadow-violet-500/20">
+                    <span class="material-symbols-outlined text-base">refresh</span>
+                    10문제 다시 생성
+                </button>
+            </div>
+            <div id="batchProblems" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+        </div>
+
+        <!-- 서버 사이드 비교 -->
+        <section class="mt-8 bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-100 dark:border-slate-800">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-bold flex items-center gap-2">
+                    <span class="material-symbols-outlined text-orange-500 text-base">dns</span>
+                    서버 사이드 비교 (server.js TOPIC_GENERATORS)
+                </h2>
+                <button onclick="testServer()"
+                    class="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-all">
+                    서버 결과 확인
+                </button>
+            </div>
+            <div id="serverResult" class="text-sm text-slate-400">
+                "서버 결과 확인" 버튼을 누르면 현재 선택된 topic으로 서버 API를 호출합니다.
+            </div>
+        </section>
+
+    </main>
+
+    <script type="module" src="js/api.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/problem-generators.js"></script>
+    <script src="js/shape-renderer.js"></script>
+    <script>
+        let currentTopic = null;
+        let isBatch = false;
+
+        // Topic 그룹 정의 (색상 카테고리)
+        const TOPIC_GROUPS = {
+            '수 체계': { keys: ['순환소수', '소수', '합성수', '서로소', '약분', '통분'], color: 'blue' },
+            '연산':    { keys: ['거듭제곱', '밑', '지수', '역수', '동류항', '대소관계', '제곱근'], color: 'emerald' },
+            '속력':    { keys: ['속력'], color: 'red' },
+            '도형':    { keys: ['삼각형', '직사각형', '정사각형', '마름모', '사다리꼴', '복잡한도형', '보조선'], color: 'violet' },
+            '단위':    { keys: ['단위변환', '넓이단위'], color: 'amber' },
+            '수체계':  { keys: ['수체계'], color: 'indigo' },
+        };
+
+        const GROUP_COLORS = {
+            blue:    'border-blue-300 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-300',
+            emerald: 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-700 dark:text-emerald-300',
+            red:     'border-red-300 bg-red-50 text-red-700 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300',
+            violet:  'border-violet-300 bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:border-violet-700 dark:text-violet-300',
+            amber:   'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:border-amber-700 dark:text-amber-300',
+            indigo:  'border-indigo-300 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:border-indigo-700 dark:text-indigo-300',
+        };
+
+        function buildTopicList() {
+            const container = document.getElementById('topicList');
+            const allKeys = Object.keys(PROBLEM_GENERATORS);
+
+            // 그룹별 렌더링
+            const rendered = new Set();
+            Object.entries(TOPIC_GROUPS).forEach(([groupName, { keys, color }]) => {
+                const validKeys = keys.filter(k => allKeys.includes(k));
+                if (!validKeys.length) return;
+
+                const wrap = document.createElement('div');
+                wrap.className = 'flex items-center gap-1.5 flex-wrap';
+
+                const lbl = document.createElement('span');
+                lbl.className = 'text-xs text-slate-400 font-bold mr-1';
+                lbl.textContent = groupName;
+                wrap.appendChild(lbl);
+
+                validKeys.forEach(key => {
+                    const btn = document.createElement('button');
+                    btn.className = `topic-btn ${GROUP_COLORS[color]}`;
+                    btn.id = `btn-${key}`;
+                    btn.textContent = key;
+                    btn.onclick = () => selectTopic(key);
+                    wrap.appendChild(btn);
+                    rendered.add(key);
+                });
+
+                container.appendChild(wrap);
+            });
+
+            // 미분류 keys
+            const extras = allKeys.filter(k => !rendered.has(k));
+            if (extras.length) {
+                const wrap = document.createElement('div');
+                wrap.className = 'flex items-center gap-1.5 flex-wrap';
+                const lbl = document.createElement('span');
+                lbl.className = 'text-xs text-slate-400 font-bold mr-1';
+                lbl.textContent = '기타';
+                wrap.appendChild(lbl);
+                extras.forEach(key => {
+                    const btn = document.createElement('button');
+                    btn.className = 'topic-btn border-slate-300 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-violet-300';
+                    btn.id = `btn-${key}`;
+                    btn.textContent = key;
+                    btn.onclick = () => selectTopic(key);
+                    wrap.appendChild(btn);
+                });
+                container.appendChild(wrap);
+            }
+
+            document.getElementById('topicCount').textContent = `(${allKeys.length}개)`;
+        }
+
+        function selectTopic(topic) {
+            // 버튼 active 상태
+            document.querySelectorAll('[id^="btn-"]').forEach(b => b.classList.remove('active'));
+            const btn = document.getElementById(`btn-${topic}`);
+            if (btn) btn.classList.add('active');
+
+            currentTopic = topic;
+            const gen = PROBLEM_GENERATORS[topic];
+            document.getElementById('currentTopicLabel').textContent =
+                `${topic} — ${gen?.label || ''}`;
+            document.getElementById('batchTopicLabel').textContent = topic;
+
+            if (isBatch) generateBatch();
+            else generateSingle();
+        }
+
+        function renderProblemCard(prob, index) {
+            const num = index != null ? `<span class="text-xs font-bold text-violet-400 mb-2 block">#${index + 1}</span>` : '';
+
+            // SVG 도형 (복잡한도형)
+            const svgHtml = prob.shape && window.ShapeRenderer
+                ? `<div class="border-t border-dashed border-slate-100 dark:border-slate-700 pt-3">
+                     <p class="label">도형 시각화</p>
+                     <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-2">${ShapeRenderer.render(prob.shape)}</div>
+                   </div>` : '';
+
+            // 수체계 트리
+            const treeHtml = prob.type === 'fillblank' && prob.blankIds
+                ? `<div class="border-t border-dashed border-slate-100 dark:border-slate-700 pt-3">
+                     <p class="label">수체계 트리 빈칸</p>
+                     <div class="flex flex-wrap gap-2 mt-1">
+                       ${Object.keys(prob.blankIds).map(id =>
+                           `<span class="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg text-sm font-bold">${escHtml(id)}</span>`
+                         ).join('')}
+                     </div>
+                     <p class="text-xs text-slate-400 mt-2">→ 정답: ${Object.entries(prob.blankIds).map(([k,v])=>`${k}=${Array.isArray(v)?v.join('|'):v}`).join(', ')}</p>
+                   </div>` : '';
+
+            // steps HTML
+            const stepsHtml = (prob.steps || []).map(s =>
+                `<div class="step">${escHtml(s)}</div>`
+            ).join('');
+
+            return `
+            <div class="prob-card flex flex-col gap-3">
+                ${num}
+                <div>
+                    <p class="label">question</p>
+                    <p class="value font-black text-xl">${escHtml(prob.question || '(수체계 트리)')}</p>
+                    ${prob.questionSub ? `<p class="text-xs text-slate-400 mt-0.5">${escHtml(prob.questionSub)}</p>` : ''}
+                </div>
+                ${svgHtml}
+                ${treeHtml}
+                <div class="border-t border-dashed border-slate-100 dark:border-slate-700 pt-3">
+                    <p class="label">answer</p>
+                    <p class="value font-bold text-emerald-600 dark:text-emerald-400 text-lg">${escHtml(String(prob.answer ?? '(빈칸 채우기)'))}</p>
+                </div>
+                ${stepsHtml ? `
+                <div class="border-t border-dashed border-slate-100 dark:border-slate-700 pt-3">
+                    <p class="label">steps</p>
+                    <div class="flex flex-col gap-1">${stepsHtml}</div>
+                </div>` : ''}
+                <div class="border-t border-dashed border-slate-100 dark:border-slate-700 pt-2">
+                    <p class="label">raw JSON</p>
+                    <pre class="text-xs text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800 rounded-lg p-2 overflow-x-auto whitespace-pre-wrap">${escHtml(JSON.stringify(prob, null, 2))}</pre>
+                </div>
+            </div>`;
+        }
+
+        function generateSingle() {
+            if (!currentTopic) return;
+            const gen = PROBLEM_GENERATORS[currentTopic];
+            if (!gen) {
+                document.getElementById('singleProblem').innerHTML =
+                    `<div class="prob-card col-span-full text-red-400 text-sm">PROBLEM_GENERATORS["${currentTopic}"] 없음</div>`;
+                return;
+            }
+            try {
+                const prob = gen.generate();
+                document.getElementById('singleProblem').innerHTML = renderProblemCard(prob);
+            } catch (e) {
+                document.getElementById('singleProblem').innerHTML =
+                    `<div class="prob-card col-span-full text-red-400 text-sm">에러: ${escHtml(e.message)}</div>`;
+            }
+        }
+
+        function generateBatch() {
+            if (!currentTopic) return;
+            const gen = PROBLEM_GENERATORS[currentTopic];
+            const container = document.getElementById('batchProblems');
+            if (!gen) {
+                container.innerHTML = `<div class="prob-card col-span-full text-red-400 text-sm">PROBLEM_GENERATORS["${currentTopic}"] 없음</div>`;
+                return;
+            }
+            try {
+                const cards = Array.from({ length: 10 }, (_, i) => renderProblemCard(gen.generate(), i));
+                container.innerHTML = cards.join('');
+            } catch (e) {
+                container.innerHTML = `<div class="prob-card col-span-full text-red-400 text-sm">에러: ${escHtml(e.message)}</div>`;
+            }
+        }
+
+        function regenerate() {
+            if (isBatch) generateBatch();
+            else generateSingle();
+        }
+
+        function toggleBatch() {
+            isBatch = !isBatch;
+            document.getElementById('singleView').classList.toggle('hidden', isBatch);
+            document.getElementById('batchView').classList.toggle('hidden', !isBatch);
+            document.getElementById('batchToggle').textContent = isBatch ? '단일 문제 보기' : '배치 10개 보기';
+            if (isBatch) generateBatch();
+        }
+
+        async function testServer() {
+            if (!currentTopic) {
+                document.getElementById('serverResult').innerHTML = '<span class="text-red-400">먼저 topic을 선택하세요</span>';
+                return;
+            }
+            const el = document.getElementById('serverResult');
+            el.innerHTML = '<span class="text-slate-400">서버 호출 중...</span>';
+            try {
+                const res = await fetch('/api/debug/generator', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic: currentTopic, count: 3 })
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    el.innerHTML = `<span class="text-red-400">서버 오류: ${escHtml(err.error || res.statusText)}</span>`;
+                    return;
+                }
+                const data = await res.json();
+                el.innerHTML = data.problems.map((p, i) => {
+                    // 수체계: {type:'fillblank', blankIds:{...}}
+                    if (p && typeof p === 'object' && p.type === 'fillblank') {
+                        const blanks = Object.keys(p.blankIds || {}).join(', ');
+                        return `<div class="mb-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                            <span class="text-xs font-bold text-orange-400">#${i+1} [수체계 빈칸]</span>
+                            <p class="font-bold mt-1">빈칸 노드: <code class="text-purple-600">${escHtml(blanks)}</code></p>
+                        </div>`;
+                    }
+                    // 일반: [question, answer] 배열
+                    const q = Array.isArray(p) ? p[0] : (p.question || '');
+                    const a = Array.isArray(p) ? p[1] : (p.answer || '');
+                    return `<div class="mb-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                        <span class="text-xs font-bold text-orange-400">#${i+1}</span>
+                        <p class="font-bold mt-1">${escHtml(q)}</p>
+                        <p class="text-emerald-600 dark:text-emerald-400 font-bold">▶ ${escHtml(a)}</p>
+                    </div>`;
+                }).join('');
+            } catch (e) {
+                el.innerHTML = `<span class="text-red-400">네트워크 오류: ${escHtml(e.message)}</span>`;
+            }
+        }
+
+        function escHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches)
+            document.documentElement.classList.add('dark');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            Layout.init();
+            buildTopicList();
+            // 첫 번째 topic 자동 선택
+            const firstKey = Object.keys(PROBLEM_GENERATORS)[0];
+            if (firstKey) selectTopic(firstKey);
+        });
+    </script>
+</body>
+</html>

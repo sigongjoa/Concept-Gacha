@@ -61,6 +61,14 @@ const Layout = {
                     <span class="material-symbols-outlined">settings</span>
                     관리자
                 </a>
+                <a class="nav-link flex items-center gap-4 px-5 py-4 rounded-2xl font-medium transition-all korean-text border" href="print.html">
+                    <span class="material-symbols-outlined">print</span>
+                    인쇄 센터
+                </a>
+                <a class="nav-link flex items-center gap-4 px-5 py-4 rounded-2xl font-medium transition-all korean-text border" href="debug-generators.html">
+                    <span class="material-symbols-outlined">bug_report</span>
+                    제네레이터 디버그
+                </a>
             </nav>
         </div>
         <div class="p-8 border-t border-slate-100 dark:border-slate-800">

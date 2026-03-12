@@ -514,24 +514,41 @@ function injectDate(template) {
   return template.replace(/rdate\s*=\s*"[^"]*"/, `rdate   = "${todayString()}"`);
 }
 
-// 카드 텍스트에서 topic 추론 — 확실히 매칭되는 경우만 반환, 아니면 null
+// 카드 텍스트에서 topic 추론
+// 핵심 규칙: "유한소수 → 거듭제곱 꼴" 같은 정의 카드 오염 방지
+//   → question에 있는 키워드 우선, answer에만 있는 경우 계산형 답(공식·숫자)일 때만 인정
 function inferTopic(card) {
   if (card.topic && TOPIC_GENERATORS[card.topic]) return card.topic;
-  const text = ((card.question || '') + ' ' + (card.answer || '')).toLowerCase();
-  if (/속력|거리.+시간|시간.+거리|km\/h|속도/.test(text))   return '속력';
-  if (/순환소수|순환마디/.test(text))                        return '순환소수';
-  if (/동류항/.test(text))                                   return '동류항';
-  if (/거듭제곱|밑|지수/.test(text))                        return '거듭제곱';
-  if (/역수/.test(text))                                     return '역수';
-  if (/약분|기약분수|통분/.test(text))                       return '약분';
-  if (/서로소|최대공약수/.test(text))                        return '서로소';
-  if (/소수.*(자연수|약수)|합성수/.test(text))               return '소수';
-  if (/제곱근|√/.test(text))                                 return '제곱근';
-  if (/대소관계|크다|작다/.test(text))                       return '대소관계';
-  if (/삼각형.*(넓이|공식)|넓이.*삼각형/.test(text))         return '삼각형';
-  if (/직사각형|정사각형/.test(text))                        return '직사각형';
-  if (/마름모/.test(text))                                   return '마름모';
-  if (/사다리꼴/.test(text))                                 return '사다리꼴';
+
+  const q = (card.question || '').toLowerCase();
+  const a = (card.answer || '').toLowerCase();
+
+  // ── 항상 q+a 전체 매칭 (오염 위험 없는 주제) ──────────────────
+  if (/속력|거리.+시간|시간.+거리|km\/h|속도/.test(q + ' ' + a))    return '속력';
+  if (/순환소수|순환마디/.test(q + ' ' + a))                          return '순환소수';
+  if (/동류항/.test(q + ' ' + a))                                      return '동류항';
+  if (/보조선|ㄱ자|ㄷ자|복잡한.도형|도형.나누/.test(q + ' ' + a))    return '복잡한도형';
+  if (/km²|m²|cm²|mm²|넓이.단위|단위.변환.*넓이/.test(q + ' ' + a)) return '단위변환';
+
+  // ── question 우선 매칭 (answer에만 있으면 오염 가능) ──────────
+  // 예) "거듭제곱이란?" → q에 있으므로 OK
+  //     "유한소수 → 10의 거듭제곱 꼴" → q엔 없고 a에만 있으므로 스킵
+  if (/거듭제곱|밑.*지수|지수.*밑/.test(q))   return '거듭제곱';
+  if (/역수/.test(q))                           return '역수';
+  if (/약분|기약분수|통분/.test(q))             return '약분';
+  if (/서로소/.test(q))                          return '서로소';
+  if (/소수|합성수/.test(q))                    return '소수';
+  if (/제곱근|√/.test(q))                       return '제곱근';
+  if (/대소관계|크기.*비교/.test(q))            return '대소관계';
+
+  // ── 도형 넓이 공식 카드: answer에 공식이 있으면 OK ──────────────
+  // 공식 카드 판별: answer가 짧고(60자 미만) × 또는 ÷ 기호 포함
+  const isFormula = a.length < 60 && /[×÷]/.test(a);
+  if (/삼각형.*(넓이|공식)/.test(q + ' ' + a))                       return '삼각형';
+  if (/직사각형|정사각형/.test(q) || (isFormula && /직사각형/.test(a))) return '직사각형';
+  if (/마름모/.test(q + ' ' + a))                                     return '마름모';
+  if (/사다리꼴/.test(q + ' ' + a))                                   return '사다리꼴';
+
   return null;
 }
 
@@ -696,18 +713,16 @@ function generateExponentProblem() {
 function generateReciprocalProblem() {
   const type = Math.floor(Math.random() * 3);
   if (type === 0) {
-    const n = Math.floor(Math.random() * 7) + 2;
-    const d = Math.floor(Math.random() * 7) + 2;
-    if (n === d) return generateReciprocalProblem();
+    let n, d;
+    do { n = Math.floor(Math.random() * 7) + 2; d = Math.floor(Math.random() * 7) + 2; } while (n === d);
     return [`${n}/${d}의 역수는?`, `${d}/${n}`];
   }
   if (type === 1) {
     const n = Math.floor(Math.random() * 8) + 2;
     return [`${n}의 역수는?`, `1/${n}`];
   }
-  const n = Math.floor(Math.random() * 7) + 2;
-  const d = Math.floor(Math.random() * 7) + 2;
-  if (n === d) return generateReciprocalProblem();
+  let n, d;
+  do { n = Math.floor(Math.random() * 7) + 2; d = Math.floor(Math.random() * 7) + 2; } while (n === d);
   return [`${n}/${d} × □ = 1  □ 에 알맞은 수는?`, `${d}/${n}`];
 }
 
@@ -766,8 +781,8 @@ function generateComparisonProblem() {
   do { idx2 = Math.floor(Math.random() * fractions.length); } while (fractions[idx2][0]===n1 && fractions[idx2][1]===d1);
   const [n2,d2] = fractions[idx2];
   const v1 = n1/d1, v2 = n2/d2;
-  const bigger = v1 > v2 ? `${n1}/${d1}` : v2 > v1 ? `${n2}/${d2}` : '같다';
-  return [`${n1}/${d1}와 ${n2}/${d2} 중 큰 수는?`, bigger];
+  const sym = v1 > v2 ? '>' : v1 < v2 ? '<' : '=';
+  return [`${n1}/${d1}  ○  ${n2}/${d2}  (○ 안에 >, <, = 쓰기)`, sym];
 }
 
 // ── 삼각형 넓이 ──────────────────────────────────────────
@@ -802,6 +817,83 @@ function generateTrapezoidAreaProblem() {
   return [`윗변 ${top}cm, 아랫변 ${bottom}cm, 높이 ${h}cm인 사다리꼴의 넓이는?`, `${(top+bottom)*h/2}cm²`];
 }
 
+// ── 복잡한 도형 넓이 (보조선으로 분할) ───────────────────────
+// 초등 5학년 수준: ㄱ자·ㄷ자·계단 모양 → 직사각형으로 나눠서 계산
+function generateComplexShapeProblem() {
+  const r = () => Math.floor(Math.random() * 5) + 2; // 2~6
+  const type = Math.floor(Math.random() * 4);
+
+  if (type === 0) {
+    // ㄱ자: 전체 큰 직사각형 - 오른쪽 위 작은 직사각형
+    const W = r() + 4, H = r() + 4;
+    const w = Math.floor(Math.random() * (W - 2)) + 1;
+    const h = Math.floor(Math.random() * (H - 2)) + 1;
+    const area = W * H - w * h;
+    return [
+      `전체 가로 ${W}cm, 세로 ${H}cm인 직사각형에서 오른쪽 위 가로 ${w}cm, 세로 ${h}cm를 잘라낸 ㄱ자 도형의 넓이는?`,
+      `${W}×${H} - ${w}×${h} = ${area}cm²`
+    ];
+  }
+  if (type === 1) {
+    // 계단(2단): 아래 큰 직사각형 + 위 작은 직사각형
+    const W1 = r() + 3, H1 = r() + 1;
+    const W2 = Math.floor(W1 / 2) + 1, H2 = r() + 1;
+    const area = W1 * H1 + W2 * H2;
+    return [
+      `아래 가로 ${W1}cm×세로 ${H1}cm, 위 가로 ${W2}cm×세로 ${H2}cm가 붙은 계단 모양 도형의 넓이는?`,
+      `${W1}×${H1} + ${W2}×${H2} = ${area}cm²`
+    ];
+  }
+  if (type === 2) {
+    // ㄷ자: 전체 큰 직사각형 - 안쪽 빈 부분
+    const W = r() + 4, H = r() + 4;
+    const w = Math.floor(Math.random() * (W - 3)) + 1;
+    const h = Math.floor(Math.random() * (H - 3)) + 1;
+    const area = W * H - w * h;
+    return [
+      `전체 가로 ${W}cm, 세로 ${H}cm 직사각형의 안쪽 가로 ${w}cm, 세로 ${h}cm가 뚫린 ㄷ자 도형의 넓이는?`,
+      `${W}×${H} - ${w}×${h} = ${area}cm²`
+    ];
+  }
+  // type === 3: 가로막대 + 세로막대 십자 모양
+  const hw = r() + 3, hh = r();
+  const vw = r(), vh = r() + 3;
+  const area = hw * hh + vw * vh - vw * hh;
+  return [
+    `가로 ${hw}cm×세로 ${hh}cm 막대와 가로 ${vw}cm×세로 ${vh}cm 막대를 겹친 십자 도형의 넓이는? (겹친 부분: ${vw}×${hh})`,
+    `${hw}×${hh} + ${vw}×${vh} - ${vw}×${hh} = ${area}cm²`
+  ];
+}
+
+// ── 넓이 단위 변환 (km²↔m², m²↔cm²) ─────────────────────────
+// 1km² = 1,000,000m²  /  1m² = 10,000cm²  /  1cm² = 100mm²
+function generateAreaUnitProblem() {
+  const type = Math.floor(Math.random() * 6);
+
+  if (type === 0) {
+    const n = Math.floor(Math.random() * 5) + 1;
+    return [`${n}km² = ______ m²`, `${(n * 1_000_000).toLocaleString('ko-KR')}m²`];
+  }
+  if (type === 1) {
+    const n = [500_000, 1_000_000, 2_000_000, 3_000_000, 5_000_000][Math.floor(Math.random() * 5)];
+    return [`${n.toLocaleString('ko-KR')}m² = ______ km²`, `${n / 1_000_000}km²`];
+  }
+  if (type === 2) {
+    const n = Math.floor(Math.random() * 5) + 1;
+    return [`${n}m² = ______ cm²`, `${(n * 10_000).toLocaleString('ko-KR')}cm²`];
+  }
+  if (type === 3) {
+    const n = [10_000, 20_000, 50_000, 100_000][Math.floor(Math.random() * 4)];
+    return [`${n.toLocaleString('ko-KR')}cm² = ______ m²`, `${n / 10_000}m²`];
+  }
+  if (type === 4) {
+    const n = Math.floor(Math.random() * 5) + 1;
+    return [`${n}cm² = ______ mm²`, `${(n * 100).toLocaleString('ko-KR')}mm²`];
+  }
+  // 빈칸 채우기: 1km = 1000m 이므로 1km² = □ × □ = □ m²
+  return [`1km = 1000m 일 때, 1km² = (______)² m² = ______ m²`, `1000² = 1,000,000m²`];
+}
+
 const TOPIC_GENERATORS = {
   '순환소수': generateRepeatingDecimalProblem,
   '속력':     generateSpeedProblem,
@@ -822,6 +914,10 @@ const TOPIC_GENERATORS = {
   '정사각형': generateRectangleProblem,
   '마름모':   generateRhombusAreaProblem,
   '사다리꼴': generateTrapezoidAreaProblem,
+  '복잡한도형': generateComplexShapeProblem,
+  '보조선':     generateComplexShapeProblem,
+  '단위변환':   generateAreaUnitProblem,
+  '넓이단위':   generateAreaUnitProblem,
 };
 
 function injectCardsAndProblems(template, cards, problems) {
@@ -956,6 +1052,35 @@ app.post('/api/print/bulk', async (req, res) => {
   }
 
   zip.finalize();
+});
+
+// ── 제네레이터 디버그 API ──────────────────────────────────────
+app.post('/api/debug/generator', (req, res) => {
+  const { topic, count = 3 } = req.body;
+  if (!topic) return res.status(400).json({ error: 'topic 필요' });
+
+  // 수체계는 TOPIC_GENERATORS에 없음 — 특수 처리
+  if (topic === '수체계') {
+    const n = Math.min(Math.max(parseInt(count) || 3, 1), 20);
+    const candidates = ['integer', 'pos_int', 'zero', 'neg_int', 'non_int', 'finite', 'repeating'];
+    const problems = Array.from({ length: n }, () => {
+      const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+      const blankCount = Math.random() < 0.45 ? 1 : 2;
+      const blanks = shuffled.slice(0, blankCount);
+      return { type: 'fillblank', blankIds: Object.fromEntries(blanks.map(b => [b, b])) };
+    });
+    return res.json({ topic, count: n, problems });
+  }
+
+  const gen = TOPIC_GENERATORS[topic];
+  if (!gen) return res.status(404).json({ error: `TOPIC_GENERATORS에 "${topic}" 없음`, available: Object.keys(TOPIC_GENERATORS) });
+  const n = Math.min(Math.max(parseInt(count) || 3, 1), 20);
+  try {
+    const problems = Array.from({ length: n }, () => gen());
+    res.json({ topic, count: n, problems });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 const PORT = process.env.PORT || 3001;

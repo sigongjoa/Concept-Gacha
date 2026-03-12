@@ -91,6 +91,65 @@
                 </div>
             </div>
 
+            <!-- 연습 문제 섹션 (topic 있는 카드일 때만 표시) -->
+            <div class="w-full hidden" id="practiceSection">
+                <div class="bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-xl border border-indigo-100 dark:border-indigo-900/30">
+                    <div class="flex items-center justify-between mb-5">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-indigo-500">calculate</span>
+                            <span class="font-bold text-indigo-600 dark:text-indigo-400" id="practiceTopicLabel"></span>
+                        </div>
+                        <button id="newProblemBtn"
+                            class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold hover:bg-indigo-100 transition-all flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">refresh</span> 다른 문제
+                        </button>
+                    </div>
+
+                    <!-- 분수 유형 문제 -->
+                    <div class="mb-5" id="practiceFractionView">
+                        <p class="text-2xl font-black text-center mb-1" id="practiceQuestion"></p>
+                        <p class="text-xs text-center text-slate-400" id="practiceQuestionSub"></p>
+                        <p class="text-sm font-bold text-center text-slate-500 mt-2" id="practiceInstruction">을 분수로 나타내시오</p>
+                        <!-- 도형 SVG (복잡한도형/보조선) -->
+                        <div id="practiceShapeView" class="hidden mt-3 flex justify-center"></div>
+                    </div>
+
+                    <!-- 트리 빈칸 유형 문제 -->
+                    <div class="mb-5 hidden" id="practiceTreeView">
+                        <p class="text-xs text-center text-slate-400 mb-4">빈칸에 알맞은 말을 쓰시오</p>
+                        <div id="practiceTreeHTML" class="flex justify-center"></div>
+                    </div>
+
+                    <!-- 입력 (분수용) -->
+                    <div class="flex gap-3 mb-4" id="practiceInputRow">
+                        <input type="text" id="practiceInput"
+                            class="flex-1 px-4 py-3 rounded-xl border-2 border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-lg font-bold text-center"
+                            placeholder="예: 1/3" />
+                        <button id="practiceSubmitBtn"
+                            class="px-6 py-3 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold transition-all">
+                            채점
+                        </button>
+                    </div>
+
+                    <!-- 채점 버튼 (트리용) -->
+                    <div class="hidden mb-4" id="practiceTreeSubmitRow">
+                        <button id="practiceTreeSubmitBtn"
+                            class="w-full py-3 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold transition-all">
+                            채점
+                        </button>
+                    </div>
+
+                    <!-- 결과 -->
+                    <div class="hidden rounded-xl p-4" id="practiceResult">
+                        <p class="font-bold text-center mb-3" id="practiceResultMsg"></p>
+                        <!-- 풀이 단계 -->
+                        <div id="practiceSteps" class="space-y-1 hidden">
+                            <p class="text-xs font-bold text-slate-400 uppercase mb-2">풀이</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Gacha Button -->
             <button
                 class="w-32 h-32 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex flex-col items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all outline-none"
@@ -100,43 +159,19 @@
         </div>
     </main>
 
-    <script type="module" src="js/supabase-client.js"></script>
     <script type="module" src="js/api.js"></script>
     <script src="js/layout.js"></script>
-    <script type="module">
-        import { requireAuth } from './js/auth.js'
-        import { supabase } from './js/supabase-client.js'
-
-        // 로그인 체크
-        await requireAuth()
-
+    <script src="js/problem-generators.js"></script>
+    <script src="js/shape-renderer.js"></script>
+    <script>
         let currentCard = null;
         let currentStudentId = null;
+        let currentProblem = null;
 
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             Layout.init();
-
-            // 현재 사용자의 student_id 자동 로드
-            try {
-                const { data: { user } } = await supabase.auth.getUser()
-                const { data: student } = await supabase
-                    .from('students')
-                    .select('id')
-                    .eq('user_id', user.id)
-                    .single()
-
-                if (!student) {
-                    alert('학생 정보를 찾을 수 없습니다.')
-                    window.location.href = '/login.html'
-                    return
-                }
-
-                currentStudentId = student.id
-            } catch (error) {
-                console.error('Error loading student:', error)
-                alert('학생 정보 로드 실패')
-                return
-            }
+            currentStudentId = Layout.currentStudent?.id;
+            if (!currentStudentId) return;
 
             document.getElementById('gachaBtn').onclick = pullCard;
             document.getElementById('showAnswerBtn').onclick = () => {
@@ -145,16 +180,18 @@
                 document.getElementById('feedbackBtns').classList.remove('hidden');
             };
             document.getElementById('successBtn').onclick = () => submitFeedback(true);
-            document.getElementById('failBtn').onclick = () => submitFeedback(false);
+            document.getElementById('failBtn').onclick   = () => submitFeedback(false);
+
+            document.getElementById('newProblemBtn').onclick = () => loadPractice(currentCard._inferredTopic || currentCard.topic);
+            document.getElementById('practiceSubmitBtn').onclick = submitPractice;
+            document.getElementById('practiceTreeSubmitBtn').onclick = submitPractice;
+            document.getElementById('practiceInput').addEventListener('keydown', e => {
+                if (e.key === 'Enter') submitPractice();
+            });
         });
 
         async function pullCard() {
             try {
-                if (!currentStudentId) {
-                    alert('학생 정보가 없습니다.')
-                    return
-                }
-
                 currentCard = await API.getRandomCard(currentStudentId);
                 displayCard(currentCard);
             } catch (e) {
@@ -168,10 +205,10 @@
             const qImgBox = document.getElementById('cardQuestionImage');
             const qImg = document.getElementById('cardQuestionImg');
 
-            if (card.type === 'image' && card.question_image) {
+            if (card.type === 'image' && card.questionImage) {
                 qTxt.classList.add('hidden');
                 qImgBox.classList.remove('hidden');
-                qImg.src = card.question_image; // Supabase Storage URL
+                qImg.src = `/assets/${card.questionImage}`;
             } else {
                 qTxt.classList.remove('hidden');
                 qImgBox.classList.add('hidden');
@@ -186,12 +223,200 @@
             document.getElementById('answerBox').classList.add('hidden');
             document.getElementById('showAnswerBtn').classList.remove('hidden');
             document.getElementById('feedbackBtns').classList.add('hidden');
+
+            // 연습 문제 섹션: 명시된 topic 또는 텍스트에서 추론한 topic 사용
+            const practiceSection = document.getElementById('practiceSection');
+            const topic = inferTopicClient(card);
+            if (topic && PROBLEM_GENERATORS[topic]) {
+                card._inferredTopic = topic;
+                practiceSection.classList.remove('hidden');
+                loadPractice(topic);
+            } else {
+                practiceSection.classList.add('hidden');
+            }
+        }
+
+        // 서버의 inferTopic과 동일한 로직 (클라이언트 버전)
+        function inferTopicClient(card) {
+            if (card.topic && PROBLEM_GENERATORS[card.topic]) return card.topic;
+            const q = (card.question || '').toLowerCase();
+            const a = (card.answer || '').toLowerCase();
+            const all = q + ' ' + a;
+
+            if (/속력|거리.+시간|시간.+거리|km\/h|속도/.test(all))    return '속력';
+            if (/순환소수|순환마디/.test(all))                          return '순환소수';
+            if (/동류항/.test(all))                                      return '동류항';
+            if (/보조선|ㄱ자|ㄷ자|복잡한.도형|도형.나누/.test(all))    return '복잡한도형';
+            if (/km²|m²|cm²|mm²|넓이.단위|단위.변환.*넓이/.test(all)) return '단위변환';
+
+            // question 우선 (answer에만 있으면 정의 카드 오염 위험)
+            if (/거듭제곱|밑.*지수|지수.*밑/.test(q))  return '거듭제곱';
+            if (/역수/.test(q))                          return '역수';
+            if (/약분|기약분수|통분/.test(q))            return '약분';
+            if (/서로소/.test(q))                         return '서로소';
+            if (/소수|합성수/.test(q))                   return '소수';
+            if (/제곱근|√/.test(q))                      return '제곱근';
+            if (/대소관계|크기.*비교/.test(q))           return '대소관계';
+
+            // 도형 공식 카드 (answer에 ×/÷ 포함된 짧은 공식)
+            const isFormula = a.length < 60 && /[×÷]/.test(a);
+            if (/삼각형.*(넓이|공식)/.test(all))                         return '삼각형';
+            if (/직사각형|정사각형/.test(q) || (isFormula && /직사각형/.test(a))) return '직사각형';
+            if (/마름모/.test(all))                                       return '마름모';
+            if (/사다리꼴/.test(all))                                     return '사다리꼴';
+
+            return null;
+        }
+
+        // 수체계 트리 HTML 생성
+        function buildTreeHTML(blankIds) {
+            const gen = PROBLEM_GENERATORS['수체계'];
+            const node = (id, label) => {
+                if (id in blankIds) {
+                    // 허용 답안 목록을 data 속성으로 저장
+                    const aliases = JSON.stringify(gen.aliases[id] || [label]);
+                    return `<input class="blank-input inline-block w-32 px-2 py-0.5 rounded-lg border-2 border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-800 font-bold text-center text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" data-id="${id}" data-aliases='${aliases}' placeholder="?" />`;
+                }
+                return `<span class="font-bold text-slate-700 dark:text-slate-200">${label}</span>`;
+            };
+            return `
+            <div class="font-mono text-sm leading-loose text-left inline-block">
+                <div>${node('rational', '유리수')}</div>
+                <div>├─ ${node('integer', '정수')}</div>
+                <div>│&nbsp;&nbsp;├─ ${node('pos_int', '양의 정수 (자연수)')}</div>
+                <div>│&nbsp;&nbsp;├─ ${node('zero', '0')}</div>
+                <div>│&nbsp;&nbsp;└─ ${node('neg_int', '음의 정수')}</div>
+                <div>└─ ${node('non_int', '정수가 아닌 유리수')}</div>
+                <div>&nbsp;&nbsp;&nbsp;├─ ${node('finite', '유한소수')}</div>
+                <div>&nbsp;&nbsp;&nbsp;└─ ${node('repeating', '순환소수')}</div>
+            </div>`;
+        }
+
+        function loadPractice(topic) {
+            const gen = PROBLEM_GENERATORS[topic];
+            currentProblem = gen.generate();
+
+            document.getElementById('practiceTopicLabel').textContent = gen.label;
+            document.getElementById('practiceResult').classList.add('hidden');
+            document.getElementById('practiceSteps').classList.add('hidden');
+
+            if (currentProblem.type === 'fillblank') {
+                // 트리 모드
+                document.getElementById('practiceFractionView').classList.add('hidden');
+                document.getElementById('practiceInputRow').classList.add('hidden');
+                document.getElementById('practiceTreeView').classList.remove('hidden');
+                document.getElementById('practiceTreeSubmitRow').classList.remove('hidden');
+                document.getElementById('practiceTreeHTML').innerHTML = buildTreeHTML(currentProblem.blankIds);
+                document.getElementById('practiceTreeSubmitBtn').disabled = false;
+                // 첫 번째 빈칸에 포커스
+                const first = document.querySelector('.blank-input');
+                if (first) first.focus();
+                // Enter 로 채점
+                document.querySelectorAll('.blank-input').forEach(inp => {
+                    inp.addEventListener('keydown', e => { if (e.key === 'Enter') submitPractice(); });
+                });
+            } else {
+                // 분수 모드
+                document.getElementById('practiceTreeView').classList.add('hidden');
+                document.getElementById('practiceTreeSubmitRow').classList.add('hidden');
+                document.getElementById('practiceFractionView').classList.remove('hidden');
+                document.getElementById('practiceInputRow').classList.remove('hidden');
+                document.getElementById('practiceQuestion').textContent = currentProblem.question;
+                document.getElementById('practiceQuestionSub').textContent = currentProblem.questionSub || '';
+                document.getElementById('practiceInput').value = '';
+                document.getElementById('practiceInput').disabled = false;
+                document.getElementById('practiceSubmitBtn').disabled = false;
+                document.getElementById('practiceInput').focus();
+                // 도형 SVG 렌더링 (복잡한도형)
+                const shapeView = document.getElementById('practiceShapeView');
+                if (currentProblem.shape && window.ShapeRenderer) {
+                    shapeView.innerHTML = ShapeRenderer.render(currentProblem.shape, { width: 320, height: 220 });
+                    shapeView.classList.remove('hidden');
+                } else {
+                    shapeView.classList.add('hidden');
+                    shapeView.innerHTML = '';
+                }
+            }
+        }
+
+        function submitPractice() {
+            if (!currentProblem) return;
+            const resultBox = document.getElementById('practiceResult');
+            const resultMsg = document.getElementById('practiceResultMsg');
+            const stepsBox = document.getElementById('practiceSteps');
+            resultBox.classList.remove('hidden', 'bg-emerald-50', 'bg-rose-50', 'dark:bg-emerald-900/10', 'dark:bg-rose-900/10');
+            stepsBox.innerHTML = '<p class="text-xs font-bold text-slate-400 uppercase mb-2">풀이</p>';
+
+            let correct;
+
+            if (currentProblem.type === 'fillblank') {
+                // 트리 빈칸 채점
+                const inputs = document.querySelectorAll('.blank-input');
+                let wrongAnswers = [];
+                inputs.forEach(inp => {
+                    const aliases = JSON.parse(inp.dataset.aliases || '[]');
+                    const val = inp.value.trim();
+                    const ok = aliases.some(a => a === val);
+                    inp.classList.toggle('border-emerald-500', ok);
+                    inp.classList.toggle('dark:border-emerald-500', ok);
+                    inp.classList.toggle('border-rose-500', !ok);
+                    inp.classList.toggle('dark:border-rose-500', !ok);
+                    inp.disabled = true;
+                    if (!ok) wrongAnswers.push(aliases[0]); // 정답 표시용
+                });
+                correct = wrongAnswers.length === 0;
+                document.getElementById('practiceTreeSubmitBtn').disabled = true;
+
+                if (!correct) {
+                    // 오답 노드 정답 표시
+                    inputs.forEach(inp => {
+                        if (inp.disabled && inp.classList.contains('border-rose-500')) {
+                            const aliases = JSON.parse(inp.dataset.aliases || '[]');
+                            const hint = document.createElement('span');
+                            hint.className = 'text-xs text-rose-500 ml-1';
+                            hint.textContent = `→ ${aliases[0]}`;
+                            inp.insertAdjacentElement('afterend', hint);
+                        }
+                    });
+                }
+            } else {
+                // 분수 채점
+                const gen = PROBLEM_GENERATORS[currentCard.topic];
+                const userInput = document.getElementById('practiceInput').value.trim();
+                if (!userInput) return;
+                correct = gen.checkAnswer(userInput, currentProblem.answer);
+                document.getElementById('practiceInput').disabled = true;
+                document.getElementById('practiceSubmitBtn').disabled = true;
+
+                if (!correct) {
+                    resultBox.classList.add('bg-rose-50', 'dark:bg-rose-900/10');
+                    currentProblem.steps.forEach(step => {
+                        const p = document.createElement('p');
+                        p.className = 'text-sm text-slate-600 dark:text-slate-300 font-mono';
+                        p.textContent = step;
+                        stepsBox.appendChild(p);
+                    });
+                    stepsBox.classList.remove('hidden');
+                }
+            }
+
+            if (correct) {
+                resultBox.classList.add('bg-emerald-50', 'dark:bg-emerald-900/10');
+                resultMsg.textContent = '✓ 정답!';
+                resultMsg.className = 'font-bold text-center mb-3 text-emerald-600 dark:text-emerald-400';
+            } else {
+                if (!resultBox.classList.contains('bg-rose-50')) {
+                    resultBox.classList.add('bg-rose-50', 'dark:bg-rose-900/10');
+                }
+                resultMsg.textContent = currentProblem.type === 'fillblank' ? '✗ 틀렸습니다' : `✗ 오답 — 정답: ${currentProblem.answer}`;
+                resultMsg.className = 'font-bold text-center mb-3 text-rose-600 dark:text-rose-400';
+            }
         }
 
         async function submitFeedback(success) {
             if (!currentCard) return;
             try {
-                await API.submitFeedback(currentCard.id, success);
+                await API.submitFeedback(currentCard.id, success, currentStudentId);
                 Layout.showToast(success ? '정답!' : '다시 해보세요!');
 
                 // Reset UI

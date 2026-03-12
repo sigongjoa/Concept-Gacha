@@ -237,7 +237,8 @@ const PROBLEM_GENERATORS = {
             const candidates = ['integer', 'pos_int', 'zero', 'neg_int', 'non_int', 'finite', 'repeating'];
             const shuffled = [...candidates].sort(() => Math.random() - 0.5);
             const blankCount = Math.random() < 0.45 ? 1 : 2;
-            const blankIds = new Set(shuffled.slice(0, blankCount));
+            const blanks = shuffled.slice(0, blankCount);
+            const blankIds = Object.fromEntries(blanks.map(b => [b, b]));
 
             return {
                 type: 'fillblank',
@@ -335,7 +336,7 @@ const PROBLEM_GENERATORS = {
         checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
         generate() {
             const fracs = [[1,2],[1,3],[2,3],[3,4],[1,4],[3,5],[2,5],[4,5],[1,6],[5,6]];
-            let [n1,d1], [n2,d2];
+            let n1, d1, n2, d2;
             do {
                 [n1,d1] = fracs[Math.floor(Math.random()*fracs.length)];
                 [n2,d2] = fracs[Math.floor(Math.random()*fracs.length)];
@@ -387,6 +388,121 @@ const PROBLEM_GENERATORS = {
             const area = (top+bot)*h/2;
             return { question: `윗변 ${top}cm, 아랫변 ${bot}cm, 높이 ${h}cm인 사다리꼴의 넓이는?`, questionSub: '넓이 = (윗변+아랫변)×높이÷2', answer: `${area}cm²`, steps: [`(${top}+${bot}) × ${h} ÷ 2 = ${area}`, `넓이 = ${area}cm²`] };
         },
+    },
+
+    '복잡한도형': {
+        label: '복잡한 도형 넓이 (보조선 분할)',
+        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        generate() {
+            const r = () => Math.floor(Math.random()*5)+2;
+            const type = Math.floor(Math.random()*4);
+
+            if (type === 0) {
+                // ㄱ자: 전체 큰 직사각형 - 잘린 부분
+                const W = r()+4, H = r()+4;
+                const w = Math.floor(Math.random()*(W-2))+1;
+                const h = Math.floor(Math.random()*(H-2))+1;
+                const area = W*H - w*h;
+                return {
+                    question: `전체 가로 ${W}cm, 세로 ${H}cm인 직사각형에서 오른쪽 위 가로 ${w}cm, 세로 ${h}cm를 잘라낸 ㄱ자 도형의 넓이는?`,
+                    questionSub: '보조선을 그어 두 직사각형으로 나눠 보세요',
+                    answer: `${area}cm²`,
+                    steps: [`큰 직사각형: ${W}×${H} = ${W*H}cm²`, `잘린 부분: ${w}×${h} = ${w*h}cm²`, `넓이 = ${W*H} - ${w*h} = ${area}cm²`],
+                    shape: { type: 'L', W, H, w, h },
+                };
+            }
+            if (type === 1) {
+                // 계단(2단): 아래 큰 + 위 작은
+                const W1 = r()+3, H1 = r()+1;
+                const W2 = Math.floor(W1/2)+1, H2 = r()+1;
+                const area = W1*H1 + W2*H2;
+                return {
+                    question: `아래 가로 ${W1}cm×세로 ${H1}cm, 위 가로 ${W2}cm×세로 ${H2}cm인 계단 모양 도형의 넓이는?`,
+                    questionSub: '두 직사각형으로 나눠 각각 구한 뒤 더하세요',
+                    answer: `${area}cm²`,
+                    steps: [`아래: ${W1}×${H1} = ${W1*H1}cm²`, `위: ${W2}×${H2} = ${W2*H2}cm²`, `합계 = ${area}cm²`],
+                    shape: { type: 'stair', W1, H1, W2, H2 },
+                };
+            }
+            if (type === 2) {
+                // ㄷ자: 전체 - 안쪽 빈 직사각형
+                const W = r()+4, H = r()+4;
+                const w = Math.floor(Math.random()*(W-3))+1;
+                const h = Math.floor(Math.random()*(H-3))+1;
+                const area = W*H - w*h;
+                return {
+                    question: `전체 가로 ${W}cm, 세로 ${H}cm 직사각형에서 안쪽 가로 ${w}cm, 세로 ${h}cm가 뚫린 ㄷ자 도형의 넓이는?`,
+                    questionSub: '전체 넓이에서 빈 부분을 빼세요',
+                    answer: `${area}cm²`,
+                    steps: [`전체: ${W}×${H} = ${W*H}cm²`, `빈 부분: ${w}×${h} = ${w*h}cm²`, `넓이 = ${W*H} - ${w*h} = ${area}cm²`],
+                    shape: { type: 'U', W, H, w, h },
+                };
+            }
+            // 십자 모양
+            const hw = r()+3, hh = r();
+            const vw = r(), vh = r()+3;
+            const area = hw*hh + vw*vh - vw*hh;
+            return {
+                question: `가로막대(${hw}×${hh}cm)와 세로막대(${vw}×${vh}cm)가 겹쳐진 십자 도형의 넓이는? (겹친 부분 ${vw}×${hh}cm)`,
+                questionSub: '두 막대 넓이의 합에서 겹친 부분을 빼세요',
+                answer: `${area}cm²`,
+                steps: [`가로막대: ${hw}×${hh} = ${hw*hh}cm²`, `세로막대: ${vw}×${vh} = ${vw*vh}cm²`, `겹침: ${vw}×${hh} = ${vw*hh}cm²`, `합계 = ${hw*hh}+${vw*vh}-${vw*hh} = ${area}cm²`],
+                shape: { type: 'cross', hw, hh, vw, vh },
+            };
+        },
+    },
+
+    '보조선': {
+        label: '복잡한 도형 넓이 (보조선 분할)',
+        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        generate() { return PROBLEM_GENERATORS['복잡한도형'].generate(); },
+    },
+
+    // ── 서버 alias와 동기화 ────────────────────────────────────
+    '밑':       { label: '거듭제곱', checkAnswer(u,c){return u===c;}, generate(){return PROBLEM_GENERATORS['거듭제곱'].generate();} },
+    '지수':     { label: '거듭제곱', checkAnswer(u,c){return u===c;}, generate(){return PROBLEM_GENERATORS['거듭제곱'].generate();} },
+    '통분':     { label: '약분/통분', checkAnswer(u,c){return u.replace(/\s/g,'')===c.replace(/\s/g,'');}, generate(){return PROBLEM_GENERATORS['약분'].generate();} },
+    '합성수':   { label: '소수/합성수', checkAnswer(u,c){return u.replace(/\s/g,'')===c.replace(/\s/g,'');}, generate(){return PROBLEM_GENERATORS['소수'].generate();} },
+    '정사각형': { label: '직사각형/정사각형', checkAnswer(u,c){return u.replace(/\s/g,'')===c.replace(/\s/g,'');}, generate(){return PROBLEM_GENERATORS['직사각형'].generate();} },
+
+    '단위변환': {
+        label: '넓이 단위 변환 (km²↔m², m²↔cm²)',
+        checkAnswer(u, c) { return u.replace(/[\s,]/g,'') === c.replace(/[\s,]/g,''); },
+        generate() {
+            const type = Math.floor(Math.random()*6);
+            const fmt = n => n.toLocaleString('ko-KR');
+
+            if (type === 0) {
+                const n = Math.floor(Math.random()*5)+1;
+                return { question: `${n}km² = ______ m²`, questionSub: '1km=1000m 이므로 1km²=1000²=1,000,000m²', answer: `${fmt(n*1_000_000)}m²`, steps: [`1km² = 1000×1000 = 1,000,000m²`, `${n}km² = ${n}×1,000,000 = ${fmt(n*1_000_000)}m²`] };
+            }
+            if (type === 1) {
+                const vals = [500_000, 1_000_000, 2_000_000, 3_000_000];
+                const n = vals[Math.floor(Math.random()*vals.length)];
+                return { question: `${fmt(n)}m² = ______ km²`, questionSub: '1,000,000m² = 1km²', answer: `${n/1_000_000}km²`, steps: [`${fmt(n)} ÷ 1,000,000 = ${n/1_000_000}km²`] };
+            }
+            if (type === 2) {
+                const n = Math.floor(Math.random()*5)+1;
+                return { question: `${n}m² = ______ cm²`, questionSub: '1m=100cm 이므로 1m²=100²=10,000cm²', answer: `${fmt(n*10_000)}cm²`, steps: [`1m² = 100×100 = 10,000cm²`, `${n}m² = ${n}×10,000 = ${fmt(n*10_000)}cm²`] };
+            }
+            if (type === 3) {
+                const vals = [10_000, 20_000, 50_000];
+                const n = vals[Math.floor(Math.random()*vals.length)];
+                return { question: `${fmt(n)}cm² = ______ m²`, questionSub: '10,000cm² = 1m²', answer: `${n/10_000}m²`, steps: [`${fmt(n)} ÷ 10,000 = ${n/10_000}m²`] };
+            }
+            if (type === 4) {
+                const n = Math.floor(Math.random()*5)+1;
+                return { question: `${n}cm² = ______ mm²`, questionSub: '1cm=10mm 이므로 1cm²=10²=100mm²', answer: `${n*100}mm²`, steps: [`1cm² = 10×10 = 100mm²`, `${n}cm² = ${n}×100 = ${n*100}mm²`] };
+            }
+            // 원리 확인
+            return { question: `1km = 1000m 일 때, 1km² = (______)² m² = ______ m²`, questionSub: '단위를 제곱하면 변환 배수도 제곱됩니다', answer: `1000² = 1,000,000m²`, steps: [`가로 1km = 1000m, 세로 1km = 1000m`, `넓이 = 1000×1000 = 1,000,000m²`] };
+        },
+    },
+
+    '넓이단위': {
+        label: '넓이 단위 변환 (km²↔m², m²↔cm²)',
+        checkAnswer(u, c) { return u.replace(/[\s,]/g,'') === c.replace(/[\s,]/g,''); },
+        generate() { return PROBLEM_GENERATORS['단위변환'].generate(); },
     },
 
 };
