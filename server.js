@@ -514,10 +514,23 @@ function injectDate(template) {
   return template.replace(/rdate\s*=\s*"[^"]*"/, `rdate   = "${todayString()}"`);
 }
 
+// 카드 텍스트에서 topic 추론 — 확실히 매칭되는 경우만 반환, 아니면 null
+function inferTopic(card) {
+  if (card.topic && TOPIC_GENERATORS[card.topic]) return card.topic;
+  const text = ((card.question || '') + ' ' + (card.answer || '')).toLowerCase();
+  if (/속력|거리.+시간|시간.+거리|km\/h|속도/.test(text)) return '속력';
+  if (/순환소수|순환마디|순환 소수/.test(text))             return '순환소수';
+  if (/동류항/.test(text))                                  return '동류항';
+  return null; // 매칭 없으면 연습문제 없음
+}
+
 function injectCards(template, cards) {
   const lines = shuffle(cards).slice(0, 8).map(c => {
     const imgPath = c.questionImage ? `/public/assets/${c.questionImage}` : '';
-    return `  ("${escapeTypst(c.question)}", "${escapeTypst(c.answer)}", ${c.box || 1}, ${c.successCount || 0}, ${c.failCount || 0}, "${imgPath}"),`;
+    const topic = inferTopic(c);
+    let pq = '', pa = '';
+    if (topic) [pq, pa] = TOPIC_GENERATORS[topic]();
+    return `  ("${escapeTypst(c.question)}", "${escapeTypst(c.answer)}", ${c.box || 1}, ${c.successCount || 0}, ${c.failCount || 0}, "${imgPath}", "${escapeTypst(pq)}", "${escapeTypst(pa)}"),`;
   }).join('\n');
   let out = template.replace(
     /\/\/ ─── AUTO_CARDS_START[\s\S]*?\/\/ ─── AUTO_CARDS_END/,
@@ -548,23 +561,10 @@ app.post('/api/print/flashcard-sheet', async (req, res) => {
   if (boxFilter && boxFilter.length > 0) cards = cards.filter(c => boxFilter.includes(c.box));
   if (cards.length === 0) return res.status(400).json({ error: '카드가 없습니다' });
 
-  // 카드의 topic 필드를 보고 관련 연습 문제 자동 생성
-  const topicSet = new Set(cards.filter(c => c.topic && TOPIC_GENERATORS[c.topic]).map(c => c.topic));
-  let problemTopics = [...topicSet];
-  if (problemTopics.length === 0) problemTopics = Object.keys(TOPIC_GENERATORS);
-
-  const practiceProblems = [];
-  const perTopic = Math.ceil(6 / problemTopics.length);
-  for (const topic of problemTopics) {
-    for (let i = 0; i < perTopic && practiceProblems.length < 6; i++) {
-      practiceProblems.push(TOPIC_GENERATORS[topic]());
-    }
-  }
-
   try {
     const buf = await buildPDF(
       path.join(PRINT_DIR, 'flashcard-sheet.typ'),
-      (t) => injectCardsAndProblems(t, cards, practiceProblems)
+      (t) => injectCards(t, cards)
     );
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     res.setHeader('Content-Type', 'application/pdf');
