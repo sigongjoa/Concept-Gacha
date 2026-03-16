@@ -667,7 +667,7 @@ const PROBLEM_GENERATORS = {
                         `삼각형(빈 부분) = ${bT} × ${hT} ÷ 2 = ${triArea}cm²`,
                         `색칠 = ${Larea} − ${triArea} = ${area}cm²`,
                     ],
-                    shape: { type: 'L', W, H, w: cw, h: ch },
+                    shape: { type: 'L_tri', W, H, cw, ch, bT, hT },
                 };
             }
 

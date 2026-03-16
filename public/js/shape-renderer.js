@@ -150,6 +150,52 @@ const ShapeRenderer = {
     const vb = `viewBox="0 0 ${W} ${H}"`;
     const svgOpen = `<svg ${vb} xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">`;
 
+    // ── ㄱ자 + 삼각형 빈 공간 ────────────────────────────────
+    if (type === 'L_tri') {
+      const { W: w, H: h, cw, ch, bT, hT } = shape;
+      const PAD = 40;
+      const sc = Math.min((W - PAD*2) / w, (H - PAD*2) / h);
+      const ox = (W - w*sc)/2, oy = (H - h*sc)/2;
+      const px = x => +(ox + x*sc).toFixed(1);
+      const py = y => +(oy + y*sc).toFixed(1);
+      const bx0 = px(0), by0 = py(0), bx1 = px(w), by1 = py(h);
+
+      const lPoly = `${bx0},${by0} ${px(w-cw)},${by0} ${px(w-cw)},${py(ch)} ${bx1},${py(ch)} ${bx1},${by1} ${bx0},${by1}`;
+      const triPoly = `${bx0},${by1} ${px(bT)},${by1} ${bx0},${py(h-hT)}`;
+
+      const hLbl = (x, y, t, col='#134e4a') =>
+        `<text x="${x}" y="${y}" text-anchor="middle" font-size="10" fill="${col}" font-family="sans-serif" font-weight="bold">${t}</text>`;
+      const vLbl = (cx, cy, t, col='#134e4a') =>
+        `<text x="${cx}" y="${cy}" text-anchor="middle" font-size="10" fill="${col}" font-family="sans-serif" font-weight="bold" transform="rotate(-90,${cx},${cy})">${t}</text>`;
+
+      return `<svg ${vb} xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">
+  <rect x="${bx0}" y="${by0}" width="${(w*sc).toFixed(1)}" height="${(h*sc).toFixed(1)}"
+        fill="none" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6,3" rx="2"/>
+  <polygon points="${lPoly}" fill="#ccfbf1" stroke="#0d9488" stroke-width="2.5" stroke-linejoin="round"/>
+  <polygon points="${triPoly}" fill="white" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="${+(bx0*0.5 + px(bT*0.4)).toFixed(1)}" y="${+((py(h-hT*0.3)+by1)/2).toFixed(1)}"
+        font-size="9" fill="#ef4444" font-family="sans-serif" text-anchor="middle">빈공간</text>
+  <!-- 총 가로 -->
+  <line x1="${bx0}" y1="${by0-10}" x2="${bx1}" y2="${by0-10}" stroke="#2dd4bf" stroke-width="1" stroke-dasharray="4,2"/>
+  <line x1="${bx0}" y1="${+by0-6}" x2="${bx0}" y2="${+by0-14}" stroke="#2dd4bf" stroke-width="1"/>
+  <line x1="${bx1}" y1="${+by0-6}" x2="${bx1}" y2="${+by0-14}" stroke="#2dd4bf" stroke-width="1"/>
+  ${hLbl((+bx0 + +bx1)/2, +by0-13, `${w}cm`)}
+  <!-- 총 세로 -->
+  <line x1="${+bx0-10}" y1="${by0}" x2="${+bx0-10}" y2="${by1}" stroke="#2dd4bf" stroke-width="1" stroke-dasharray="4,2"/>
+  <line x1="${+bx0-6}" y1="${by0}" x2="${+bx0-14}" y2="${by0}" stroke="#2dd4bf" stroke-width="1"/>
+  <line x1="${+bx0-6}" y1="${by1}" x2="${+bx0-14}" y2="${by1}" stroke="#2dd4bf" stroke-width="1"/>
+  ${vLbl(+bx0-18, (+by0 + +by1)/2, `${h}cm`)}
+  <!-- 잘린 cw, ch -->
+  ${hLbl((+px(w-cw) + +bx1)/2, +py(ch)+13, `${cw}cm`, '#94a3b8')}
+  ${vLbl(+bx1+14, (+by0 + +py(ch))/2, `${ch}cm`, '#94a3b8')}
+  <!-- 삼각형 bT -->
+  <line x1="${bx0}" y1="${+by1+10}" x2="${px(bT)}" y2="${+by1+10}" stroke="#ef4444" stroke-width="1" stroke-dasharray="3,2"/>
+  ${hLbl((+bx0 + +px(bT))/2, +by1+14, `${bT}cm`, '#ef4444')}
+  <!-- 삼각형 hT (안쪽 왼쪽, 빈공간 안) -->
+  ${vLbl(+bx0+10, (+py(h-hT) + +by1)/2, `${hT}cm`, '#ef4444')}
+</svg>`;
+    }
+
     // ── 원에 내접하는 마름모 ─────────────────────────────────
     if (type === 'circle_rhombus') {
       const { r } = shape;
