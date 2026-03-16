@@ -81,10 +81,10 @@ const ShapeRenderer = {
       return {
         points: [[0,0],[W-w,0],[W-w,h],[W,h],[W,H],[0,H]],
         dims: [
-          { axis:'h', a:0,   b:W,   refY:'top',    offPx:-15, label:`${W}` },
-          { axis:'v', a:0,   b:H,   refX:'left',   offPx:-15, label:`${H}` },
-          { axis:'h', a:W-w, b:W,   refY:h,        offPx:12,  label:`${w}`, small:true },
-          { axis:'v', a:0,   b:h,   refX:'right',  offPx:12,  label:`${h}`, small:true },
+          { axis:'h', a:0,   b:W,   refY:'top',    offPx:-15, label:`${W}cm` },
+          { axis:'v', a:0,   b:H,   refX:'left',   offPx:-15, label:`${H}cm` },
+          { axis:'h', a:W-w, b:W,   refY:h,        offPx:12,  label:`${w}cm`, small:true },
+          { axis:'v', a:0,   b:h,   refX:'right',  offPx:12,  label:`${h}cm`, small:true },
         ],
       };
     }
@@ -95,10 +95,10 @@ const ShapeRenderer = {
       return {
         points: [[0,0],[W2,0],[W2,H2],[W1,H2],[W1,H1+H2],[0,H1+H2]],
         dims: [
-          { axis:'h', a:0,  b:W2, refY:'top',    offPx:-15, label:`${W2}`, small:true },
-          { axis:'h', a:0,  b:W1, refY:'bottom', offPx:15,  label:`${W1}` },
-          { axis:'v', a:0,  b:H2, refX:W2,       offPx:12,  label:`${H2}`, small:true },
-          { axis:'v', a:H2, b:H1+H2, refX:W1,   offPx:12,  label:`${H1}`, small:true },
+          { axis:'h', a:0,  b:W2, refY:'top',    offPx:-15, label:`${W2}cm`, small:true },
+          { axis:'h', a:0,  b:W1, refY:'bottom', offPx:15,  label:`${W1}cm` },
+          { axis:'v', a:0,  b:H2, refX:W2,       offPx:12,  label:`${H2}cm`, small:true },
+          { axis:'v', a:H2, b:H1+H2, refX:W1,   offPx:12,  label:`${H1}cm`, small:true },
         ],
       };
     }
@@ -110,10 +110,10 @@ const ShapeRenderer = {
       return {
         points: [[0,0],[W,0],[W,gy],[W-w,gy],[W-w,gy+h],[W,gy+h],[W,H],[0,H]],
         dims: [
-          { axis:'h', a:0,   b:W,     refY:'top',   offPx:-15, label:`${W}` },
-          { axis:'v', a:0,   b:H,     refX:'left',  offPx:-15, label:`${H}` },
-          { axis:'h', a:W-w, b:W,     refY:H/2,     offPx:0,   label:`${w}`, small:true },
-          { axis:'v', a:gy,  b:gy+h,  refX:'right', offPx:12,  label:`${h}`, small:true },
+          { axis:'h', a:0,   b:W,     refY:'top',   offPx:-15, label:`${W}cm` },
+          { axis:'v', a:0,   b:H,     refX:'left',  offPx:-15, label:`${H}cm` },
+          { axis:'h', a:W-w, b:W,     refY:H/2,     offPx:0,   label:`${w}cm`, small:true },
+          { axis:'v', a:gy,  b:gy+h,  refX:'right', offPx:26,  label:`${h}cm`, small:true },
         ],
       };
     }
@@ -133,10 +133,10 @@ const ShapeRenderer = {
           [0, vy],  [vx, vy],
         ],
         dims: [
-          { axis:'h', a:0,  b:hw,    refY:'bottom', offPx:15,  label:`${hw}` },
-          { axis:'v', a:0,  b:vh,    refX:'left',   offPx:-15, label:`${vh}` },
-          { axis:'h', a:vx, b:vx+vw, refY:'top',    offPx:-12, label:`${vw}`, small:true },
-          { axis:'v', a:vy, b:vy+hh, refX:'right',  offPx:12,  label:`${hh}`, small:true },
+          { axis:'h', a:0,  b:hw,    refY:'bottom', offPx:15,  label:`${hw}cm` },
+          { axis:'v', a:0,  b:vh,    refX:'left',   offPx:-15, label:`${vh}cm` },
+          { axis:'h', a:vx, b:vx+vw, refY:'top',    offPx:-12, label:`${vw}cm`, small:true },
+          { axis:'v', a:vy, b:vy+hh, refX:'right',  offPx:12,  label:`${hh}cm`, small:true },
         ],
       };
     }
@@ -243,23 +243,25 @@ const ShapeRenderer = {
       const lx = parseFloat(px(0)), ly = parseFloat(py(0));
       const rx = parseFloat(px(w)), ry = parseFloat(py(fh));
       const mx = (lx+rx)/2;
+      const midY = (ly + ry) / 2;
       return `${svgOpen}
-  <!-- 접힌 종이 전체 윤곽 (점선) -->
+  <!-- 접힌 종이 윤곽 -->
   <rect x="${lx}" y="${ly}" width="${rw.toFixed(1)}" height="${rh.toFixed(1)}"
         fill="#fef3c7" stroke="#d97706" stroke-width="1.5" stroke-dasharray="5,3"/>
-  <!-- 색칠된 삼각형: 아래쪽 삼각형 (밑변=W, 높이=foldH) -->
+  <!-- 색칠 삼각형 -->
   <polygon points="${lx},${ly} ${rx},${ry} ${lx},${ry}"
            fill="#fde68a" stroke="#d97706" stroke-width="2"/>
   <!-- 대각선 절단선 -->
-  <line x1="${lx}" y1="${ly}" x2="${rx}" y2="${ry}"
-        stroke="#b45309" stroke-width="2.5"/>
-  <!-- 원래 세로 라벨 (접기 전) -->
-  ${oh ? `<text x="${rx+8}" y="${ly+12}" font-size="9" fill="#92400e" font-family="sans-serif">(원래 ${oh}cm)</text>` : ''}
-  <!-- 치수: 가로 W, 세로 foldH -->
-  <text x="${mx}" y="${ry+16}" text-anchor="middle" font-size="10" fill="#b45309" font-family="sans-serif" font-weight="bold">가로 ${w}cm</text>
-  <text x="${lx-22}" y="${(ly+ry)/2+4}" text-anchor="middle" font-size="10" fill="#b45309" font-family="sans-serif" font-weight="bold">${fh}cm</text>
-  <!-- "접은 후" 안내 텍스트 -->
-  <text x="${mx}" y="${ly-8}" text-anchor="middle" font-size="9" fill="#92400e" font-family="sans-serif">← 반으로 접은 종이 →</text>
+  <line x1="${lx}" y1="${ly}" x2="${rx}" y2="${ry}" stroke="#b45309" stroke-width="2.5"/>
+  <!-- 가로 치수 (아래) -->
+  <line x1="${lx}" y1="${ry+8}" x2="${rx}" y2="${ry+8}" stroke="#b45309" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="${mx}" y="${ry+20}" text-anchor="middle" font-size="10" fill="#b45309" font-family="sans-serif" font-weight="bold">가로 ${w}cm</text>
+  <!-- 세로 치수: 접은 후 높이 (오른쪽, 안전 위치) -->
+  <line x1="${rx+8}" y1="${ly}" x2="${rx+8}" y2="${ry}" stroke="#b45309" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="${rx+12}" y="${midY+4}" text-anchor="start" font-size="10" fill="#b45309" font-family="sans-serif" font-weight="bold">세로 ${fh}cm</text>
+  ${oh ? `<text x="${rx+12}" y="${midY+17}" text-anchor="start" font-size="9" fill="#92400e" font-family="sans-serif">(원본 ${oh}÷2)</text>` : ''}
+  <!-- 상단 안내 -->
+  <text x="${mx}" y="${ly-6}" text-anchor="middle" font-size="9" fill="#92400e" font-family="sans-serif">반으로 접은 후 — 대각선 절단</text>
 </svg>`;
     }
 
