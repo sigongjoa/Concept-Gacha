@@ -316,7 +316,7 @@
                 document.getElementById('practiceTreeSubmitBtn').disabled = false;
                 // 첫 번째 빈칸에 포커스
                 const first = document.querySelector('.blank-input');
-                if (first) first.focus();
+                if (first) first.focus({ preventScroll: true });
                 // Enter 로 채점
                 document.querySelectorAll('.blank-input').forEach(inp => {
                     inp.addEventListener('keydown', e => { if (e.key === 'Enter') submitPractice(); });
@@ -333,7 +333,7 @@
                 document.getElementById('practiceInput').value = '';
                 document.getElementById('practiceInput').disabled = false;
                 document.getElementById('practiceSubmitBtn').disabled = false;
-                document.getElementById('practiceInput').focus();
+                document.getElementById('practiceInput').focus({ preventScroll: true });
                 // 도형 SVG 렌더링 (복잡한도형)
                 const shapeView = document.getElementById('practiceShapeView');
                 if (currentProblem.shape && window.ShapeRenderer) {
