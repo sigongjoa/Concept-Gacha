@@ -47,9 +47,17 @@
         </div>
 
         <!-- Topic 선택 -->
-        <section class="mb-6">
-            <p class="label mb-3">Topic 선택 <span id="topicCount" class="text-violet-500"></span></p>
-            <div id="topicList" class="flex flex-wrap gap-2"></div>
+        <section class="mb-6 space-y-4">
+            <!-- 위: 현재 학생 카드 topics -->
+            <div class="bg-violet-50 dark:bg-violet-900/10 rounded-xl p-4 border border-violet-100 dark:border-violet-800">
+                <p class="label mb-2 text-violet-600 dark:text-violet-400">현재 학생 카드 topic</p>
+                <div id="topicListStudent" class="flex flex-wrap gap-2"></div>
+            </div>
+            <!-- 아래: 전체 PROBLEM_GENERATORS -->
+            <div class="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-100 dark:border-slate-800">
+                <p class="label mb-2">전체 제네레이터 <span id="topicCount" class="text-violet-500"></span></p>
+                <div id="topicListAll" class="flex flex-wrap gap-2"></div>
+            </div>
         </section>
 
         <!-- 단일 문제 뷰 -->
@@ -109,78 +117,49 @@
     <script>
         let currentTopic = null;
         let isBatch = false;
+        let studentTopics = new Set(); // 현재 학생 카드 topics
 
-        // Topic 그룹 정의 (색상 카테고리)
-        const TOPIC_GROUPS = {
-            '수 체계': { keys: ['순환소수', '소수', '합성수', '서로소', '약분', '통분'], color: 'blue' },
-            '연산':    { keys: ['거듭제곱', '밑', '지수', '역수', '동류항', '대소관계', '제곱근'], color: 'emerald' },
-            '속력':    { keys: ['속력'], color: 'red' },
-            '도형':    { keys: ['삼각형', '직사각형', '정사각형', '마름모', '사다리꼴', '복잡한도형', '보조선'], color: 'violet' },
-            '단위':    { keys: ['단위변환', '넓이단위'], color: 'amber' },
-            '수체계':  { keys: ['수체계'], color: 'indigo' },
-        };
+        function makeTopicBtn(key, extra = '') {
+            const btn = document.createElement('button');
+            btn.className = `topic-btn border-slate-300 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-violet-300 ${extra}`;
+            btn.id = `btn-${key}`;
+            btn.textContent = key;
+            btn.onclick = () => selectTopic(key);
+            return btn;
+        }
 
-        const GROUP_COLORS = {
-            blue:    'border-blue-300 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-300',
-            emerald: 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-700 dark:text-emerald-300',
-            red:     'border-red-300 bg-red-50 text-red-700 dark:bg-red-900/20 dark:border-red-700 dark:text-red-300',
-            violet:  'border-violet-300 bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:border-violet-700 dark:text-violet-300',
-            amber:   'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:border-amber-700 dark:text-amber-300',
-            indigo:  'border-indigo-300 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:border-indigo-700 dark:text-indigo-300',
-        };
-
-        function buildTopicList() {
-            const container = document.getElementById('topicList');
-            const allKeys = Object.keys(PROBLEM_GENERATORS);
-
-            // 그룹별 렌더링
-            const rendered = new Set();
-            Object.entries(TOPIC_GROUPS).forEach(([groupName, { keys, color }]) => {
-                const validKeys = keys.filter(k => allKeys.includes(k));
-                if (!validKeys.length) return;
-
-                const wrap = document.createElement('div');
-                wrap.className = 'flex items-center gap-1.5 flex-wrap';
-
-                const lbl = document.createElement('span');
-                lbl.className = 'text-xs text-slate-400 font-bold mr-1';
-                lbl.textContent = groupName;
-                wrap.appendChild(lbl);
-
-                validKeys.forEach(key => {
-                    const btn = document.createElement('button');
-                    btn.className = `topic-btn ${GROUP_COLORS[color]}`;
-                    btn.id = `btn-${key}`;
-                    btn.textContent = key;
-                    btn.onclick = () => selectTopic(key);
-                    wrap.appendChild(btn);
-                    rendered.add(key);
-                });
-
-                container.appendChild(wrap);
-            });
-
-            // 미분류 keys
-            const extras = allKeys.filter(k => !rendered.has(k));
-            if (extras.length) {
-                const wrap = document.createElement('div');
-                wrap.className = 'flex items-center gap-1.5 flex-wrap';
-                const lbl = document.createElement('span');
-                lbl.className = 'text-xs text-slate-400 font-bold mr-1';
-                lbl.textContent = '기타';
-                wrap.appendChild(lbl);
-                extras.forEach(key => {
-                    const btn = document.createElement('button');
-                    btn.className = 'topic-btn border-slate-300 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:border-violet-300';
-                    btn.id = `btn-${key}`;
-                    btn.textContent = key;
-                    btn.onclick = () => selectTopic(key);
-                    wrap.appendChild(btn);
-                });
-                container.appendChild(wrap);
+        async function buildTopicList() {
+            // 현재 학생 카드 가져오기
+            const studentId = localStorage.getItem('currentStudent');
+            if (studentId) {
+                try {
+                    const cards = await API.getCards(studentId);
+                    cards.forEach(c => {
+                        const t = c.topic || c._inferredTopic;
+                        if (t && PROBLEM_GENERATORS[t]) studentTopics.add(t);
+                    });
+                } catch (e) { /* ignore */ }
             }
 
-            document.getElementById('topicCount').textContent = `(${allKeys.length}개)`;
+            const allKeys = Object.keys(PROBLEM_GENERATORS);
+
+            // ── 위: 현재 학생 topic ──
+            const topSection = document.getElementById('topicListStudent');
+            if (studentTopics.size) {
+                [...studentTopics].forEach(key => {
+                    topSection.appendChild(makeTopicBtn(key, 'border-violet-400 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'));
+                });
+            } else {
+                topSection.innerHTML = '<span class="text-xs text-slate-400">학생을 선택하거나 카드에 topic이 없습니다</span>';
+            }
+
+            // ── 아래: 전체 제네레이터 ──
+            const botSection = document.getElementById('topicListAll');
+            allKeys.forEach(key => {
+                botSection.appendChild(makeTopicBtn(key));
+            });
+
+            document.getElementById('topicCount').textContent = `(전체 ${allKeys.length}개)`;
         }
 
         function selectTopic(topic) {
@@ -351,11 +330,11 @@
         if (window.matchMedia('(prefers-color-scheme: dark)').matches)
             document.documentElement.classList.add('dark');
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             Layout.init();
-            buildTopicList();
-            // 첫 번째 topic 자동 선택
-            const firstKey = Object.keys(PROBLEM_GENERATORS)[0];
+            await buildTopicList();
+            // 현재 학생 topic 중 첫 번째 자동 선택, 없으면 전체 첫 번째
+            const firstKey = [...studentTopics][0] || Object.keys(PROBLEM_GENERATORS)[0];
             if (firstKey) selectTopic(firstKey);
         });
     </script>

@@ -2,6 +2,15 @@
 
 function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
 
+// 단위 정규화: cm², cm2, cm^2 → cm² 로 통일 후 비교
+function normUnit(s) {
+    return s.replace(/\s/g, '')
+            .replace(/cm\^?2/gi, 'cm²')
+            .replace(/m\^?2/gi,  'm²')
+            .replace(/km\^?2/gi, 'km²');
+}
+function checkUnitAnswer(u, c) { return normUnit(u) === normUnit(c); }
+
 function simplify(n, d) {
     const g = gcd(Math.abs(n), Math.abs(d));
     return [n / g, d / g];
@@ -267,7 +276,7 @@ const PROBLEM_GENERATORS = {
 
     '역수': {
         label: '역수 구하기',
-        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const type = Math.floor(Math.random()*3);
             if (type === 0) {
@@ -334,7 +343,7 @@ const PROBLEM_GENERATORS = {
 
     '대소관계': {
         label: '분수 대소관계',
-        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const fracs = [[1,2],[1,3],[2,3],[3,4],[1,4],[3,5],[2,5],[4,5],[1,6],[5,6]];
             let n1, d1, n2, d2;
@@ -350,7 +359,7 @@ const PROBLEM_GENERATORS = {
 
     '삼각형': {
         label: '삼각형 넓이',
-        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const b = Math.floor(Math.random()*8)+2, h = Math.floor(Math.random()*8)+2;
             const area = b*h/2;
@@ -360,7 +369,7 @@ const PROBLEM_GENERATORS = {
 
     '직사각형': {
         label: '직사각형 둘레/넓이',
-        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const w = Math.floor(Math.random()*8)+2, h = Math.floor(Math.random()*8)+2;
             const type = Math.floor(Math.random()*2);
@@ -371,7 +380,7 @@ const PROBLEM_GENERATORS = {
 
     '마름모': {
         label: '마름모 넓이',
-        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const d1 = (Math.floor(Math.random()*5)+2)*2;
             const d2 = (Math.floor(Math.random()*5)+2)*2;
@@ -381,7 +390,7 @@ const PROBLEM_GENERATORS = {
 
     '사다리꼴': {
         label: '사다리꼴 넓이',
-        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const top = Math.floor(Math.random()*5)+2;
             const bot = top + Math.floor(Math.random()*5)+1;
@@ -393,7 +402,7 @@ const PROBLEM_GENERATORS = {
 
     '복잡한도형': {
         label: '복잡한 도형 넓이 (보조선 분할)',
-        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const r = () => Math.floor(Math.random()*5)+2;
             const type = Math.floor(Math.random()*4);
@@ -458,7 +467,7 @@ const PROBLEM_GENERATORS = {
     '원내접마름모': {
         label: '원에 내접하는 마름모 넓이',
         instruction: '넓이를 구하시오 (단위 포함)',
-        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const r = [5, 6, 7, 8, 9, 10][Math.floor(Math.random()*6)];
             const d = 2 * r;
@@ -481,10 +490,11 @@ const PROBLEM_GENERATORS = {
     '종이접기': {
         label: '종이접기 — 합동 삼각형 넓이',
         instruction: '넓이를 구하시오 (단위 포함)',
-        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
-            const W = [6,8,10,12,14][Math.floor(Math.random()*5)];
-            const H = [4,6,8,10][Math.floor(Math.random()*4)];
+            // W:foldH(=H/2) 비율이 너무 납작하지 않도록 W≤H 조합만 사용
+            const pairs = [[6,6],[6,8],[8,8],[8,10],[10,10],[10,12],[12,12]];
+            const [W, H] = pairs[Math.floor(Math.random()*pairs.length)];
             const type = Math.floor(Math.random()*2);
             if (type === 0) {
                 // 대각선으로 접기 → 삼각형 = 직사각형 / 2
@@ -522,7 +532,7 @@ const PROBLEM_GENERATORS = {
     '넓이역산': {
         label: '넓이 역산 — 변의 길이 구하기',
         instruction: '변의 길이를 구하시오 (단위 포함)',
-        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const type = Math.floor(Math.random()*3);
             if (type === 0) {
@@ -576,70 +586,115 @@ const PROBLEM_GENERATORS = {
     },
 
     '색칠부분': {
-        label: '색칠된 부분의 넓이',
+        label: '색칠된 부분의 넓이 (★★★)',
         instruction: '색칠된 부분의 넓이를 구하시오 (단위 포함)',
-        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
-            const type = Math.floor(Math.random()*3);
+            const pick = a => a[Math.floor(Math.random()*a.length)];
+            const type = Math.floor(Math.random()*5);
+
             if (type === 0) {
-                // 직사각형 테두리 색칠
-                const W = Math.floor(Math.random()*4)+6;
-                const H = Math.floor(Math.random()*3)+4;
-                const border = Math.floor(Math.random()*2)+1;
-                const iW = W - 2*border;
-                const iH = H - 2*border;
-                const area = W*H - iW*iH;
+                // ① 두 직사각형 겹침 합집합 (포함-배제 원리)
+                const W1=pick([8,10,12,14]), H1=pick([6,7,8]);
+                const W2=pick([6,8,10]),     H2=pick([5,6,7]);
+                const ow=pick([2,3,4]),       oh=pick([2,3,4]);
+                const area = W1*H1 + W2*H2 - ow*oh;
                 return {
-                    question: `가로 ${W}cm, 세로 ${H}cm인 직사각형에서 안쪽 가로 ${iW}cm, 세로 ${iH}cm 직사각형을 뺀 테두리 부분의 넓이는?`,
-                    questionSub: '색칠 = 전체 − 안쪽 빈 부분',
+                    question: `가로 ${W1}cm·세로 ${H1}cm인 직사각형 ①과 가로 ${W2}cm·세로 ${H2}cm인 직사각형 ②가 가로 ${ow}cm·세로 ${oh}cm 크기로 겹쳐 있습니다. 두 직사각형이 덮는 전체 색칠 넓이는?`,
+                    questionSub: '전체 = ① + ② − 겹친 부분 (겹친 부분을 두 번 더했으므로 한 번 뺌)',
                     answer: `${area}cm²`,
                     steps: [
-                        `전체: ${W} × ${H} = ${W*H}cm²`,
-                        `안쪽(빈 부분): ${iW} × ${iH} = ${iW*iH}cm²`,
-                        `색칠 = ${W*H} − ${iW*iH} = ${area}cm²`,
+                        `직사각형① = ${W1} × ${H1} = ${W1*H1}cm²`,
+                        `직사각형② = ${W2} × ${H2} = ${W2*H2}cm²`,
+                        `겹친 부분 = ${ow} × ${oh} = ${ow*oh}cm²`,
+                        `색칠 = ${W1*H1} + ${W2*H2} − ${ow*oh} = ${area}cm²`,
                     ],
-                    shape: { type: 'shaded_border', W, H, iW, iH },
                 };
             }
+
             if (type === 1) {
-                // 삼각형 두 개 합산
-                const b1=[4,6,8][Math.floor(Math.random()*3)], h1=[4,6,8][Math.floor(Math.random()*3)];
-                const b2=[4,6,8][Math.floor(Math.random()*3)], h2=[4,6,8][Math.floor(Math.random()*3)];
-                const a1=b1*h1/2, a2=b2*h2/2;
+                // ② 네 모서리 직각삼각형 4개 제거 → 팔각형 넓이
+                const W=pick([10,12,14,16]), H=pick([8,10,12]);
+                const a=pick([2,4]); // 정수 보장
+                const corners = 4*(a*a/2);
+                const area = W*H - corners;
                 return {
-                    question: `밑변 ${b1}cm·높이 ${h1}cm인 삼각형과 밑변 ${b2}cm·높이 ${h2}cm인 삼각형, 색칠된 두 부분의 넓이의 합은?`,
-                    questionSub: '삼각형 각각의 넓이를 구해 더합니다',
-                    answer: `${a1+a2}cm²`,
+                    question: `가로 ${W}cm, 세로 ${H}cm인 직사각형의 네 모서리에서 각각 밑변 ${a}cm·높이 ${a}cm인 직각삼각형을 잘라냈습니다. 남은 육각형의 넓이는?`,
+                    questionSub: '4개 모서리 삼각형을 모두 빼세요',
+                    answer: `${area}cm²`,
                     steps: [
-                        `삼각형① = ${b1} × ${h1} ÷ 2 = ${a1}cm²`,
-                        `삼각형② = ${b2} × ${h2} ÷ 2 = ${a2}cm²`,
-                        `합계 = ${a1} + ${a2} = ${a1+a2}cm²`,
+                        `직사각형 전체 = ${W} × ${H} = ${W*H}cm²`,
+                        `삼각형 1개 = ${a} × ${a} ÷ 2 = ${a*a/2}cm²`,
+                        `삼각형 4개 = ${a*a/2} × 4 = ${corners}cm²`,
+                        `색칠 = ${W*H} − ${corners} = ${area}cm²`,
                     ],
                 };
             }
-            // 직사각형에서 삼각형 빼기
-            const W = Math.floor(Math.random()*4)+6;
-            const H = Math.floor(Math.random()*3)+4;
-            const bT = Math.floor(W/2)+1;
-            const rectArea = W*H, triArea = bT*H/2;
-            const shaded = rectArea - triArea;
+
+            if (type === 2) {
+                // ③ 사다리꼴 − 내부 직사각형 (빈 공간)
+                const top=pick([4,6,8]), add=pick([4,6,8]);
+                const bot=top+add, H=pick([6,8,10]);
+                const iW=pick([3,4,5]), iH=pick([2,3]);
+                const trapArea=(top+bot)*H/2, rectArea=iW*iH;
+                const area=trapArea-rectArea;
+                return {
+                    question: `윗변 ${top}cm, 아랫변 ${bot}cm, 높이 ${H}cm인 사다리꼴에서 안쪽에 가로 ${iW}cm·세로 ${iH}cm인 직사각형이 뚫려 있습니다. 색칠된 부분의 넓이는?`,
+                    questionSub: '색칠 = 사다리꼴 − 빈 직사각형',
+                    answer: `${area}cm²`,
+                    steps: [
+                        `사다리꼴 = (${top}+${bot}) × ${H} ÷ 2 = ${top+bot} × ${H} ÷ 2 = ${trapArea}cm²`,
+                        `빈 직사각형 = ${iW} × ${iH} = ${rectArea}cm²`,
+                        `색칠 = ${trapArea} − ${rectArea} = ${area}cm²`,
+                    ],
+                };
+            }
+
+            if (type === 3) {
+                // ④ ㄱ자 도형에서 삼각형 추가 빼기 (3단계)
+                const W=pick([10,12,14]), H=pick([8,10,12]);
+                const cw=pick([3,4,5]),   ch=pick([3,4,5]);
+                const Larea=W*H-cw*ch;
+                const bT=pick([4,6,8]),  hT=pick([4,6]);
+                const triArea=bT*hT/2;
+                const area=Larea-triArea;
+                return {
+                    question: `가로 ${W}cm·세로 ${H}cm 직사각형의 오른쪽 위에서 가로 ${cw}cm·세로 ${ch}cm를 잘라낸 ㄱ자 도형이 있습니다. 이 도형에서 밑변 ${bT}cm·높이 ${hT}cm인 삼각형도 빈 공간일 때, 색칠된 넓이는?`,
+                    questionSub: '① ㄱ자 넓이 → ② 삼각형(빈 부분) 빼기 — 2단계',
+                    answer: `${area}cm²`,
+                    steps: [
+                        `ㄱ자 = ${W}×${H} − ${cw}×${ch} = ${W*H} − ${cw*ch} = ${Larea}cm²`,
+                        `삼각형(빈 부분) = ${bT} × ${hT} ÷ 2 = ${triArea}cm²`,
+                        `색칠 = ${Larea} − ${triArea} = ${area}cm²`,
+                    ],
+                    shape: { type: 'L', W, H, w: cw, h: ch },
+                };
+            }
+
+            // ⑤ 직사각형 − 삼각형 2개 − 작은 직사각형 (4단계)
+            const W=pick([12,14,16]), H=pick([8,10]);
+            const b1=pick([4,6]),     t1=b1*H/2;
+            const b2=pick([4,6]),     h2=pick([4,6]); const t2=b2*h2/2;
+            const iW=pick([3,4]),     iH=pick([2,3]); const r=iW*iH;
+            const area=W*H-t1-t2-r;
             return {
-                question: `가로 ${W}cm, 세로 ${H}cm인 직사각형에서 밑변 ${bT}cm, 높이 ${H}cm인 삼각형 부분을 빼면 색칠된 부분의 넓이는?`,
-                questionSub: '색칠 = 직사각형 − 삼각형',
-                answer: `${shaded}cm²`,
+                question: `가로 ${W}cm·세로 ${H}cm 직사각형에서 삼각형①(밑변 ${b1}cm·높이 ${H}cm), 삼각형②(밑변 ${b2}cm·높이 ${h2}cm), 직사각형(가로 ${iW}cm·세로 ${iH}cm)을 빈 공간으로 제외할 때 색칠 넓이는?`,
+                questionSub: '색칠 = 전체 − 삼각형① − 삼각형② − 직사각형 (4단계)',
+                answer: `${area}cm²`,
                 steps: [
-                    `직사각형: ${W} × ${H} = ${rectArea}cm²`,
-                    `삼각형: ${bT} × ${H} ÷ 2 = ${triArea}cm²`,
-                    `색칠 = ${rectArea} − ${triArea} = ${shaded}cm²`,
+                    `전체 = ${W} × ${H} = ${W*H}cm²`,
+                    `삼각형① = ${b1} × ${H} ÷ 2 = ${t1}cm²`,
+                    `삼각형② = ${b2} × ${h2} ÷ 2 = ${t2}cm²`,
+                    `직사각형 = ${iW} × ${iH} = ${r}cm²`,
+                    `색칠 = ${W*H} − ${t1} − ${t2} − ${r} = ${area}cm²`,
                 ],
-                shape: { type: 'shaded_rect_tri', W, H, bT },
             };
         },
     },
 
     '보조선': {
         label: '복잡한 도형 넓이 (보조선 분할)',
-        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() { return PROBLEM_GENERATORS['복잡한도형'].generate(); },
     },
 
