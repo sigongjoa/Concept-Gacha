@@ -64,15 +64,9 @@
         </div>
     </main>
 
-    <script type="module" src="js/supabase-client.js"></script>
     <script type="module" src="js/api.js"></script>
     <script src="js/layout.js"></script>
-    <script type="module">
-        import { requireAuth } from './js/auth.js'
-
-        // 로그인 체크
-        await requireAuth()
-
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
             Layout.init();
             loadAllStudents();

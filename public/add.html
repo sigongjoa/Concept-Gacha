@@ -88,6 +88,18 @@
                             placeholder="예: 산소" />
                     </div>
 
+                    <div>
+                        <label class="block text-sm font-bold text-slate-400 uppercase mb-2">연습 문제 유형 <span class="normal-case font-normal text-slate-300">(선택)</span></label>
+                        <select id="inputTopic"
+                            class="w-full p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:ring-2 focus:ring-orange-500 outline-none text-slate-700 dark:text-slate-300">
+                            <option value="">없음 (일반 카드)</option>
+                            <option value="순환소수">순환소수 → 분수 변환</option>
+                            <option value="속력">속력 · 거리 · 시간</option>
+                            <option value="동류항">동류항 정리</option>
+                        </select>
+                        <p class="text-xs text-slate-400 mt-1.5">선택하면 카드 학습 중 공식 적용 연습 문제가 자동 생성됩니다</p>
+                    </div>
+
                     <button id="addCardBtn"
                         class="w-full py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold hover:opacity-90 shadow-xl shadow-orange-500/20 transition-all">카드
                         추가</button>
@@ -96,51 +108,18 @@
         </div>
     </main>
 
-    <script type="module" src="js/supabase-client.js"></script>
     <script type="module" src="js/api.js"></script>
     <script src="js/layout.js"></script>
-    <script type="module">
-        import { requireAuth } from './js/auth.js'
-        import { supabase } from './js/supabase-client.js'
-
-        // 로그인 체크
-        await requireAuth()
-
+    <script>
         let currentStudentId = null;
-
-        // 현재 사용자의 student_id 자동 로드
-        async function loadCurrentStudent() {
-            try {
-                const { data: { user } } = await supabase.auth.getUser()
-                const { data: student } = await supabase
-                    .from('students')
-                    .select('id')
-                    .eq('user_id', user.id)
-                    .single()
-
-                if (!student) {
-                    alert('학생 정보를 찾을 수 없습니다.')
-                    window.location.href = '/login.html'
-                    return null
-                }
-
-                return student.id
-            } catch (error) {
-                console.error('Error loading student:', error)
-                alert('학생 정보 로드 실패')
-                return null
-            }
-        }
-
         let cardType = 'text';
         let uploadedFilename = null;
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            // 학생 ID 로드
-            currentStudentId = await loadCurrentStudent()
-            if (!currentStudentId) return
-
+        document.addEventListener('DOMContentLoaded', () => {
             Layout.init();
+            currentStudentId = Layout.currentStudent?.id;
+            if (!currentStudentId) return;
+
             setupTabs();
             setupUpload();
             document.getElementById('addCardBtn').onclick = addCard;
@@ -202,6 +181,7 @@
 
             const answer = document.getElementById('inputAnswer').value.trim();
             const question = document.getElementById('inputQuestion').value.trim();
+            const topic = document.getElementById('inputTopic').value;
 
             if (cardType === 'text' && !question) return Layout.showToast('질문을 입력하세요', true);
             if (cardType === 'image' && !uploadedFilename) return Layout.showToast('이미지를 올려주세요', true);
@@ -212,12 +192,14 @@
                     type: cardType,
                     answer,
                     question: cardType === 'text' ? question : '',
-                    questionImage: cardType === 'image' ? uploadedFilename : null
+                    questionImage: cardType === 'image' ? uploadedFilename : null,
+                    topic: topic || null,
                 };
                 await API.addCard(currentStudentId, data);
                 Layout.showToast('추가되었습니다!');
                 document.getElementById('inputAnswer').value = '';
                 document.getElementById('inputQuestion').value = '';
+                document.getElementById('inputTopic').value = '';
                 uploadedFilename = null;
                 document.getElementById('previewBox').classList.add('hidden');
                 document.getElementById('placeholder').classList.remove('hidden');

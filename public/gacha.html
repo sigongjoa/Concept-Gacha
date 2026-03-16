@@ -323,6 +323,7 @@
                 document.getElementById('practiceInputRow').classList.remove('hidden');
                 document.getElementById('practiceQuestion').textContent = currentProblem.question;
                 document.getElementById('practiceQuestionSub').textContent = currentProblem.questionSub || '';
+                document.getElementById('practiceInstruction').textContent = gen.instruction || '답을 구하시오';
                 document.getElementById('practiceInput').value = '';
                 document.getElementById('practiceInput').disabled = false;
                 document.getElementById('practiceSubmitBtn').disabled = false;
@@ -381,7 +382,7 @@
                 }
             } else {
                 // 분수 채점
-                const gen = PROBLEM_GENERATORS[currentCard.topic];
+                const gen = PROBLEM_GENERATORS[currentCard._inferredTopic || currentCard.topic];
                 const userInput = document.getElementById('practiceInput').value.trim();
                 if (!userInput) return;
                 correct = gen.checkAnswer(userInput, currentProblem.answer);

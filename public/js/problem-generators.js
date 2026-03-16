@@ -29,6 +29,7 @@ const PROBLEM_GENERATORS = {
 
     '순환소수': {
         label: '순환소수 → 분수 변환',
+        instruction: '을 분수로 나타내시오',
         checkAnswer: checkFractionAnswer,
 
         generate() {
