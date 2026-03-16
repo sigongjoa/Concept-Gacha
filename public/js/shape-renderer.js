@@ -8,6 +8,11 @@ const ShapeRenderer = {
   // ── 공개 API ────────────────────────────────────────────────
   render(shape, { width = 280, height = 210 } = {}) {
     if (!shape || !shape.type) return '';
+
+    // 특수 도형 (원·종이접기·색칠) — 폴리곤 방식 우회
+    const special = this._renderSpecial(shape, width, height);
+    if (special) return special;
+
     const PAD = 42;
     const geo = this._geometry(shape);
     if (!geo.points.length) return '';
@@ -108,6 +113,101 @@ const ShapeRenderer = {
     }
 
     return { points: [], dims: [] };
+  },
+
+  // ── 특수 도형 SVG 렌더러 ─────────────────────────────────────
+  _renderSpecial(shape, W, H) {
+    const { type } = shape;
+    const tc = '#4c1d95', lc = '#a78bfa';
+    const vb = `viewBox="0 0 ${W} ${H}"`;
+    const svgOpen = `<svg ${vb} xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">`;
+
+    // ── 원에 내접하는 마름모 ─────────────────────────────────
+    if (type === 'circle_rhombus') {
+      const { r } = shape;
+      const cx = W/2, cy = H/2;
+      const sr = Math.min(W, H) * 0.38; // SVG 반지름
+      const top=[cx,cy-sr], right=[cx+sr,cy], bot=[cx,cy+sr], left=[cx-sr,cy];
+      const pts = `${top} ${right} ${bot} ${left}`.replace(/,/g,' ').replace(/ +/g,' ');
+      const lbl = (x,y,t,col='#be185d') => `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" font-size="10.5" fill="${col}" font-family="sans-serif" font-weight="bold">${t}</text>`;
+      return `${svgOpen}
+  <circle cx="${cx}" cy="${cy}" r="${sr}" fill="#fce7f3" stroke="#ec4899" stroke-width="2"/>
+  <polygon points="${cx},${cy-sr} ${cx+sr},${cy} ${cx},${cy+sr} ${cx-sr},${cy}" fill="#fbcfe8" fill-opacity="0.6" stroke="#be185d" stroke-width="2"/>
+  <line x1="${cx-sr}" y1="${cy}" x2="${cx+sr}" y2="${cy}" stroke="#9d174d" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="${cx}" y1="${cy-sr}" x2="${cx}" y2="${cy+sr}" stroke="#9d174d" stroke-width="1.5" stroke-dasharray="5,3"/>
+  ${lbl(cx+(sr/2)+2, cy-6, `지름=${2*r}cm`)}
+  ${lbl(cx+6, cy-(sr/2)+4, `지름=${2*r}cm`, '#9d174d')}
+  ${lbl(cx, cy+sr+14, `반지름 r=${r}cm`, '#be185d')}
+</svg>`;
+    }
+
+    // ── 직사각형 대각선 접기 ─────────────────────────────────
+    if (type === 'paper_fold_diag') {
+      const { W: w, H: h } = shape;
+      const PAD = 36;
+      const sc = Math.min((W-PAD*2)/w, (H-PAD*2)/h);
+      const ox = (W - w*sc)/2, oy = (H - h*sc)/2;
+      const px = x => (ox+x*sc).toFixed(1), py = y => (oy+y*sc).toFixed(1);
+      const lbl = (x,y,t,col='#b45309') => `<text x="${x}" y="${y}" text-anchor="middle" font-size="10" fill="${col}" font-family="sans-serif" font-weight="bold">${t}</text>`;
+      return `${svgOpen}
+  <polygon points="${px(0)},${py(0)} ${px(w)},${py(0)} ${px(0)},${py(h)}" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+  <polygon points="${px(w)},${py(0)} ${px(w)},${py(h)} ${px(0)},${py(h)}" fill="#fef3c7" fill-opacity="0.5" stroke="#d97706" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="${px(0)}" y1="${py(0)}" x2="${px(w)}" y2="${py(h)}" stroke="#b45309" stroke-width="2.5"/>
+  ${lbl((parseFloat(px(0))+parseFloat(px(w)))/2, parseFloat(py(h))+15, `가로 ${w}cm`)}
+  ${lbl(parseFloat(px(0))-18, (parseFloat(py(0))+parseFloat(py(h)))/2, `${h}cm`)}
+  <text x="${(parseFloat(px(0))+parseFloat(px(w))/2)/2+10}" y="${(parseFloat(py(0))+parseFloat(py(h)))/2-5}" font-size="10" fill="#b45309" font-family="sans-serif">색칠 삼각형</text>
+</svg>`;
+    }
+
+    // ── 가로 반 접기 ─────────────────────────────────────────
+    if (type === 'paper_fold') {
+      const { W: w, H: fh, origH: oh } = shape;
+      const PAD = 36;
+      const sc = Math.min((W-PAD*2)/w, (H-PAD*2)/(oh||fh*2));
+      const ox = (W - w*sc)/2, oy = (H - (oh||fh*2)*sc)/2;
+      const px = x => (ox+x*sc).toFixed(1), py = y => (oy+y*sc).toFixed(1);
+      const foldY = oh ? oh/2 : fh;
+      return `${svgOpen}
+  <rect x="${px(0)}" y="${py(0)}" width="${(w*sc).toFixed(1)}" height="${((oh||fh*2)*sc).toFixed(1)}" fill="#fef3c7" stroke="#d97706" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="${px(0)}" y1="${py(foldY)}" x2="${px(w)}" y2="${py(foldY)}" stroke="#b45309" stroke-width="2" stroke-dasharray="6,3"/>
+  <polygon points="${px(0)},${py(foldY)} ${px(w)},${py(foldY)} ${px(0)},${py(oh||fh*2)}" fill="#fde68a" stroke="#d97706" stroke-width="2"/>
+  <text x="${(parseFloat(px(0))+parseFloat(px(w)))/2}" y="${parseFloat(py(oh||fh*2))+15}" text-anchor="middle" font-size="10" fill="#b45309" font-family="sans-serif" font-weight="bold">가로 ${w}cm</text>
+  <text x="${parseFloat(px(0))-22}" y="${(parseFloat(py(foldY))+parseFloat(py(oh||fh*2)))/2}" text-anchor="middle" font-size="10" fill="#b45309" font-family="sans-serif" font-weight="bold">${fh}cm</text>
+</svg>`;
+    }
+
+    // ── 테두리 색칠 (직사각형 안에 직사각형) ────────────────
+    if (type === 'shaded_border') {
+      const { W: w, H: h, iW, iH } = shape;
+      const PAD = 30;
+      const sc = Math.min((W-PAD*2)/w, (H-PAD*2)/h);
+      const ox = (W-w*sc)/2, oy = (H-h*sc)/2;
+      const px = x => (ox+x*sc).toFixed(1), py = y => (oy+y*sc).toFixed(1);
+      const bx = (w-iW)/2, by = (h-iH)/2;
+      return `${svgOpen}
+  <rect x="${px(0)}" y="${py(0)}" width="${(w*sc).toFixed(1)}" height="${(h*sc).toFixed(1)}" fill="#fed7aa" stroke="#ea580c" stroke-width="2"/>
+  <rect x="${px(bx)}" y="${py(by)}" width="${(iW*sc).toFixed(1)}" height="${(iH*sc).toFixed(1)}" fill="white" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="${W/2}" y="${parseFloat(py(0))-8}" text-anchor="middle" font-size="10" fill="#c2410c" font-family="sans-serif" font-weight="bold">${w}cm</text>
+  <text x="${parseFloat(px(0))-10}" y="${H/2}" text-anchor="middle" font-size="10" fill="#c2410c" font-family="sans-serif" font-weight="bold" transform="rotate(-90,${parseFloat(px(0))-10},${H/2})">${h}cm</text>
+</svg>`;
+    }
+
+    // ── 직사각형 − 삼각형 색칠 ──────────────────────────────
+    if (type === 'shaded_rect_tri') {
+      const { W: w, H: h, bT } = shape;
+      const PAD = 36;
+      const sc = Math.min((W-PAD*2)/w, (H-PAD*2)/h);
+      const ox = (W-w*sc)/2, oy = (H-h*sc)/2;
+      const px = x => (ox+x*sc).toFixed(1), py = y => (oy+y*sc).toFixed(1);
+      return `${svgOpen}
+  <rect x="${px(0)}" y="${py(0)}" width="${(w*sc).toFixed(1)}" height="${(h*sc).toFixed(1)}" fill="#fed7aa" stroke="#ea580c" stroke-width="2"/>
+  <polygon points="${px(0)},${py(h)} ${px(bT)},${py(0)} ${px(0)},${py(0)}" fill="white" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="${W/2}" y="${parseFloat(py(h))+15}" text-anchor="middle" font-size="10" fill="#c2410c" font-family="sans-serif" font-weight="bold">${w}cm</text>
+  <text x="${parseFloat(px(0))-12}" y="${H/2}" text-anchor="middle" font-size="10" fill="#c2410c" font-family="sans-serif" font-weight="bold" transform="rotate(-90,${parseFloat(px(0))-12},${H/2})">${h}cm</text>
+</svg>`;
+    }
+
+    return null; // 특수 처리 없음 → 기존 폴리곤 방식 사용
   },
 
   // ── 치수선 SVG 생성 ──────────────────────────────────────────

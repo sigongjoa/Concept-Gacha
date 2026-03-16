@@ -453,6 +453,190 @@ const PROBLEM_GENERATORS = {
         },
     },
 
+    // ── 김시우 특화 — 초5 다각형 취약 유형 ────────────────────
+
+    '원내접마름모': {
+        label: '원에 내접하는 마름모 넓이',
+        instruction: '넓이를 구하시오 (단위 포함)',
+        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        generate() {
+            const r = [5, 6, 7, 8, 9, 10][Math.floor(Math.random()*6)];
+            const d = 2 * r;
+            const area = d * d / 2; // 2r²
+            return {
+                question: `반지름이 ${r}cm인 원에 꼭 맞게 들어가는 마름모의 넓이는?`,
+                questionSub: `핵심: 원에 내접하는 마름모의 대각선 = 원의 지름`,
+                answer: `${area}cm²`,
+                steps: [
+                    `원의 지름 = 반지름 × 2 = ${r} × 2 = ${d}cm`,
+                    `원에 내접하는 마름모 → 두 대각선이 모두 지름`,
+                    `두 대각선 = ${d}cm`,
+                    `마름모 넓이 = ${d} × ${d} ÷ 2 = ${area}cm²`,
+                ],
+                shape: { type: 'circle_rhombus', r },
+            };
+        },
+    },
+
+    '종이접기': {
+        label: '종이접기 — 합동 삼각형 넓이',
+        instruction: '넓이를 구하시오 (단위 포함)',
+        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        generate() {
+            const W = [6,8,10,12,14][Math.floor(Math.random()*5)];
+            const H = [4,6,8,10][Math.floor(Math.random()*4)];
+            const type = Math.floor(Math.random()*2);
+            if (type === 0) {
+                // 대각선으로 접기 → 삼각형 = 직사각형 / 2
+                const area = W * H / 2;
+                return {
+                    question: `가로 ${W}cm, 세로 ${H}cm인 직사각형 종이를 대각선으로 접었을 때 생기는 삼각형의 넓이는?`,
+                    questionSub: '접힌 두 삼각형은 합동 — 각 삼각형 = 직사각형의 절반',
+                    answer: `${area}cm²`,
+                    steps: [
+                        `직사각형을 대각선으로 접으면 합동인 삼각형 2개`,
+                        `삼각형 넓이 = 직사각형 넓이 ÷ 2`,
+                        `= ${W} × ${H} ÷ 2 = ${area}cm²`,
+                    ],
+                    shape: { type: 'paper_fold_diag', W, H },
+                };
+            } else {
+                // 반으로 접고 대각선 → 접힌 삼각형 높이 = H/2
+                const foldH = H / 2;
+                const area = W * foldH / 2;
+                return {
+                    question: `가로 ${W}cm, 세로 ${H}cm인 직사각형 종이를 가로로 반 접은 뒤 대각선으로 잘랐을 때 생기는 삼각형의 넓이는?`,
+                    questionSub: '종이를 반 접으면 높이가 절반으로 줄어듭니다',
+                    answer: `${area}cm²`,
+                    steps: [
+                        `반으로 접으면 높이 = ${H} ÷ 2 = ${foldH}cm`,
+                        `삼각형 밑변 = ${W}cm, 높이 = ${foldH}cm`,
+                        `넓이 = ${W} × ${foldH} ÷ 2 = ${area}cm²`,
+                    ],
+                    shape: { type: 'paper_fold', W, H: foldH, origH: H },
+                };
+            }
+        },
+    },
+
+    '넓이역산': {
+        label: '넓이 역산 — 변의 길이 구하기',
+        instruction: '변의 길이를 구하시오 (단위 포함)',
+        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        generate() {
+            const type = Math.floor(Math.random()*3);
+            if (type === 0) {
+                // 삼각형 높이 역산
+                const h = [4,6,8,10,12][Math.floor(Math.random()*5)];
+                const b = [4,6,8,10,12][Math.floor(Math.random()*5)];
+                const A = b * h / 2;
+                return {
+                    question: `넓이가 ${A}cm²이고 밑변이 ${b}cm인 삼각형의 높이는?`,
+                    questionSub: '공식: 넓이 = 밑변 × 높이 ÷ 2',
+                    answer: `${h}cm`,
+                    steps: [
+                        `넓이 = 밑변 × 높이 ÷ 2`,
+                        `${A} = ${b} × 높이 ÷ 2`,
+                        `높이 = ${A} × 2 ÷ ${b} = ${h}cm`,
+                    ],
+                };
+            }
+            if (type === 1) {
+                // 직사각형 세로 역산
+                const w = Math.floor(Math.random()*6)+3;
+                const h = Math.floor(Math.random()*6)+3;
+                const A = w * h;
+                return {
+                    question: `넓이가 ${A}cm²이고 가로가 ${w}cm인 직사각형의 세로는?`,
+                    questionSub: '공식: 넓이 = 가로 × 세로',
+                    answer: `${h}cm`,
+                    steps: [
+                        `넓이 = 가로 × 세로`,
+                        `${A} = ${w} × 세로`,
+                        `세로 = ${A} ÷ ${w} = ${h}cm`,
+                    ],
+                };
+            }
+            // 사다리꼴 높이 역산
+            const top = Math.floor(Math.random()*4)+2;
+            const bot = top + Math.floor(Math.random()*4)+2;
+            const h = [4,6,8,10][Math.floor(Math.random()*4)];
+            const A = (top + bot) * h / 2;
+            return {
+                question: `넓이가 ${A}cm²이고 윗변 ${top}cm, 아랫변 ${bot}cm인 사다리꼴의 높이는?`,
+                questionSub: '공식: 넓이 = (윗변+아랫변) × 높이 ÷ 2',
+                answer: `${h}cm`,
+                steps: [
+                    `넓이 = (윗변+아랫변) × 높이 ÷ 2`,
+                    `${A} = (${top}+${bot}) × 높이 ÷ 2`,
+                    `높이 = ${A} × 2 ÷ ${top+bot} = ${h}cm`,
+                ],
+            };
+        },
+    },
+
+    '색칠부분': {
+        label: '색칠된 부분의 넓이',
+        instruction: '색칠된 부분의 넓이를 구하시오 (단위 포함)',
+        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+        generate() {
+            const type = Math.floor(Math.random()*3);
+            if (type === 0) {
+                // 직사각형 테두리 색칠
+                const W = Math.floor(Math.random()*4)+6;
+                const H = Math.floor(Math.random()*3)+4;
+                const border = Math.floor(Math.random()*2)+1;
+                const iW = W - 2*border;
+                const iH = H - 2*border;
+                const area = W*H - iW*iH;
+                return {
+                    question: `가로 ${W}cm, 세로 ${H}cm인 직사각형에서 안쪽 가로 ${iW}cm, 세로 ${iH}cm 직사각형을 뺀 테두리 부분의 넓이는?`,
+                    questionSub: '색칠 = 전체 − 안쪽 빈 부분',
+                    answer: `${area}cm²`,
+                    steps: [
+                        `전체: ${W} × ${H} = ${W*H}cm²`,
+                        `안쪽(빈 부분): ${iW} × ${iH} = ${iW*iH}cm²`,
+                        `색칠 = ${W*H} − ${iW*iH} = ${area}cm²`,
+                    ],
+                    shape: { type: 'shaded_border', W, H, iW, iH },
+                };
+            }
+            if (type === 1) {
+                // 삼각형 두 개 합산
+                const b1=[4,6,8][Math.floor(Math.random()*3)], h1=[4,6,8][Math.floor(Math.random()*3)];
+                const b2=[4,6,8][Math.floor(Math.random()*3)], h2=[4,6,8][Math.floor(Math.random()*3)];
+                const a1=b1*h1/2, a2=b2*h2/2;
+                return {
+                    question: `밑변 ${b1}cm·높이 ${h1}cm인 삼각형과 밑변 ${b2}cm·높이 ${h2}cm인 삼각형, 색칠된 두 부분의 넓이의 합은?`,
+                    questionSub: '삼각형 각각의 넓이를 구해 더합니다',
+                    answer: `${a1+a2}cm²`,
+                    steps: [
+                        `삼각형① = ${b1} × ${h1} ÷ 2 = ${a1}cm²`,
+                        `삼각형② = ${b2} × ${h2} ÷ 2 = ${a2}cm²`,
+                        `합계 = ${a1} + ${a2} = ${a1+a2}cm²`,
+                    ],
+                };
+            }
+            // 직사각형에서 삼각형 빼기
+            const W = Math.floor(Math.random()*4)+6;
+            const H = Math.floor(Math.random()*3)+4;
+            const bT = Math.floor(W/2)+1;
+            const rectArea = W*H, triArea = bT*H/2;
+            const shaded = rectArea - triArea;
+            return {
+                question: `가로 ${W}cm, 세로 ${H}cm인 직사각형에서 밑변 ${bT}cm, 높이 ${H}cm인 삼각형 부분을 빼면 색칠된 부분의 넓이는?`,
+                questionSub: '색칠 = 직사각형 − 삼각형',
+                answer: `${shaded}cm²`,
+                steps: [
+                    `직사각형: ${W} × ${H} = ${rectArea}cm²`,
+                    `삼각형: ${bT} × ${H} ÷ 2 = ${triArea}cm²`,
+                    `색칠 = ${rectArea} − ${triArea} = ${shaded}cm²`,
+                ],
+                shape: { type: 'shaded_rect_tri', W, H, bT },
+            };
+        },
+    },
+
     '보조선': {
         label: '복잡한 도형 넓이 (보조선 분할)',
         checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
