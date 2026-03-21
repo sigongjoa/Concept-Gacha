@@ -38,6 +38,7 @@ const PROBLEM_GENERATORS = {
 
     '순환소수': {
         label: '순환소수 → 분수 변환',
+        inputType: 'fraction',
         instruction: '을 분수로 나타내시오',
         checkAnswer: checkFractionAnswer,
 
@@ -102,6 +103,7 @@ const PROBLEM_GENERATORS = {
 
     '속력': {
         label: '속력 · 거리 · 시간',
+        inputType: 'numeric',
         checkAnswer(userInput, correct) {
             // 숫자 부분만 추출해서 비교 ("180km" → 180)
             const extract = s => parseFloat(s.replace(/\s/g, '').match(/^-?[\d.]+/)?.[0] ?? 'NaN');
@@ -152,6 +154,7 @@ const PROBLEM_GENERATORS = {
 
     '동류항': {
         label: '동류항 정리',
+        inputType: 'algebraic',
         checkAnswer(userInput, correct) {
             const norm = s => s.replace(/\s/g, '').toLowerCase()
                 .replace(/\+1([a-z])/g, '+$1')
@@ -178,6 +181,7 @@ const PROBLEM_GENERATORS = {
                     question: `${coef(a,v)} + ${coef(b,v)}`,
                     questionSub: `변수 ${v}끼리 계수를 더하세요`,
                     answer: coef(a+b, v),
+                    vars: [v],
                     steps: [`(${a}+${b})${v} = ${coef(a+b,v)}`],
                 };
             }
@@ -189,6 +193,7 @@ const PROBLEM_GENERATORS = {
                     question: `${coef(a,v)} - ${coef(b,v)}`,
                     questionSub: `변수 ${v}끼리 계수를 빼세요`,
                     answer: coef(a-b, v),
+                    vars: [v],
                     steps: [`(${a}-${b})${v} = ${coef(a-b,v)}`],
                 };
             }
@@ -202,6 +207,7 @@ const PROBLEM_GENERATORS = {
                     question: `${coef(a,v)} + ${coef(b,v)} - ${coef(c,v)}`,
                     questionSub: `동류항 세 항을 정리하세요`,
                     answer: coef(r, v),
+                    vars: [v],
                     steps: [`(${a}+${b}-${c})${v} = ${coef(r,v)}`],
                 };
             }
@@ -216,6 +222,7 @@ const PROBLEM_GENERATORS = {
                 question: `${coef(a,v)} + ${coef(b,w)} + ${coef(c,v)} + ${coef(d,w)}`,
                 questionSub: `${v}끼리, ${w}끼리 모아서 정리 (${v}항 먼저)`,
                 answer: `${coef(rx,v)} + ${coef(ry,w)}`,
+                vars: [v, w],
                 steps: [
                     `${v}항: ${a}${v}+${c}${v} = ${coef(rx,v)}`,
                     `${w}항: ${b}${w}+${d}${w} = ${coef(ry,w)}`,
@@ -227,6 +234,7 @@ const PROBLEM_GENERATORS = {
 
     '수체계': {
         label: '유리수의 수 체계',
+        inputType: 'fillblank',
         // checkAnswer은 gacha.html이 직접 처리 (multi-blank)
         checkAnswer: null,
 
@@ -260,6 +268,7 @@ const PROBLEM_GENERATORS = {
 
     '거듭제곱': {
         label: '거듭제곱 계산',
+        inputType: 'numeric',
         checkAnswer(u, c) { return u.trim() === c.trim(); },
         generate() {
             const BASE = [2,3,4,5,6,7];
@@ -276,6 +285,7 @@ const PROBLEM_GENERATORS = {
 
     '역수': {
         label: '역수 구하기',
+        inputType: 'fraction',
         checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const type = Math.floor(Math.random()*3);
@@ -294,6 +304,7 @@ const PROBLEM_GENERATORS = {
 
     '약분': {
         label: '약분 / 기약분수',
+        inputType: 'fraction',
         checkAnswer: checkFractionAnswer,
         generate() {
             const GCDS = [2,3,4,5,6];
@@ -307,6 +318,8 @@ const PROBLEM_GENERATORS = {
 
     '서로소': {
         label: '서로소 판별',
+        inputType: 'choice',
+        choices: ['서로소', '서로소 아님'],
         checkAnswer(u, c) { return u.trim().startsWith(c.trim().split(' ')[0]); },
         generate() {
             const pairs = [[8,15,'서로소'],[4,9,'서로소'],[7,12,'서로소'],[5,13,'서로소'],[4,6,'서로소 아님'],[9,12,'서로소 아님'],[10,15,'서로소 아님']];
@@ -317,6 +330,8 @@ const PROBLEM_GENERATORS = {
 
     '소수': {
         label: '소수 / 합성수 판별',
+        inputType: 'choice',
+        choices: ['소수', '합성수'],
         checkAnswer(u, c) { return u.trim() === c.trim(); },
         generate() {
             const PRIMES = [2,3,5,7,11,13,17,19,23,29,31,37];
@@ -330,6 +345,7 @@ const PROBLEM_GENERATORS = {
 
     '제곱근': {
         label: '제곱근 계산',
+        inputType: 'numeric',
         checkAnswer(u, c) { return u.trim() === c.trim(); },
         generate() {
             const PERFECT = [1,4,9,16,25,36,49,64,81,100,121,144];
@@ -343,6 +359,8 @@ const PROBLEM_GENERATORS = {
 
     '대소관계': {
         label: '분수 대소관계',
+        inputType: 'choice',
+        choices: ['<', '=', '>'],
         checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const fracs = [[1,2],[1,3],[2,3],[3,4],[1,4],[3,5],[2,5],[4,5],[1,6],[5,6]];
@@ -359,6 +377,8 @@ const PROBLEM_GENERATORS = {
 
     '삼각형': {
         label: '삼각형 넓이',
+        inputType: 'unit',
+        units: ['cm²', 'm²'],
         checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const b = Math.floor(Math.random()*8)+2, h = Math.floor(Math.random()*8)+2;
@@ -369,6 +389,8 @@ const PROBLEM_GENERATORS = {
 
     '직사각형': {
         label: '직사각형 둘레/넓이',
+        inputType: 'unit',
+        units: ['cm', 'cm²', 'm', 'm²'],
         checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const w = Math.floor(Math.random()*8)+2, h = Math.floor(Math.random()*8)+2;
@@ -380,6 +402,8 @@ const PROBLEM_GENERATORS = {
 
     '마름모': {
         label: '마름모 넓이',
+        inputType: 'unit',
+        units: ['cm²', 'm²'],
         checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const d1 = (Math.floor(Math.random()*5)+2)*2;
@@ -390,6 +414,8 @@ const PROBLEM_GENERATORS = {
 
     '사다리꼴': {
         label: '사다리꼴 넓이',
+        inputType: 'unit',
+        units: ['cm²', 'm²'],
         checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const top = Math.floor(Math.random()*5)+2;
@@ -402,6 +428,8 @@ const PROBLEM_GENERATORS = {
 
     '복잡한도형': {
         label: '복잡한 도형 넓이 (보조선 분할)',
+        inputType: 'unit',
+        units: ['cm²', 'm²'],
         checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
             const r = () => Math.floor(Math.random()*5)+2;
@@ -466,6 +494,8 @@ const PROBLEM_GENERATORS = {
 
     '원내접마름모': {
         label: '원에 내접하는 마름모 넓이',
+        inputType: 'unit',
+        units: ['cm²', 'm²'],
         instruction: '넓이를 구하시오 (단위 포함)',
         checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
@@ -489,6 +519,8 @@ const PROBLEM_GENERATORS = {
 
     '종이접기': {
         label: '종이접기 — 합동 삼각형 넓이',
+        inputType: 'unit',
+        units: ['cm²', 'm²'],
         instruction: '넓이를 구하시오 (단위 포함)',
         checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
@@ -531,6 +563,8 @@ const PROBLEM_GENERATORS = {
 
     '넓이역산': {
         label: '넓이 역산 — 변의 길이 구하기',
+        inputType: 'unit',
+        units: ['cm', 'm'],
         instruction: '변의 길이를 구하시오 (단위 포함)',
         checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
@@ -587,6 +621,8 @@ const PROBLEM_GENERATORS = {
 
     '색칠부분': {
         label: '색칠된 부분의 넓이 (★★★)',
+        inputType: 'unit',
+        units: ['cm²', 'm²'],
         instruction: '색칠된 부분의 넓이를 구하시오 (단위 포함)',
         checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() {
@@ -694,19 +730,23 @@ const PROBLEM_GENERATORS = {
 
     '보조선': {
         label: '복잡한 도형 넓이 (보조선 분할)',
+        inputType: 'unit',
+        units: ['cm²', 'm²'],
         checkAnswer(u, c) { return checkUnitAnswer(u, c); },
         generate() { return PROBLEM_GENERATORS['복잡한도형'].generate(); },
     },
 
     // ── 서버 alias와 동기화 ────────────────────────────────────
-    '밑':       { label: '거듭제곱', checkAnswer(u,c){return u===c;}, generate(){return PROBLEM_GENERATORS['거듭제곱'].generate();} },
-    '지수':     { label: '거듭제곱', checkAnswer(u,c){return u===c;}, generate(){return PROBLEM_GENERATORS['거듭제곱'].generate();} },
-    '통분':     { label: '약분/통분', checkAnswer(u,c){return u.replace(/\s/g,'')===c.replace(/\s/g,'');}, generate(){return PROBLEM_GENERATORS['약분'].generate();} },
-    '합성수':   { label: '소수/합성수', checkAnswer(u,c){return u.replace(/\s/g,'')===c.replace(/\s/g,'');}, generate(){return PROBLEM_GENERATORS['소수'].generate();} },
-    '정사각형': { label: '직사각형/정사각형', checkAnswer(u,c){return u.replace(/\s/g,'')===c.replace(/\s/g,'');}, generate(){return PROBLEM_GENERATORS['직사각형'].generate();} },
+    '밑':       { label: '거듭제곱', inputType: 'numeric', checkAnswer(u,c){return u===c;}, generate(){return PROBLEM_GENERATORS['거듭제곱'].generate();} },
+    '지수':     { label: '거듭제곱', inputType: 'numeric', checkAnswer(u,c){return u===c;}, generate(){return PROBLEM_GENERATORS['거듭제곱'].generate();} },
+    '통분':     { label: '약분/통분', inputType: 'fraction', checkAnswer(u,c){return u.replace(/\s/g,'')===c.replace(/\s/g,'');}, generate(){return PROBLEM_GENERATORS['약분'].generate();} },
+    '합성수':   { label: '소수/합성수', inputType: 'choice', choices: ['소수', '합성수'], checkAnswer(u,c){return u.replace(/\s/g,'')===c.replace(/\s/g,'');}, generate(){return PROBLEM_GENERATORS['소수'].generate();} },
+    '정사각형': { label: '직사각형/정사각형', inputType: 'unit', units: ['cm', 'cm²', 'm', 'm²'], checkAnswer(u,c){return u.replace(/\s/g,'')===c.replace(/\s/g,'');}, generate(){return PROBLEM_GENERATORS['직사각형'].generate();} },
 
     '단위변환': {
         label: '넓이 단위 변환 (km²↔m², m²↔cm²)',
+        inputType: 'unit',
+        units: ['mm²', 'cm²', 'm²', 'km²'],
         checkAnswer(u, c) { return u.replace(/[\s,]/g,'') === c.replace(/[\s,]/g,''); },
         generate() {
             const type = Math.floor(Math.random()*6);
@@ -734,13 +774,15 @@ const PROBLEM_GENERATORS = {
                 const n = Math.floor(Math.random()*5)+1;
                 return { question: `${n}cm² = ______ mm²`, questionSub: '1cm=10mm 이므로 1cm²=10²=100mm²', answer: `${n*100}mm²`, steps: [`1cm² = 10×10 = 100mm²`, `${n}cm² = ${n}×100 = ${n*100}mm²`] };
             }
-            // 원리 확인
-            return { question: `1km = 1000m 일 때, 1km² = (______)² m² = ______ m²`, questionSub: '단위를 제곱하면 변환 배수도 제곱됩니다', answer: `1000² = 1,000,000m²`, steps: [`가로 1km = 1000m, 세로 1km = 1000m`, `넓이 = 1000×1000 = 1,000,000m²`] };
+            // 원리 확인 — type 0으로 재귀 (빈칸 두 개짜리 문제 제거)
+            return PROBLEM_GENERATORS['단위변환'].generate();
         },
     },
 
     '넓이단위': {
         label: '넓이 단위 변환 (km²↔m², m²↔cm²)',
+        inputType: 'unit',
+        units: ['mm²', 'cm²', 'm²', 'km²'],
         checkAnswer(u, c) { return u.replace(/[\s,]/g,'') === c.replace(/[\s,]/g,''); },
         generate() { return PROBLEM_GENERATORS['단위변환'].generate(); },
     },
