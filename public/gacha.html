@@ -359,6 +359,11 @@
                 this.algExpr = ''; this.algCur = '';
                 this.choiceVal = null; this.blankFocused = null;
 
+                // 이전 채점으로 disabled된 키패드 버튼 복구
+                document.querySelectorAll('#numericKeypad button').forEach(b => b.disabled = false);
+                const sb = document.getElementById('practiceSubmitBtn');
+                if (sb) sb.disabled = false;
+
                 // show/hide panels
                 const show = (id, v) => { const el = document.getElementById(id); if(el) el.classList.toggle('hidden', !v); };
                 const isKey = ['numeric','fraction','unit','algebraic'].includes(this.type);
