@@ -185,9 +185,19 @@
     <script type="module" src="js/api.js"></script>
     <script src="js/layout.js"></script>
     <script>
+        // ── HTML 이스케이프 (XSS 방지) ────────────────────────────
+        function escHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // ── PIN Gate ──────────────────────────────────────────────
         let gatePin = '';
-        let teacherPin = '';
+        let teacherToken = '';
 
         function gateKey(digit) {
             if (gatePin.length >= 4) return;
@@ -217,15 +227,15 @@
 
         async function doTeacherLogin() {
             try {
-                await API.teacherLogin(gatePin);
-                teacherPin = gatePin;
-                sessionStorage.setItem('teacherAuth', gatePin);
+                const res = await API.teacherLogin(gatePin);
+                teacherToken = res.token;
+                sessionStorage.setItem('teacherToken', teacherToken);
                 document.getElementById('pinGate').classList.add('hidden');
                 document.getElementById('mainContent').classList.remove('hidden');
                 initAdmin();
             } catch (e) {
                 const errEl = document.getElementById('gateError');
-                errEl.textContent = 'PIN이 올바르지 않습니다';
+                errEl.textContent = e.message || 'PIN이 올바르지 않습니다';
                 errEl.classList.remove('hidden');
                 const dots = document.getElementById('gatePinDots');
                 dots.classList.add('shake');
@@ -236,8 +246,8 @@
         }
 
         function logout() {
-            sessionStorage.removeItem('teacherAuth');
-            teacherPin = '';
+            sessionStorage.removeItem('teacherToken');
+            teacherToken = '';
             gatePin = '';
             updateGateDots();
             document.getElementById('pinGate').classList.remove('hidden');
@@ -291,18 +301,18 @@
                         <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
                             <div class="flex items-center gap-3 flex-1 min-w-0">
                                 <div class="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center font-bold cursor-pointer hover:scale-110 active:scale-95 transition-all text-sm flex-shrink-0"
-                                    onclick="selectStudentForCards('${s.id}')">${s.name.charAt(0)}</div>
-                                <input type="text" value="${s.name}"
-                                    onblur="renameStudent('${s.id}', this.value)"
+                                    data-action="select" data-id="${escHtml(s.id)}">${escHtml(s.name.charAt(0))}</div>
+                                <input type="text" value="${escHtml(s.name)}"
+                                    data-action="rename" data-id="${escHtml(s.id)}"
                                     class="bg-transparent font-bold border-none outline-none focus:ring-1 focus:ring-orange-300 rounded px-1 text-sm min-w-0 flex-1"/>
                             </div>
                             <div class="flex items-center gap-1 flex-shrink-0">
-                                <button onclick="goToStudent('${s.id}', '${s.name.replace(/'/g, "\\'")}')"
+                                <button data-action="goto" data-id="${escHtml(s.id)}" data-name="${escHtml(s.name)}"
                                     class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 text-xs font-bold hover:bg-orange-200 dark:hover:bg-orange-900/40 transition-all active:scale-95">
                                     <span class="material-symbols-outlined text-sm">open_in_new</span>
                                     이동
                                 </button>
-                                <button onclick="deleteStudent('${s.id}')" class="p-1.5 text-slate-300 hover:text-red-500 transition-colors">
+                                <button data-action="delete" data-id="${escHtml(s.id)}" class="p-1.5 text-slate-300 hover:text-red-500 transition-colors">
                                     <span class="material-symbols-outlined text-xl">delete</span>
                                 </button>
                             </div>
@@ -313,12 +323,12 @@
                     ? '<div class="text-center py-8 text-slate-400 text-sm">등록된 학생이 없습니다.</div>'
                     : students.map(s => `
                         <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                            <div class="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center font-bold text-sm flex-shrink-0">${s.name.charAt(0)}</div>
-                            <span class="flex-1 font-bold text-sm">${s.name}</span>
+                            <div class="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center font-bold text-sm flex-shrink-0">${escHtml(s.name.charAt(0))}</div>
+                            <span class="flex-1 font-bold text-sm">${escHtml(s.name)}</span>
                             <input type="password" placeholder="새 PIN" maxlength="4" inputmode="numeric" pattern="\\d{4}"
-                                id="pin-${s.id}"
+                                id="pin-${escHtml(s.id)}"
                                 class="w-20 px-2 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none text-sm font-bold tracking-widest text-center focus:ring-2 focus:ring-indigo-200"/>
-                            <button onclick="changeStudentPin('${s.id}')"
+                            <button data-action="change-pin" data-id="${escHtml(s.id)}"
                                 class="px-3 py-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-200 dark:hover:bg-indigo-900/40 transition-all active:scale-95">
                                 변경
                             </button>
@@ -326,7 +336,25 @@
                     `).join('');
 
                 filter.innerHTML = '<option value="">학생 선택</option>' + students.map(s =>
-                    `<option value="${s.id}">${s.name}</option>`).join('');
+                    `<option value="${escHtml(s.id)}">${escHtml(s.name)}</option>`).join('');
+
+                // 이벤트 위임 (onclick 속성 대신 addEventListener)
+                list.addEventListener('click', e => {
+                    const btn = e.target.closest('[data-action]');
+                    if (!btn) return;
+                    const { action, id, name } = btn.dataset;
+                    if (action === 'select') selectStudentForCards(id);
+                    if (action === 'goto')   goToStudent(id, name);
+                    if (action === 'delete') deleteStudent(id);
+                });
+                list.addEventListener('blur', e => {
+                    const input = e.target.closest('[data-action="rename"]');
+                    if (input) renameStudent(input.dataset.id, input.value);
+                }, true);
+                pinList.addEventListener('click', e => {
+                    const btn = e.target.closest('[data-action="change-pin"]');
+                    if (btn) changeStudentPin(btn.dataset.id);
+                });
 
             } catch (e) {
                 list.innerHTML = '<div class="text-center py-8 text-red-400 text-sm">로드 실패</div>';
@@ -377,25 +405,40 @@
                     return;
                 }
                 list.innerHTML = cards.map(c => `
-                    <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                    <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800" data-card-id="${escHtml(c.id)}" data-sid="${escHtml(sid)}">
                         <div class="flex-1 min-w-0 space-y-1.5">
                             ${c.type === 'text'
-                                ? `<input type="text" value="${c.question.replace(/"/g, '&quot;')}" onblur="updateCardContent('${c.id}', {question: this.value})"
+                                ? `<input type="text" value="${escHtml(c.question)}" data-field="question"
                                     class="w-full bg-transparent font-bold border-none outline-none focus:ring-1 focus:ring-teal-300 rounded px-1 text-sm"/>`
                                 : `<div class="flex items-center gap-2 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-500 font-bold">
                                     <span class="material-symbols-outlined text-xs">image</span> 이미지 질문</div>`
                             }
                             <div class="flex items-center gap-2">
                                 <span class="text-xs text-slate-400 font-bold px-1">정답:</span>
-                                <input type="text" value="${c.answer.replace(/"/g, '&quot;')}" onblur="updateCardContent('${c.id}', {answer: this.value})"
+                                <input type="text" value="${escHtml(c.answer)}" data-field="answer"
                                     class="flex-1 bg-transparent text-sm border-none outline-none focus:ring-1 focus:ring-teal-300 rounded px-1"/>
                             </div>
                         </div>
-                        <button onclick="deleteCard('${c.id}', '${sid}')" class="text-slate-300 hover:text-red-500 transition-colors flex-shrink-0">
+                        <button data-action="delete-card" class="text-slate-300 hover:text-red-500 transition-colors flex-shrink-0">
                             <span class="material-symbols-outlined text-xl">delete</span>
                         </button>
                     </div>
                 `).join('');
+
+                // 카드 이벤트 위임
+                list.addEventListener('blur', e => {
+                    const input = e.target.closest('[data-field]');
+                    if (!input) return;
+                    const row = input.closest('[data-card-id]');
+                    if (!row) return;
+                    updateCardContent(row.dataset.cardId, { [input.dataset.field]: input.value });
+                }, true);
+                list.addEventListener('click', e => {
+                    const btn = e.target.closest('[data-action="delete-card"]');
+                    if (!btn) return;
+                    const row = btn.closest('[data-card-id]');
+                    if (row) deleteCard(row.dataset.cardId, row.dataset.sid);
+                });
             } catch (e) {
                 list.innerHTML = '<div class="text-center py-8 text-red-400 text-sm">로드 실패</div>';
             }
@@ -429,7 +472,7 @@
                 return;
             }
             try {
-                await API.setStudentPin(id, newPin, teacherPin);
+                await API.setStudentPin(id, newPin, teacherToken);
                 input.value = '';
                 showToast('PIN이 변경되었습니다');
             } catch (e) {
@@ -445,9 +488,8 @@
                 return;
             }
             try {
-                await API.setTeacherPin(teacherPin, newPin);
-                teacherPin = newPin;
-                sessionStorage.setItem('teacherAuth', newPin);
+                await API.setTeacherPin(teacherToken, newPin);
+                // 토큰은 유지 (PIN 변경해도 현재 세션 유효)
                 input.value = '';
                 showToast('선생님 PIN이 변경되었습니다');
             } catch (e) {
@@ -457,18 +499,20 @@
 
         // ── Init ──────────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
-            const saved = sessionStorage.getItem('teacherAuth');
-            if (saved) {
-                teacherPin = saved;
-                API.teacherLogin(saved)
-                    .then(() => {
-                        document.getElementById('pinGate').classList.add('hidden');
-                        document.getElementById('mainContent').classList.remove('hidden');
-                        initAdmin();
-                    })
-                    .catch(() => {
-                        sessionStorage.removeItem('teacherAuth');
-                    });
+            const savedToken = sessionStorage.getItem('teacherToken');
+            if (savedToken) {
+                teacherToken = savedToken;
+                document.getElementById('pinGate').classList.add('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+                initAdmin();
+            }
+        });
+
+        // 토큰 만료 시 자동 로그아웃 처리
+        window.addEventListener('unhandledrejection', e => {
+            if (e.reason?.message?.includes('선생님 인증 필요')) {
+                showToast('세션이 만료되었습니다. 다시 로그인해주세요', true);
+                setTimeout(logout, 1500);
             }
         });
 

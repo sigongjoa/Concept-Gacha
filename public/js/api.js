@@ -34,18 +34,18 @@ const API = {
         })
     },
 
-    async setStudentPin(id, pin, teacherPin) {
+    async setStudentPin(id, pin, teacherToken) {
         return this._fetch(`/api/students/${id}/pin`, {
             method: 'PUT',
-            headers: { 'X-Teacher-Pin': teacherPin },
+            headers: { 'X-Teacher-Token': teacherToken },
             body: JSON.stringify({ pin })
         })
     },
 
-    async setTeacherPin(currentPin, newPin) {
+    async setTeacherPin(teacherToken, newPin) {
         return this._fetch('/api/auth/teacher-pin', {
             method: 'PUT',
-            headers: { 'X-Teacher-Pin': currentPin },
+            headers: { 'X-Teacher-Token': teacherToken },
             body: JSON.stringify({ newPin })
         })
     },

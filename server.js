@@ -3,6 +3,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const crypto = require('crypto');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
 const archiver = require('archiver');
@@ -13,9 +14,49 @@ const PRINT_TMP = path.join(PRINT_DIR, 'tmp');
 if (!fs.existsSync(PRINT_TMP)) fs.mkdirSync(PRINT_TMP, { recursive: true });
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: ['http://localhost:3002', 'http://127.0.0.1:3002'] }));
 app.use(express.json());
 app.use(express.static('public'));
+
+// ── PIN 해싱 (PBKDF2) ──────────────────────────────────────
+function hashPin(pin, salt) {
+  return crypto.pbkdf2Sync(String(pin), salt, 10000, 32, 'sha256').toString('hex');
+}
+function generateSalt() {
+  return crypto.randomBytes(16).toString('hex');
+}
+
+// ── 선생님 세션 토큰 (서버 메모리) ───────────────────────────
+const teacherSessions = new Map(); // token → expiresAt
+function createTeacherToken() {
+  const token = crypto.randomBytes(32).toString('hex');
+  teacherSessions.set(token, Date.now() + 30 * 60 * 1000); // 30분
+  return token;
+}
+function validateTeacherToken(token) {
+  if (!token) return false;
+  const exp = teacherSessions.get(token);
+  if (!exp) return false;
+  if (Date.now() > exp) { teacherSessions.delete(token); return false; }
+  return true;
+}
+
+// ── 로그인 시도 횟수 제한 (5회 / 15분) ───────────────────────
+const loginAttempts = new Map();
+function checkRateLimit(key) {
+  const now = Date.now();
+  const rec = loginAttempts.get(key) || { count: 0, resetAt: now + 15 * 60 * 1000 };
+  if (now > rec.resetAt) { rec.count = 0; rec.resetAt = now + 15 * 60 * 1000; }
+  if (rec.count >= 5) return false;
+  rec.count++;
+  loginAttempts.set(key, rec);
+  return true;
+}
+function resetRateLimit(key) { loginAttempts.delete(key); }
+
+// ── 인메모리 캐시 ─────────────────────────────────────────
+let _dataCache = null;
+let _dataCacheMtime = 0;
 
 // 이미지 업로드 설정
 const ASSETS_DIR = path.join(__dirname, 'public', 'assets');
@@ -56,21 +97,49 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 function loadData() {
   try {
     if (fs.existsSync(DATA_FILE)) {
+      const stat = fs.statSync(DATA_FILE);
+      if (_dataCache && stat.mtimeMs === _dataCacheMtime) return _dataCache;
+
       const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-      // 새 필드 기본값 보장 (하위 호환)
-      if (!data.curricula)   data.curricula  = [];
-      if (!data.progress)    data.progress   = [];
-      if (!data.teacherPin)  data.teacherPin = '1234';
+      if (!data.curricula)  data.curricula  = [];
+      if (!data.progress)   data.progress   = [];
+
+      let needsSave = false;
+
+      // 선생님 PIN 해싱 마이그레이션
+      if (!data.teacherPinSalt) {
+        const plain = data.teacherPin || '1234';
+        data.teacherPinSalt = generateSalt();
+        data.teacherPin = hashPin(plain, data.teacherPinSalt);
+        needsSave = true;
+      }
+
+      // 학생 PIN 해싱 마이그레이션
       data.students.forEach(s => {
         if (!s.enrolledCurricula) s.enrolledCurricula = [];
-        if (!s.pin) s.pin = '0000';
+        if (!s.pinSalt) {
+          const plain = s.pin || '0000';
+          s.pinSalt = generateSalt();
+          s.pin = hashPin(plain, s.pinSalt);
+          needsSave = true;
+        }
       });
+
+      if (needsSave) {
+        try { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8'); }
+        catch (e) { console.error('마이그레이션 저장 실패:', e); }
+      }
+
+      const finalStat = needsSave ? fs.statSync(DATA_FILE) : stat;
+      _dataCache = data;
+      _dataCacheMtime = finalStat.mtimeMs;
       return data;
     }
   } catch (e) {
     console.error('데이터 로드 실패:', e);
   }
-  return { students: [], cards: [], curricula: [], progress: [], teacherPin: '1234' };
+  const salt = generateSalt();
+  return { students: [], cards: [], curricula: [], progress: [], teacherPin: hashPin('1234', salt), teacherPinSalt: salt };
 }
 
 // 커리큘럼 카드의 학생별 진도 조회/생성 헬퍼
@@ -93,6 +162,8 @@ function mergeProgress(card, studentId, data) {
 // 데이터 저장
 function saveData(data) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+  _dataCache = data;
+  try { _dataCacheMtime = fs.statSync(DATA_FILE).mtimeMs; } catch (_) {}
 }
 
 // ============ 학생 API ============
@@ -108,18 +179,16 @@ app.get('/api/students/:id', (req, res) => {
   const { id } = req.params;
   const data = loadData();
   const student = data.students.find(s => s.id === id);
-  if (!student) {
-    return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
-  }
-  res.json(student);
+  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
+  const { pin: _, pinSalt: __, ...safeStudent } = student;
+  res.json(safeStudent);
 });
 
 // 학생 추가
 app.post('/api/students', (req, res) => {
   const { name } = req.body;
-  if (!name || !name.trim()) {
-    return res.status(400).json({ error: '이름을 입력해주세요' });
-  }
+  if (!name || !name.trim()) return res.status(400).json({ error: '이름을 입력해주세요' });
+  if (name.trim().length > 50) return res.status(400).json({ error: '이름은 50자 이하로 입력해주세요' });
 
   const data = loadData();
 
@@ -128,10 +197,12 @@ app.post('/api/students', (req, res) => {
     return res.status(400).json({ error: '이미 존재하는 이름입니다' });
   }
 
+  const pinSalt = generateSalt();
   const newStudent = {
     id: Date.now().toString(),
     name: name.trim(),
-    pin: '0000',
+    pin: hashPin('0000', pinSalt),
+    pinSalt,
     createdAt: new Date().toISOString(),
   };
 
@@ -177,47 +248,65 @@ app.patch('/api/students/:id', (req, res) => {
 
 // ============ 인증 API ============
 
-// 학생 로그인
+// 학생 로그인 (rate limit + 해시 검증)
 app.post('/api/auth/login', (req, res) => {
   const { name, pin } = req.body;
   if (!name || !pin) return res.status(400).json({ error: '이름과 PIN을 입력해주세요' });
+
+  const ip = req.ip || 'unknown';
+  const key = `login:${ip}:${name.trim()}`;
+  if (!checkRateLimit(key)) return res.status(429).json({ error: '시도 횟수 초과. 15분 후 다시 시도해주세요' });
+
   const data = loadData();
-  const student = data.students.find(s => s.name === name.trim() && s.pin === pin);
-  if (!student) return res.status(401).json({ error: '이름 또는 PIN이 올바르지 않습니다' });
-  const { pin: _, ...safeStudent } = student;
+  const student = data.students.find(s => s.name === name.trim());
+  if (!student || hashPin(pin, student.pinSalt) !== student.pin) {
+    return res.status(401).json({ error: '이름 또는 PIN이 올바르지 않습니다' });
+  }
+  resetRateLimit(key);
+  const { pin: _, pinSalt: __, ...safeStudent } = student;
   res.json(safeStudent);
 });
 
-// 선생님 로그인
+// 선생님 로그인 (rate limit + 토큰 반환)
 app.post('/api/auth/teacher', (req, res) => {
   const { pin } = req.body;
+  const ip = req.ip || 'unknown';
+  const key = `teacher:${ip}`;
+  if (!checkRateLimit(key)) return res.status(429).json({ error: '시도 횟수 초과. 15분 후 다시 시도해주세요' });
+
   const data = loadData();
-  if (pin !== data.teacherPin) return res.status(401).json({ error: 'PIN이 올바르지 않습니다' });
-  res.json({ ok: true });
+  if (hashPin(pin, data.teacherPinSalt) !== data.teacherPin) {
+    return res.status(401).json({ error: 'PIN이 올바르지 않습니다' });
+  }
+  resetRateLimit(key);
+  const token = createTeacherToken();
+  res.json({ token });
 });
 
-// 학생 PIN 변경 (선생님 전용)
+// 학생 PIN 변경 (선생님 토큰 필요 + 해시 저장)
 app.put('/api/students/:id/pin', (req, res) => {
-  const teacherPin = req.headers['x-teacher-pin'];
-  const data = loadData();
-  if (teacherPin !== data.teacherPin) return res.status(401).json({ error: '선생님 인증 필요' });
+  const token = req.headers['x-teacher-token'];
+  if (!validateTeacherToken(token)) return res.status(401).json({ error: '선생님 인증 필요' });
   const { pin } = req.body;
   if (!pin || !/^\d{4}$/.test(pin)) return res.status(400).json({ error: '4자리 숫자 PIN을 입력해주세요' });
+  const data = loadData();
   const student = data.students.find(s => s.id === req.params.id);
   if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
-  student.pin = pin;
+  student.pinSalt = generateSalt();
+  student.pin = hashPin(pin, student.pinSalt);
   saveData(data);
   res.json({ success: true });
 });
 
-// 선생님 PIN 변경
+// 선생님 PIN 변경 (선생님 토큰 필요 + 해시 저장)
 app.put('/api/auth/teacher-pin', (req, res) => {
-  const teacherPin = req.headers['x-teacher-pin'];
-  const data = loadData();
-  if (teacherPin !== data.teacherPin) return res.status(401).json({ error: '현재 PIN이 올바르지 않습니다' });
+  const token = req.headers['x-teacher-token'];
+  if (!validateTeacherToken(token)) return res.status(401).json({ error: '선생님 인증 필요' });
   const { newPin } = req.body;
   if (!newPin || !/^\d{4}$/.test(newPin)) return res.status(400).json({ error: '4자리 숫자 PIN을 입력해주세요' });
-  data.teacherPin = newPin;
+  const data = loadData();
+  data.teacherPinSalt = generateSalt();
+  data.teacherPin = hashPin(newPin, data.teacherPinSalt);
   saveData(data);
   res.json({ success: true });
 });
@@ -338,6 +427,8 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
 app.post('/api/students/:studentId/cards', (req, res) => {
   const { studentId } = req.params;
   const { question, answer, type, questionImage, topic } = req.body;
+  if (question && question.length > 2000) return res.status(400).json({ error: '질문은 2000자 이하로 입력해주세요' });
+  if (answer && answer.length > 2000) return res.status(400).json({ error: '정답은 2000자 이하로 입력해주세요' });
   const data = loadData();
 
   const newCard = {
