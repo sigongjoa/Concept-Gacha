@@ -1,112 +1,268 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html class="light" lang="ko">
 
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>개념 가챠 - 카드 추가</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'surface':                    '#f7f9fb',
+                        'surface-bright':             '#f7f9fb',
+                        'surface-dim':                '#d8dadc',
+                        'surface-container-lowest':   '#ffffff',
+                        'surface-container-low':      '#f2f4f6',
+                        'surface-container':          '#eceef0',
+                        'surface-container-high':     '#e6e8ea',
+                        'surface-container-highest':  '#e0e3e5',
+                        'primary':                    '#9d4300',
+                        'primary-container':          '#f97316',
+                        'primary-fixed':              '#ffdbca',
+                        'primary-fixed-dim':          '#ffb690',
+                        'on-primary':                 '#ffffff',
+                        'on-primary-container':       '#582200',
+                        'secondary':                  '#4648d4',
+                        'secondary-container':        '#6063ee',
+                        'secondary-fixed':            '#e1e0ff',
+                        'secondary-fixed-dim':        '#c0c1ff',
+                        'on-secondary':               '#ffffff',
+                        'on-secondary-container':     '#fffbff',
+                        'tertiary':                   '#006c49',
+                        'tertiary-container':         '#00b07a',
+                        'on-tertiary':                '#ffffff',
+                        'on-tertiary-container':      '#003b26',
+                        'error':                      '#ba1a1a',
+                        'error-container':            '#ffdad6',
+                        'on-error':                   '#ffffff',
+                        'on-error-container':         '#93000a',
+                        'on-surface':                 '#191c1e',
+                        'on-surface-variant':         '#584237',
+                        'outline':                    '#8c7164',
+                        'outline-variant':            '#e0c0b1',
+                        'surface-tint':               '#9d4300',
+                        'surface-variant':            '#e0e3e5',
+                        'background':                 '#f7f9fb',
+                        'inverse-surface':            '#2d3133',
+                        'inverse-on-surface':         '#eff1f3',
+                    },
+                    fontFamily: {
+                        'headline': ['Plus Jakarta Sans', 'Noto Sans KR', 'sans-serif'],
+                        'body':     ['Inter', 'Noto Sans KR', 'sans-serif'],
+                        'label':    ['Inter', 'Noto Sans KR', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        'DEFAULT': '1rem',
+                        'lg': '2rem',
+                        'xl': '3rem',
+                        'full': '9999px',
+                    },
+                },
+            },
+        };
+    </script>
+
     <style>
-        body {
+        body { font-family: 'Inter', 'Noto Sans KR', sans-serif; min-height: 100dvh; }
+        .font-headline { font-family: 'Plus Jakarta Sans', 'Noto Sans KR', sans-serif; }
+        .glass {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .field-input {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            background: #f2f4f6;
+            border: 2px solid transparent;
+            outline: none;
+            color: #191c1e;
+            transition: background 0.15s, border-color 0.15s;
             font-family: 'Inter', 'Noto Sans KR', sans-serif;
         }
+        .field-input:focus {
+            background: #ffffff;
+            border-color: rgba(157, 67, 0, 0.20);
+        }
+        .field-input::placeholder { color: #8c7164; }
+        select.field-input { cursor: pointer; }
     </style>
 </head>
 
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 h-screen flex overflow-hidden">
+<body class="bg-surface font-body text-on-surface overflow-x-hidden">
 
-    <aside
-        class="w-72 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col justify-between z-20 hidden lg:flex">
-    </aside>
-
-    <main class="flex-1 p-6 lg:p-12 overflow-y-auto flex flex-col items-center justify-center">
-        <!-- Top Bar -->
-        <div class="absolute top-6 left-6 right-6 flex justify-between lg:justify-end items-center z-30">
-            <button
-                class="lg:hidden p-3 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800"
-                id="mobileMenuBtn">
-                <span class="material-symbols-outlined">menu</span>
-            </button>
-            <button class="p-3 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800"
-                onclick="document.documentElement.classList.toggle('dark')">
-                <span class="material-symbols-outlined">dark_mode</span>
-            </button>
-        </div>
-
-        <div class="w-full max-w-xl">
-            <div
-                class="bg-white dark:bg-slate-900 rounded-[2rem] p-10 shadow-2xl border border-slate-100 dark:border-slate-800">
-                <h2 class="text-2xl font-black mb-6">새 카드 추가</h2>
-
-                <!-- Type Tabs -->
-                <div class="flex gap-2 mb-6" id="typeTabs">
-                    <button
-                        class="flex-1 py-3 px-4 rounded-xl font-bold border-2 border-orange-500 bg-orange-50 dark:bg-orange-900/10 text-orange-600"
-                        data-type="text">
-                        <span class="material-symbols-outlined align-middle mr-1">text_fields</span> 텍스트
-                    </button>
-                    <button
-                        class="flex-1 py-3 px-4 rounded-xl font-bold border-2 border-slate-100 dark:border-slate-800 text-slate-400 hover:border-orange-200"
-                        data-type="image">
-                        <span class="material-symbols-outlined align-middle mr-1">image</span> 이미지
-                    </button>
+    <!-- ── TopAppBar ──────────────────────────────────────────── -->
+    <header class="fixed top-0 w-full z-50 bg-white/70 dark:bg-inverse-surface/70 glass shadow-sm">
+        <div class="flex justify-between items-center px-6 py-3 max-w-2xl mx-auto">
+            <div class="flex items-center gap-3">
+                <div id="studentAvatar"
+                    class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <span class="font-bold text-primary text-sm font-headline" id="studentInitial">?</span>
                 </div>
-
-                <div class="space-y-6">
-                    <div id="textInput">
-                        <label class="block text-sm font-bold text-slate-400 uppercase mb-2">질문 (텍스트)</label>
-                        <textarea id="inputQuestion"
-                            class="w-full p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:ring-2 focus:ring-orange-500 outline-none resize-none"
-                            rows="3" placeholder="예: 광합성에서 물이 분해되면?"></textarea>
-                    </div>
-
-                    <div id="imageInput" class="hidden">
-                        <label class="block text-sm font-bold text-slate-400 uppercase mb-2">질문 (이미지)</label>
-                        <div class="w-full p-8 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-center cursor-pointer hover:border-orange-400"
-                            id="dropZone">
-                            <input type="file" id="fileInput" class="hidden" accept="image/*" />
-                            <div id="previewBox" class="hidden">
-                                <img src="" id="imgPreview" class="max-h-48 mx-auto rounded-lg mb-3" />
-                                <button class="text-sm text-red-500 font-bold" id="removeImgBtn">제거</button>
-                            </div>
-                            <div id="placeholder">
-                                <span class="material-symbols-outlined text-4xl text-slate-300 mb-2">cloud_upload</span>
-                                <p class="text-slate-400">이미지를 선택하거나 드래그하세요</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-bold text-slate-400 uppercase mb-2">정답 (개념명)</label>
-                        <input type="text" id="inputAnswer"
-                            class="w-full p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:ring-2 focus:ring-orange-500 outline-none"
-                            placeholder="예: 산소" />
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-bold text-slate-400 uppercase mb-2">연습 문제 유형 <span class="normal-case font-normal text-slate-300">(선택)</span></label>
-                        <select id="inputTopic"
-                            class="w-full p-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:ring-2 focus:ring-orange-500 outline-none text-slate-700 dark:text-slate-300">
-                            <option value="">없음 (일반 카드)</option>
-                            <option value="순환소수">순환소수 → 분수 변환</option>
-                            <option value="속력">속력 · 거리 · 시간</option>
-                            <option value="동류항">동류항 정리</option>
-                        </select>
-                        <p class="text-xs text-slate-400 mt-1.5">선택하면 카드 학습 중 공식 적용 연습 문제가 자동 생성됩니다</p>
-                    </div>
-
-                    <button id="addCardBtn"
-                        class="w-full py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold hover:opacity-90 shadow-xl shadow-orange-500/20 transition-all">카드
-                        추가</button>
-                </div>
+                <h1 class="text-xl font-bold tracking-tight text-primary font-headline">
+                    Concept Gacha
+                </h1>
+            </div>
+            <div class="flex items-center gap-1">
+                <button onclick="document.documentElement.classList.toggle('dark')"
+                    class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-90">
+                    <span class="material-symbols-outlined text-on-surface-variant">dark_mode</span>
+                </button>
             </div>
         </div>
+        <div class="bg-surface-dim/30 h-px w-full"></div>
+    </header>
+
+    <!-- Sidebar placeholder (layout.js 호환용) -->
+    <aside id="sidebarInjected" class="hidden"></aside>
+
+    <!-- ── Main Content ──────────────────────────────────────── -->
+    <main class="pt-20 pb-36 px-6 max-w-2xl mx-auto space-y-6">
+
+        <!-- Page Title -->
+        <div class="mt-4">
+            <span class="text-primary font-bold font-label text-xs uppercase tracking-widest">Collection</span>
+            <h2 class="font-headline text-2xl font-bold text-on-surface mt-1">새 카드 추가</h2>
+            <div class="w-12 h-1.5 bg-primary-container rounded-full opacity-40 mt-2"></div>
+        </div>
+
+        <!-- ── Form Card ──────────────────────────────────────── -->
+        <div class="bg-surface-container-lowest rounded-xl overflow-hidden
+                    shadow-[0px_20px_40px_rgba(88,66,55,0.06)]">
+            <div class="p-7 space-y-6">
+
+                <!-- Type Tabs -->
+                <div class="flex gap-2 p-1 bg-surface-container-low rounded-DEFAULT" id="typeTabs">
+                    <button
+                        class="type-tab flex-1 py-3 px-4 rounded-DEFAULT font-bold text-sm transition-all
+                               bg-primary-fixed text-primary shadow-sm"
+                        data-type="text">
+                        <span class="material-symbols-outlined align-middle mr-1 text-[18px]">text_fields</span>텍스트
+                    </button>
+                    <button
+                        class="type-tab flex-1 py-3 px-4 rounded-DEFAULT font-bold text-sm transition-all
+                               text-outline hover:text-on-surface-variant"
+                        data-type="image">
+                        <span class="material-symbols-outlined align-middle mr-1 text-[18px]">image</span>이미지
+                    </button>
+                </div>
+
+                <!-- Text Question -->
+                <div id="textInput">
+                    <label class="block text-[10px] font-bold text-primary uppercase tracking-widest mb-2 font-label">
+                        질문 (텍스트)
+                    </label>
+                    <textarea id="inputQuestion"
+                        class="field-input resize-none"
+                        rows="3" placeholder="예: 광합성에서 물이 분해되면?"></textarea>
+                </div>
+
+                <!-- Image Question -->
+                <div id="imageInput" class="hidden">
+                    <label class="block text-[10px] font-bold text-primary uppercase tracking-widest mb-2 font-label">
+                        질문 (이미지)
+                    </label>
+                    <div class="w-full p-8 rounded-DEFAULT border-2 border-dashed border-outline-variant
+                                bg-surface-container-low text-center cursor-pointer
+                                hover:border-primary-fixed-dim transition-colors"
+                        id="dropZone">
+                        <input type="file" id="fileInput" class="hidden" accept="image/*" />
+                        <div id="previewBox" class="hidden">
+                            <img src="" id="imgPreview" class="max-h-48 mx-auto rounded-DEFAULT mb-3 shadow-sm" />
+                            <button class="text-sm text-on-error-container font-bold px-4 py-1.5 rounded-full bg-error-container" id="removeImgBtn">제거</button>
+                        </div>
+                        <div id="placeholder">
+                            <span class="material-symbols-outlined text-4xl text-surface-dim mb-2 block">cloud_upload</span>
+                            <p class="text-outline text-sm">이미지를 선택하거나 드래그하세요</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Answer -->
+                <div>
+                    <label class="block text-[10px] font-bold text-primary uppercase tracking-widest mb-2 font-label">
+                        정답 (개념명)
+                    </label>
+                    <input type="text" id="inputAnswer"
+                        class="field-input"
+                        placeholder="예: 산소" />
+                </div>
+
+                <!-- Topic -->
+                <div>
+                    <label class="block text-[10px] font-bold text-primary uppercase tracking-widest mb-2 font-label">
+                        연습 문제 유형 <span class="normal-case font-normal text-outline ml-1">(선택)</span>
+                    </label>
+                    <select id="inputTopic" class="field-input">
+                        <option value="">없음 (일반 카드)</option>
+                        <option value="순환소수">순환소수 → 분수 변환</option>
+                        <option value="속력">속력 · 거리 · 시간</option>
+                        <option value="동류항">동류항 정리</option>
+                    </select>
+                    <p class="text-xs text-outline mt-2">선택하면 카드 학습 중 공식 적용 연습 문제가 자동 생성됩니다</p>
+                </div>
+
+                <!-- Submit Button -->
+                <button id="addCardBtn"
+                    class="w-full h-14 rounded-full font-label font-bold uppercase tracking-widest
+                           text-on-primary shadow-[0_10px_30px_rgba(157,67,0,0.3)]
+                           transition-all active:scale-95"
+                    style="background: linear-gradient(135deg, #9d4300, #f97316)">
+                    카드 추가
+                </button>
+            </div>
+
+            <!-- Bottom accent bar -->
+            <div class="h-1.5" style="background: linear-gradient(to right, #9d4300, #f97316)"></div>
+        </div>
+
     </main>
+
+    <!-- ── Bottom Navigation ──────────────────────────────────── -->
+    <nav class="fixed bottom-0 left-0 w-full z-40
+                flex justify-around items-center
+                px-4 pb-8 pt-4
+                bg-white/70 dark:bg-inverse-surface/70 glass
+                rounded-t-xl
+                shadow-[0_-10px_40px_rgba(249,115,22,0.08)]">
+        <a href="/index.html"
+            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            <span class="material-symbols-outlined">group</span>
+            <span class="font-bold text-[10px] uppercase tracking-widest mt-1 font-label">Students</span>
+        </a>
+        <a href="/gacha.html"
+            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            <span class="material-symbols-outlined">auto_awesome</span>
+            <span class="font-bold text-[10px] uppercase tracking-widest mt-1 font-label">Gacha</span>
+        </a>
+        <button class="flex flex-col items-center justify-center bg-primary-fixed text-primary rounded-full px-5 py-2 scale-110 shadow-inner">
+            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">add_circle</span>
+            <span class="font-bold text-[10px] uppercase tracking-widest mt-1 font-label">Add</span>
+        </button>
+        <a href="/list.html"
+            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            <span class="material-symbols-outlined">style</span>
+            <span class="font-bold text-[10px] uppercase tracking-widest mt-1 font-label">Cards</span>
+        </a>
+        <a href="/admin.html"
+            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            <span class="material-symbols-outlined">settings</span>
+            <span class="font-bold text-[10px] uppercase tracking-widest mt-1 font-label">Admin</span>
+        </a>
+    </nav>
+
+    <!-- ── Ambient Orbs ───────────────────────────────────────── -->
+    <div class="fixed top-20 -left-20 w-64 h-64 rounded-full pointer-events-none -z-10"
+        style="background:rgba(255,219,202,0.30); filter:blur(100px);"></div>
+    <div class="fixed bottom-40 -right-20 w-80 h-80 rounded-full pointer-events-none -z-10"
+        style="background:rgba(225,224,255,0.20); filter:blur(100px);"></div>
 
     <script type="module" src="js/api.js"></script>
     <script src="js/layout.js"></script>
@@ -120,19 +276,23 @@
             currentStudentId = Layout.currentStudent?.id;
             if (!currentStudentId) return;
 
+            const s = Layout.currentStudent;
+            document.getElementById('studentInitial').textContent = s.name.charAt(0);
+
             setupTabs();
             setupUpload();
             document.getElementById('addCardBtn').onclick = addCard;
         });
 
         function setupTabs() {
-            const tabs = document.querySelectorAll('#typeTabs button');
+            const tabs = document.querySelectorAll('#typeTabs .type-tab');
             tabs.forEach(tab => {
                 tab.onclick = () => {
                     cardType = tab.dataset.type;
-                    tabs.forEach(t => t.className = 'flex-1 py-3 px-4 rounded-xl font-bold border-2 border-slate-100 dark:border-slate-800 text-slate-400 hover:border-orange-200');
-                    tab.className = 'flex-1 py-3 px-4 rounded-xl font-bold border-2 border-orange-500 bg-orange-50 dark:bg-orange-900/10 text-orange-600';
-
+                    tabs.forEach(t => {
+                        t.className = 'type-tab flex-1 py-3 px-4 rounded-DEFAULT font-bold text-sm transition-all text-outline hover:text-on-surface-variant';
+                    });
+                    tab.className = 'type-tab flex-1 py-3 px-4 rounded-DEFAULT font-bold text-sm transition-all bg-primary-fixed text-primary shadow-sm';
                     document.getElementById('textInput').classList.toggle('hidden', cardType !== 'text');
                     document.getElementById('imageInput').classList.toggle('hidden', cardType !== 'image');
                 };
@@ -144,7 +304,6 @@
             const fi = document.getElementById('fileInput');
             dz.onclick = () => fi.click();
             fi.onchange = (e) => handleUpload(e.target.files[0]);
-
             document.getElementById('removeImgBtn').onclick = (e) => {
                 e.stopPropagation();
                 uploadedFilename = null;
@@ -163,7 +322,6 @@
                 document.getElementById('placeholder').classList.add('hidden');
             };
             reader.readAsDataURL(file);
-
             try {
                 const res = await API.uploadImage(file);
                 uploadedFilename = res.filename;
@@ -174,11 +332,7 @@
         }
 
         async function addCard() {
-            if (!currentStudentId) {
-                alert('학생 정보가 없습니다.')
-                return
-            }
-
+            if (!currentStudentId) { alert('학생 정보가 없습니다.'); return; }
             const answer = document.getElementById('inputAnswer').value.trim();
             const question = document.getElementById('inputQuestion').value.trim();
             const topic = document.getElementById('inputTopic').value;

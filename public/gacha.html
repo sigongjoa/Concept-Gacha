@@ -1,334 +1,476 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html class="light" lang="ko">
 
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>개념 가챠 - 카드 뽑기</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'surface':                    '#f7f9fb',
+                        'surface-dim':                '#d8dadc',
+                        'surface-container-lowest':   '#ffffff',
+                        'surface-container-low':      '#f2f4f6',
+                        'surface-container':          '#eceef0',
+                        'surface-container-high':     '#e6e8ea',
+                        'surface-container-highest':  '#e0e3e5',
+                        'primary':                    '#9d4300',
+                        'primary-container':          '#f97316',
+                        'primary-fixed':              '#ffdbca',
+                        'primary-fixed-dim':          '#ffb690',
+                        'on-primary':                 '#ffffff',
+                        'secondary':                  '#4648d4',
+                        'secondary-container':        '#6063ee',
+                        'secondary-fixed':            '#e1e0ff',
+                        'secondary-fixed-dim':        '#c0c1ff',
+                        'on-secondary':               '#ffffff',
+                        'on-secondary-container':     '#fffbff',
+                        'tertiary':                   '#006c49',
+                        'tertiary-container':         '#00b07a',
+                        'on-tertiary':                '#ffffff',
+                        'on-tertiary-container':      '#003b26',
+                        'error':                      '#ba1a1a',
+                        'error-container':            '#ffdad6',
+                        'on-error-container':         '#93000a',
+                        'on-surface':                 '#191c1e',
+                        'on-surface-variant':         '#584237',
+                        'outline':                    '#8c7164',
+                        'outline-variant':            '#e0c0b1',
+                        'inverse-surface':            '#2d3133',
+                        'inverse-on-surface':         '#eff1f3',
+                    },
+                    fontFamily: {
+                        'headline': ['Plus Jakarta Sans', 'Noto Sans KR', 'sans-serif'],
+                        'body':     ['Inter', 'Noto Sans KR', 'sans-serif'],
+                        'label':    ['Inter', 'Noto Sans KR', 'sans-serif'],
+                    },
+                    // 합리적인 라운드 값으로 재정의
+                    borderRadius: {
+                        'sm':   '4px',
+                        'DEFAULT': '8px',
+                        'md':   '10px',
+                        'lg':   '12px',
+                        'xl':   '16px',
+                        '2xl':  '20px',
+                        'full': '9999px',
+                    },
+                },
+            },
+        };
+    </script>
+
     <style>
-        body { font-family: 'Inter', 'Noto Sans KR', sans-serif; }
+        body { font-family: 'Inter', 'Noto Sans KR', sans-serif; min-height: max(884px, 100dvh); }
+        .font-headline { font-family: 'Plus Jakarta Sans', 'Noto Sans KR', sans-serif; }
 
-        /* ── 키패드 버튼 공통 ─────────────────────────── */
+        /* ── 글래스 ───────────────────────────────────────── */
+        .glass {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        /* ── 키패드 버튼 ─────────────────────────────────── */
         .kp-btn {
-            height: 4rem;
-            border-radius: 1rem;
-            background: #f1f5f9;
-            font-size: 1.5rem;
+            height: 3.25rem;
+            border-radius: 8px;
+            background: #f2f4f6;
+            font-size: 1.2rem;
             font-weight: 700;
-            border: 2px solid transparent;
-            transition: transform 0.1s, background 0.1s;
+            color: #191c1e;
+            border: none;
+            transition: transform 0.08s, background 0.08s;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        .kp-btn:active { transform: scale(0.92); background: #e2e8f0; }
-        .kp-del { background: #fff1f2 !important; color: #f43f5e; }
-        .kp-del:active { background: #ffe4e6 !important; }
-        .kp-dot { color: #6366f1; }
-        .kp-slash { height: 3.2rem; background: #eef2ff !important; color: #4f46e5; font-size: 1rem; }
-        .kp-slash:active { background: #e0e7ff !important; }
+        .kp-btn:active { transform: scale(0.93); background: #e6e8ea; }
+        .kp-del { background: #ffdad6 !important; color: #93000a !important; }
+        .kp-del:active { background: #ffb4ab !important; }
+        .kp-dot { color: #4648d4; }
+        .kp-slash {
+            height: 2.75rem;
+            background: #e1e0ff !important;
+            color: #4648d4 !important;
+            font-size: 0.85rem;
+            border: 1.5px solid #c0c1ff !important;
+        }
+        .kp-slash:active { background: #c0c1ff !important; }
+        .dark .kp-btn { background: #2d3133; color: #eff1f3; }
+        .dark .kp-btn:active { background: #3a3f42; }
+        .dark .kp-del { background: #93000a !important; color: #ffdad6 !important; }
+        .dark .kp-slash { background: #2f2ebe !important; color: #e1e0ff !important; }
 
-        /* dark mode 키패드 */
-        .dark .kp-btn { background: #1e293b; color: #cbd5e1; }
-        .dark .kp-btn:active { background: #334155; }
-        .dark .kp-del { background: #2d1515 !important; color: #f87171; }
-        .dark .kp-slash { background: #1e1b4b !important; color: #818cf8; }
-
-        /* ── 단위 버튼 ─────────────────────────────────── */
+        /* ── 단위·선택·대수·fillblank 버튼 ─────────────── */
         .unit-btn {
-            padding: 0.6rem 1.1rem;
-            border-radius: 0.75rem;
-            border: 2px solid #e2e8f0;
-            font-size: 1.05rem;
-            font-weight: 700;
-            transition: all 0.15s;
+            padding: 0.45rem 0.9rem;
+            border-radius: 8px;
+            border: 1.5px solid #e0c0b1;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #584237;
+            background: transparent;
+            transition: all 0.12s;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        .unit-btn.selected {
-            border-color: #6366f1;
-            background: #eef2ff;
-            color: #4f46e5;
-        }
-        .dark .unit-btn { border-color: #334155; color: #94a3b8; background: transparent; }
-        .dark .unit-btn.selected { border-color: #818cf8; background: #1e1b4b; color: #a5b4fc; }
+        .unit-btn.selected { border-color: #4648d4; background: #e1e0ff; color: #4648d4; }
+        .dark .unit-btn { border-color: #584237; color: #8c7164; }
+        .dark .unit-btn.selected { border-color: #6063ee; background: #2f2ebe; color: #e1e0ff; }
 
-        /* ── 대수식 변수 버튼 ──────────────────────────── */
         .alg-btn {
-            padding: 0.6rem 1.1rem;
-            border-radius: 0.75rem;
-            border: 2px solid #c7d2fe;
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: #4f46e5;
-            background: #eef2ff;
+            padding: 0.45rem 0.9rem;
+            border-radius: 8px;
+            border: 1.5px solid #c0c1ff;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #4648d4;
+            background: #e1e0ff;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
-            transition: transform 0.1s;
+            transition: transform 0.08s;
         }
         .alg-btn:active { transform: scale(0.92); }
-        .alg-op { border-color: #e2e8f0; color: #475569; background: #f8fafc; }
-        .dark .alg-btn { background: #1e1b4b; border-color: #3730a3; color: #a5b4fc; }
-        .dark .alg-op { background: #1e293b; border-color: #334155; color: #94a3b8; }
+        .alg-op { border-color: #e0c0b1; color: #584237; background: #f2f4f6; }
+        .dark .alg-btn { background: #2f2ebe; border-color: #4648d4; color: #e1e0ff; }
+        .dark .alg-op { background: #2d3133; border-color: #584237; color: #8c7164; }
 
-        /* ── choice 버튼 ────────────────────────────────── */
         .choice-btn {
             flex: 1;
-            padding: 1rem;
-            border-radius: 1rem;
-            border: 2px solid #e2e8f0;
-            font-size: 1.25rem;
-            font-weight: 700;
-            transition: all 0.15s;
+            padding: 0.875rem;
+            border-radius: 10px;
+            border: 1.5px solid #e0c0b1;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #584237;
+            background: transparent;
+            transition: all 0.12s;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        .choice-btn.selected {
-            border-color: #6366f1;
-            background: #eef2ff;
-            color: #4f46e5;
-        }
-        .dark .choice-btn { border-color: #334155; color: #94a3b8; }
-        .dark .choice-btn.selected { border-color: #818cf8; background: #1e1b4b; color: #a5b4fc; }
+        .choice-btn.selected { border-color: #4648d4; background: #e1e0ff; color: #4648d4; }
+        .dark .choice-btn { border-color: #584237; color: #8c7164; }
+        .dark .choice-btn.selected { border-color: #6063ee; background: #2f2ebe; color: #e1e0ff; }
 
-        /* ── fillblank 워드뱅크 ─────────────────────────── */
         .word-chip {
-            padding: 0.5rem 0.9rem;
-            border-radius: 0.75rem;
-            border: 2px solid #c7d2fe;
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: #4f46e5;
-            background: #eef2ff;
+            padding: 0.35rem 0.75rem;
+            border-radius: 8px;
+            border: 1.5px solid #c0c1ff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4648d4;
+            background: #e1e0ff;
             touch-action: manipulation;
-            transition: all 0.15s;
+            transition: all 0.12s;
         }
-        .word-chip:active { transform: scale(0.92); }
-        .word-chip.used { opacity: 0.35; pointer-events: none; }
-        .dark .word-chip { background: #1e1b4b; border-color: #3730a3; color: #a5b4fc; }
+        .word-chip:active { transform: scale(0.93); }
+        .word-chip.used { opacity: 0.3; pointer-events: none; }
+        .dark .word-chip { background: #2f2ebe; border-color: #4648d4; color: #e1e0ff; }
 
-        /* ── blank-slot (fillblank 트리 빈칸) ──────────── */
         .blank-slot {
             display: inline-block;
-            min-width: 7rem;
-            padding: 0.15rem 0.6rem;
-            border-radius: 0.5rem;
-            border: 2px dashed #a5b4fc;
-            background: #f5f3ff;
-            color: #6366f1;
-            font-weight: 700;
+            min-width: 6rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 6px;
+            border: 2px dashed #c0c1ff;
+            background: #e1e0ff;
+            color: #4648d4;
+            font-weight: 600;
             font-size: 0.85rem;
             cursor: pointer;
-            transition: all 0.15s;
+            transition: all 0.12s;
             touch-action: manipulation;
         }
-        .blank-slot.focused { border-style: solid; border-color: #4f46e5; background: #e0e7ff; }
-        .blank-slot.filled { color: #1e293b; background: #f8fafc; border-color: #94a3b8; border-style: solid; }
-        .blank-slot.correct { border-color: #10b981 !important; background: #ecfdf5 !important; color: #059669 !important; }
-        .blank-slot.wrong { border-color: #f43f5e !important; background: #fff1f2 !important; color: #f43f5e !important; }
-        .dark .blank-slot { background: #1e1b4b; border-color: #4338ca; color: #a5b4fc; }
-        .dark .blank-slot.filled { background: #1e293b; color: #e2e8f0; border-color: #475569; }
+        .blank-slot.focused { border-style: solid; border-color: #4648d4; background: #c0c1ff; }
+        .blank-slot.filled { color: #191c1e; background: #f2f4f6; border-color: #8c7164; border-style: solid; }
+        .blank-slot.correct { border-color: #006c49 !important; background: #d1fae5 !important; color: #006c49 !important; }
+        .blank-slot.wrong { border-color: #ba1a1a !important; background: #ffdad6 !important; color: #93000a !important; }
+        .dark .blank-slot { background: #2f2ebe; border-color: #4648d4; color: #e1e0ff; }
+        .dark .blank-slot.filled { background: #2d3133; color: #eff1f3; border-color: #584237; }
+
+        /* ── 채점 결과 ─────────────────────────────────────── */
+        .result-correct { background: rgba(0,176,122,0.10); border-radius: 10px; }
+        .result-wrong   { background: rgba(255,218,214,0.55); border-radius: 10px; }
     </style>
 </head>
 
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 h-screen flex overflow-hidden">
+<body class="bg-surface font-body text-on-surface overflow-x-hidden">
 
-    <!-- Sidebar (Injected) -->
-    <aside
-        class="w-72 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col justify-between z-20 hidden lg:flex">
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 relative overflow-y-auto">
-        <!-- Top Bar -->
-        <div class="sticky top-0 left-0 right-0 flex justify-between items-center p-4 lg:px-12 z-30 pointer-events-none">
-            <button
-                class="lg:hidden p-3 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm pointer-events-auto"
-                id="mobileMenuBtn">
-                <span class="material-symbols-outlined">menu</span>
+    <!-- ── TopAppBar ──────────────────────────────────────────── -->
+    <header class="fixed top-0 w-full z-50 glass bg-surface/80 border-b border-outline-variant/20">
+        <div class="flex justify-between items-center px-5 h-14 max-w-2xl mx-auto">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center flex-shrink-0">
+                    <span class="font-bold text-primary text-xs font-headline" id="studentInitial">?</span>
+                </div>
+                <span class="font-headline font-bold text-primary tracking-tight" id="studentNameLabel">Concept Gacha</span>
+            </div>
+            <button onclick="document.documentElement.classList.toggle('dark')"
+                class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-surface-container-low transition-colors active:scale-90">
+                <span class="material-symbols-outlined text-[20px] text-on-surface-variant">dark_mode</span>
             </button>
-            <button
-                class="p-3 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm pointer-events-auto ml-auto"
-                onclick="document.documentElement.classList.toggle('dark')">
-                <span class="material-symbols-outlined">dark_mode</span>
+        </div>
+    </header>
+
+    <aside id="sidebarInjected" class="hidden"></aside>
+
+    <!-- ── Main ───────────────────────────────────────────────── -->
+    <main class="pt-16 pb-32 px-4 max-w-lg mx-auto space-y-3">
+
+        <!-- ── Draw Zone (카드 없을 때 표시) ─────────────────── -->
+        <div id="drawZone" class="pt-4">
+            <button id="gachaBtn"
+                class="w-full h-13 rounded-full font-label font-semibold text-sm uppercase tracking-[0.08em]
+                       text-on-primary shadow-[0_6px_20px_rgba(157,67,0,0.22)]
+                       transition-all active:scale-[0.97] flex items-center justify-center gap-2.5"
+                style="background: linear-gradient(135deg, #9d4300, #f97316); height: 3.25rem;">
+                <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1">auto_awesome</span>
+                카드 뽑기
             </button>
         </div>
 
-        <div class="w-full max-w-2xl mx-auto flex flex-col items-center gap-10 px-6 lg:px-12 pb-16 relative">
-            <div
-                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-[100px] -z-10 pointer-events-none">
-            </div>
+        <!-- ── HeroCard ──────────────────────────────────────── -->
+        <section id="heroCardSection">
+            <div class="bg-surface-container-lowest dark:bg-inverse-surface rounded-xl overflow-hidden
+                        shadow-[0px_4px_20px_rgba(88,66,55,0.09)] transition-all duration-300"
+                 id="heroCardOuter">
 
-            <!-- Card -->
-            <div class="w-full relative group">
-                <div
-                    class="bg-white dark:bg-slate-900 rounded-[2rem] p-10 md:p-14 shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col items-center text-center">
-                    <div class="absolute top-8 left-8" id="badgeContainer">
-                        <span
-                            class="px-4 py-1.5 rounded-full bg-slate-50 dark:bg-slate-800 text-slate-500 text-xs font-bold border border-slate-100 dark:border-slate-800 flex items-center gap-2">
-                            <span class="h-2 w-2 rounded-full bg-red-500" id="boxDot"></span>
-                            <span id="boxLabel">상자 -</span>
-                        </span>
-                    </div>
+                <!-- 상자 컬러 — 카드 왼쪽 accent bar -->
+                <div class="flex">
+                    <div id="boxAccentBar" class="w-[3px] flex-shrink-0 transition-colors duration-300"
+                         style="background: #e0c0b1"></div>
 
-                    <div class="mt-8 mb-10 w-full">
-                        <h2 class="text-3xl md:text-5xl font-extrabold leading-tight tracking-tight" id="cardQuestion">
-                            카드를 뽑아보세요!</h2>
-                        <div class="hidden" id="cardQuestionImage">
-                            <img src="" class="max-h-64 md:max-h-80 mx-auto rounded-xl shadow-lg"
-                                id="cardQuestionImg" />
+                    <div class="flex-1 px-6 py-6 space-y-4">
+
+                        <!-- 카테고리 라벨 -->
+                        <span class="block text-[10px] font-bold text-primary dark:text-primary-fixed
+                                     uppercase tracking-[0.12em] font-label"
+                              id="cardCategory">개념 가챠</span>
+
+                        <!-- 질문 -->
+                        <div class="space-y-2">
+                            <h2 class="font-headline text-[1.6rem] font-bold leading-[1.25] text-on-surface dark:text-inverse-on-surface"
+                                id="cardQuestion">카드를 뽑아보세요!</h2>
+                            <div id="cardQuestionImage" class="hidden">
+                                <img src="" class="max-h-56 mx-auto rounded-lg shadow-sm" id="cardQuestionImg" />
+                            </div>
+                            <div class="w-8 h-[3px] rounded-full" id="accentLine"
+                                 style="background: rgba(249,115,22,0.35)"></div>
                         </div>
-                    </div>
 
-                    <div class="w-full bg-teal-50 dark:bg-teal-900/10 rounded-2xl p-8 border border-teal-100 dark:border-teal-900/20 mb-10 hidden"
-                        id="answerBox">
-                        <p class="text-2xl font-bold text-teal-700 dark:text-teal-400" id="cardAnswer"></p>
-                    </div>
+                        <!-- 정답 박스 -->
+                        <div class="hidden rounded-lg p-4" id="answerBox"
+                            style="background:rgba(0,176,122,0.12); border: 1px solid rgba(0,176,122,0.22)">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="material-symbols-outlined text-tertiary text-[16px]"
+                                    style="font-variation-settings:'FILL' 1">check_circle</span>
+                                <span class="text-[10px] font-bold text-tertiary font-label uppercase tracking-wider">
+                                    Answer
+                                </span>
+                            </div>
+                            <p class="font-headline text-xl font-bold text-on-tertiary-container dark:text-tertiary-container"
+                                id="cardAnswer"></p>
+                        </div>
 
-                    <button
-                        class="py-4 px-8 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold hidden"
-                        id="showAnswerBtn">정답 보기</button>
+                        <!-- 정답 보기 버튼 -->
+                        <button class="w-full py-3 rounded-lg bg-surface-container-low dark:bg-surface-container
+                                       text-on-surface-variant text-sm font-semibold hidden
+                                       transition-all active:scale-[0.98] hover:bg-surface-container"
+                            id="showAnswerBtn">정답 보기</button>
 
-                    <div class="flex w-full gap-5 mt-auto hidden" id="feedbackBtns">
-                        <button
-                            class="flex-1 py-5 rounded-2xl border-2 border-slate-50 dark:border-slate-800 hover:border-emerald-500 hover:text-emerald-600 font-bold transition-all flex items-center justify-center gap-2"
-                            id="successBtn">
-                            <span class="material-symbols-outlined">check_circle</span> 알고 있었다
-                        </button>
-                        <button
-                            class="flex-1 py-5 rounded-2xl border-2 border-slate-50 dark:border-slate-800 hover:border-rose-500 hover:text-rose-600 font-bold transition-all flex items-center justify-center gap-2"
-                            id="failBtn">
-                            <span class="material-symbols-outlined">cancel</span> 몰랐다
-                        </button>
+                        <!-- 피드백 버튼 -->
+                        <div class="hidden flex w-full gap-3" id="feedbackBtns">
+                            <button class="flex-1 py-3 rounded-lg border border-outline-variant
+                                           hover:border-tertiary hover:bg-tertiary/5 hover:text-tertiary
+                                           text-sm font-semibold transition-all
+                                           text-on-surface-variant active:scale-[0.97] flex items-center justify-center gap-1.5"
+                                id="successBtn">
+                                <span class="material-symbols-outlined text-[16px]">check</span>
+                                알았다
+                            </button>
+                            <button class="flex-1 py-3 rounded-lg border border-outline-variant
+                                           hover:border-error/50 hover:bg-error-container/40 hover:text-on-error-container
+                                           text-sm font-semibold transition-all
+                                           text-on-surface-variant active:scale-[0.97] flex items-center justify-center gap-1.5"
+                                id="failBtn">
+                                <span class="material-symbols-outlined text-[16px]">close</span>
+                                몰랐다
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <!-- 연습 문제 섹션 (topic 있는 카드일 때만 표시) -->
-            <div class="w-full hidden" id="practiceSection">
-                <div class="bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-xl border border-indigo-100 dark:border-indigo-900/30">
-                    <div class="flex items-center justify-between mb-5">
-                        <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined text-indigo-500">calculate</span>
-                            <span class="font-bold text-indigo-600 dark:text-indigo-400" id="practiceTopicLabel"></span>
-                        </div>
-                        <button id="newProblemBtn"
-                            class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold hover:bg-indigo-100 transition-all flex items-center gap-1">
-                            <span class="material-symbols-outlined text-sm">refresh</span> 다른 문제
-                        </button>
+        <!-- ── Practice Panel ─────────────────────────────────── -->
+        <section class="hidden" id="practiceSection">
+            <div class="bg-surface-container dark:bg-surface-container rounded-xl p-5 space-y-4
+                        border border-outline-variant/30">
+
+                <!-- 헤더 -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-1 h-5 rounded-full bg-secondary-container flex-shrink-0"></div>
+                        <h3 class="font-headline font-bold text-base text-on-surface dark:text-inverse-on-surface"
+                            id="practiceTopicLabel"></h3>
                     </div>
+                    <button id="newProblemBtn"
+                        class="text-xs px-3 py-1.5 rounded-lg bg-surface-container-lowest dark:bg-surface-container-high
+                               text-secondary font-semibold hover:bg-secondary-fixed transition-all
+                               flex items-center gap-1 active:scale-95">
+                        <span class="material-symbols-outlined text-[14px]">refresh</span> 다른 문제
+                    </button>
+                </div>
 
-                    <!-- 분수 유형 문제 -->
-                    <div class="mb-5" id="practiceFractionView">
-                        <p class="text-2xl font-black text-center mb-1" id="practiceQuestion"></p>
-                        <div id="practiceHintArea" class="hidden text-center mt-1">
-                            <p class="text-xs text-slate-400" id="practiceQuestionSub"></p>
+                <!-- 문제 카드 -->
+                <div class="bg-surface-container-lowest dark:bg-inverse-surface rounded-xl p-5
+                            shadow-[0px_2px_8px_rgba(88,66,55,0.05)]">
+
+                    <div id="practiceFractionView">
+                        <p class="text-on-surface dark:text-inverse-on-surface font-medium leading-relaxed"
+                            id="practiceQuestion"></p>
+                        <div id="practiceHintArea" class="hidden mt-2">
+                            <p class="text-xs text-outline" id="practiceQuestionSub"></p>
                         </div>
-                        <div id="practiceHintBtnWrap" class="hidden text-center mt-1">
+                        <div id="practiceHintBtnWrap" class="hidden mt-2">
                             <button onclick="document.getElementById('practiceHintArea').classList.remove('hidden');document.getElementById('practiceHintBtnWrap').classList.add('hidden');"
-                                class="text-xs text-slate-400 border border-slate-300 dark:border-slate-600 rounded px-2 py-0.5 hover:bg-slate-100 dark:hover:bg-slate-700">
+                                class="text-xs text-outline border border-outline-variant rounded px-2 py-0.5 hover:bg-surface-container-low">
                                 💡 힌트 보기
                             </button>
                         </div>
-                        <p class="text-sm font-bold text-center text-slate-500 mt-2" id="practiceInstruction">을 분수로 나타내시오</p>
-                        <!-- 도형 SVG (복잡한도형/보조선) -->
+                        <p class="text-sm font-semibold text-outline mt-2" id="practiceInstruction"></p>
                         <div id="practiceShapeView" class="hidden mt-3 flex justify-center"></div>
                     </div>
 
-                    <!-- 트리 빈칸 유형 문제 -->
-                    <div class="mb-5 hidden" id="practiceTreeView">
-                        <p class="text-xs text-center text-slate-400 mb-4">빈칸에 알맞은 말을 쓰시오</p>
+                    <div class="hidden" id="practiceTreeView">
+                        <p class="text-xs text-center text-outline mb-4">빈칸에 알맞은 말을 쓰시오</p>
                         <div id="practiceTreeHTML" class="flex justify-center"></div>
                     </div>
 
-                    <!-- 스마트 입력 패널 (키패드 기반) -->
-                    <div id="smartInputArea" class="hidden mb-4">
+                    <!-- 스마트 입력 -->
+                    <div id="smartInputArea" class="hidden mt-4">
 
-                        <!-- 숫자 디스플레이 (numeric/unit/algebraic 공통) -->
                         <div id="numericDisplayBox" class="hidden mb-3">
-                            <div class="flex items-center justify-center gap-2 py-4 px-6 rounded-2xl bg-slate-50 dark:bg-slate-800 min-h-[5rem]">
-                                <span id="kdValue" class="text-4xl font-black text-slate-400 dark:text-slate-500">?</span>
-                                <span id="kdUnit" class="hidden text-3xl font-black text-indigo-500"></span>
+                            <div class="flex items-center justify-center gap-2 h-12 px-5 rounded-lg
+                                        bg-surface-container-low dark:bg-surface-container">
+                                <span id="kdValue"
+                                    class="text-2xl font-bold text-on-surface-variant dark:text-outline">?</span>
+                                <span id="kdUnit"
+                                    class="hidden text-xl font-bold text-secondary dark:text-secondary-fixed-dim"></span>
                             </div>
                         </div>
 
-                        <!-- 분수 디스플레이 -->
                         <div id="fracDisplayBox" class="hidden mb-3">
                             <div class="flex justify-center py-2">
                                 <div class="text-center min-w-[4rem]">
-                                    <div id="fracNum" class="text-3xl font-black py-1 text-indigo-600 dark:text-indigo-400 border-b-0">?</div>
-                                    <div class="h-[3px] bg-slate-600 dark:bg-slate-300 my-1 rounded"></div>
-                                    <div id="fracDen" class="text-3xl font-black py-1 text-slate-400 dark:text-slate-500">?</div>
+                                    <div id="fracNum"
+                                        class="text-2xl font-bold py-1 text-secondary dark:text-secondary-fixed">?</div>
+                                    <div class="h-[2px] bg-on-surface dark:bg-inverse-on-surface my-1 rounded"></div>
+                                    <div id="fracDen"
+                                        class="text-2xl font-bold py-1 text-outline">?</div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 단위 선택 버튼 패널 -->
                         <div id="unitBtnPanel" class="hidden flex-wrap gap-2 mb-3 justify-center"></div>
-
-                        <!-- 대수식 변수/연산자 버튼 -->
                         <div id="algBtnPanel" class="hidden flex-wrap gap-2 mb-3 justify-center"></div>
-
-                        <!-- 선택지 버튼 (choice / 대소관계 등) -->
                         <div id="choiceBtnPanel" class="hidden flex gap-2 mb-3 justify-center"></div>
 
-                        <!-- 숫자 키패드 -->
-                        <div id="numericKeypad" class="hidden grid grid-cols-3 gap-2 mb-3">
-                            <button class="kp-btn" onclick="IC.key('7')">7</button>
-                            <button class="kp-btn" onclick="IC.key('8')">8</button>
-                            <button class="kp-btn" onclick="IC.key('9')">9</button>
-                            <button class="kp-btn" onclick="IC.key('4')">4</button>
-                            <button class="kp-btn" onclick="IC.key('5')">5</button>
-                            <button class="kp-btn" onclick="IC.key('6')">6</button>
+                        <!-- 4열 숫자 키패드 -->
+                        <div id="numericKeypad" class="hidden grid grid-cols-4 gap-2 mb-3">
                             <button class="kp-btn" onclick="IC.key('1')">1</button>
                             <button class="kp-btn" onclick="IC.key('2')">2</button>
                             <button class="kp-btn" onclick="IC.key('3')">3</button>
-                            <button class="kp-btn kp-dot" onclick="IC.key('.')">.</button>
-                            <button class="kp-btn" onclick="IC.key('0')">0</button>
                             <button class="kp-btn kp-del" onclick="IC.key('⌫')">⌫</button>
-                            <!-- 분수 전환 키 (fraction 모드만 표시) -->
-                            <button id="fracSlashKey" class="hidden kp-btn kp-slash col-span-3" onclick="IC.key('/')">― 분모 입력</button>
+                            <button class="kp-btn" onclick="IC.key('4')">4</button>
+                            <button class="kp-btn" onclick="IC.key('5')">5</button>
+                            <button class="kp-btn" onclick="IC.key('6')">6</button>
+                            <button class="kp-btn kp-dot" onclick="IC.key('.')">.</button>
+                            <button class="kp-btn" onclick="IC.key('7')">7</button>
+                            <button class="kp-btn" onclick="IC.key('8')">8</button>
+                            <button class="kp-btn" onclick="IC.key('9')">9</button>
+                            <button class="kp-btn" onclick="IC.key('0')">0</button>
+                            <button id="fracSlashKey"
+                                class="hidden kp-btn kp-slash col-span-4"
+                                onclick="IC.key('/')">― 분모 입력</button>
                         </div>
 
                         <!-- 채점 버튼 -->
                         <button id="practiceSubmitBtn"
-                            class="w-full py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white font-bold transition-all text-lg touch-manipulation">
+                            class="w-full h-12 rounded-full font-label font-semibold text-sm uppercase tracking-[0.08em]
+                                   text-on-primary shadow-[0_6px_16px_rgba(157,67,0,0.22)]
+                                   transition-all active:scale-[0.97] disabled:opacity-40"
+                            style="background: linear-gradient(135deg, #9d4300, #f97316)">
                             채점
                         </button>
                     </div>
 
-                    <!-- 채점 버튼 (트리/fillblank용) -->
-                    <div class="hidden mb-4" id="practiceTreeSubmitRow">
+                    <!-- 트리 채점 버튼 -->
+                    <div class="hidden mt-4" id="practiceTreeSubmitRow">
                         <button id="practiceTreeSubmitBtn"
-                            class="w-full py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-white font-bold transition-all text-lg touch-manipulation">
+                            class="w-full h-12 rounded-full font-label font-semibold text-sm uppercase tracking-[0.08em]
+                                   text-on-primary shadow-[0_6px_16px_rgba(157,67,0,0.22)]
+                                   transition-all active:scale-[0.97] disabled:opacity-40"
+                            style="background: linear-gradient(135deg, #9d4300, #f97316)">
                             채점
                         </button>
                     </div>
 
-                    <!-- 결과 -->
-                    <div class="hidden rounded-xl p-4" id="practiceResult">
-                        <p class="font-bold text-center mb-3" id="practiceResultMsg"></p>
-                        <!-- 풀이 단계 -->
+                    <!-- 채점 결과 -->
+                    <div class="hidden p-4 mt-3" id="practiceResult">
+                        <p class="font-semibold text-center mb-2" id="practiceResultMsg"></p>
                         <div id="practiceSteps" class="space-y-1 hidden">
-                            <p class="text-xs font-bold text-slate-400 uppercase mb-2">풀이</p>
+                            <p class="text-xs font-bold text-outline uppercase mb-2">풀이</p>
                         </div>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <!-- Gacha Button -->
-            <button
-                class="w-32 h-32 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex flex-col items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-all outline-none"
-                id="gachaBtn">
-                <span class="material-symbols-outlined text-white text-5xl">style</span>
-            </button>
-        </div>
     </main>
+
+    <!-- ── Bottom Navigation ──────────────────────────────────── -->
+    <nav class="fixed bottom-0 left-0 w-full z-40
+                flex justify-around items-center
+                px-4 pb-7 pt-3
+                glass bg-surface/80 border-t border-outline-variant/20">
+        <a href="/index.html"
+            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            <span class="material-symbols-outlined text-[22px]">group</span>
+            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Students</span>
+        </a>
+        <div class="flex flex-col items-center justify-center px-4 py-1.5 rounded-full bg-primary-fixed text-primary">
+            <span class="material-symbols-outlined text-[22px]" style="font-variation-settings:'FILL' 1">auto_awesome</span>
+            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Gacha</span>
+        </div>
+        <a href="/add.html"
+            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            <span class="material-symbols-outlined text-[22px]">add_circle</span>
+            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Add</span>
+        </a>
+        <a href="/list.html"
+            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            <span class="material-symbols-outlined text-[22px]">style</span>
+            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Cards</span>
+        </a>
+        <a href="/admin.html"
+            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            <span class="material-symbols-outlined text-[22px]">settings</span>
+            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Admin</span>
+        </a>
+    </nav>
+
+    <!-- ── Ambient Orbs ───────────────────────────────────────── -->
+    <div class="fixed top-0 -left-24 w-72 h-72 rounded-full pointer-events-none -z-10"
+        style="background:rgba(255,219,202,0.25); filter:blur(80px);"></div>
+    <div class="fixed bottom-32 -right-20 w-72 h-72 rounded-full pointer-events-none -z-10"
+        style="background:rgba(225,224,255,0.18); filter:blur(80px);"></div>
 
     <script type="module" src="js/api.js"></script>
     <script src="js/layout.js"></script>
@@ -339,18 +481,16 @@
         let currentStudentId = null;
         let currentProblem = null;
 
+        // 상자별 컬러
+        const BOX_COLORS = ['#d8dadc', '#f87171', '#facc15', '#60a5fa', '#34d399', '#f97316'];
+
         // ─── InputController (IC) ────────────────────────────────
         const IC = {
-            type: null,    // 'numeric'|'fraction'|'unit'|'algebraic'|'choice'|'fillblank'
-            value: '',
-            unit: '',
-            fracFocus: 'num',   // 'num' | 'den'
-            fracNum: '',
-            fracDen: '',
-            algExpr: '',
-            algCur: '',
-            choiceVal: null,
-            blankFocused: null,  // currently focused blank-slot element
+            type: null,
+            value: '', unit: '',
+            fracFocus: 'num', fracNum: '', fracDen: '',
+            algExpr: '', algCur: '',
+            choiceVal: null, blankFocused: null,
 
             init(gen, problem) {
                 this.type = problem.inputType || gen.inputType || 'numeric';
@@ -359,13 +499,11 @@
                 this.algExpr = ''; this.algCur = '';
                 this.choiceVal = null; this.blankFocused = null;
 
-                // 이전 채점으로 disabled된 키패드 버튼 복구
                 document.querySelectorAll('#numericKeypad button').forEach(b => b.disabled = false);
                 const sb = document.getElementById('practiceSubmitBtn');
                 if (sb) sb.disabled = false;
 
-                // show/hide panels
-                const show = (id, v) => { const el = document.getElementById(id); if(el) el.classList.toggle('hidden', !v); };
+                const show = (id, v) => { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', !v); };
                 const isKey = ['numeric','fraction','unit','algebraic'].includes(this.type);
                 show('smartInputArea',    this.type !== 'fillblank');
                 show('numericDisplayBox', isKey && this.type !== 'fraction');
@@ -377,17 +515,14 @@
                 show('choiceBtnPanel',    this.type === 'choice');
                 show('practiceSubmitBtn', this.type !== 'fillblank');
 
-                // unit buttons
                 if (this.type === 'unit') {
                     const units = gen.units || [];
                     document.getElementById('unitBtnPanel').innerHTML =
                         units.map(u => `<button class="unit-btn" data-unit="${u}" onclick="IC.pickUnit('${u}')">${u}</button>`).join('') +
                         `<button class="unit-btn" data-unit="" onclick="IC.pickUnit('')">없음</button>`;
-                    document.getElementById('unitBtnPanel').classList.remove('hidden');
                     document.getElementById('unitBtnPanel').style.display = 'flex';
                 }
 
-                // algebraic var buttons
                 if (this.type === 'algebraic') {
                     const vars = problem.vars || [];
                     const panel = document.getElementById('algBtnPanel');
@@ -398,7 +533,6 @@
                     panel.style.display = 'flex';
                 }
 
-                // choice buttons
                 if (this.type === 'choice') {
                     const choices = gen.choices || [];
                     document.getElementById('choiceBtnPanel').innerHTML =
@@ -412,8 +546,8 @@
             key(k) {
                 if (this.type === 'fraction') {
                     if (k === '⌫') {
-                        if (this.fracFocus === 'den') this.fracDen = this.fracDen.slice(0,-1);
-                        else this.fracNum = this.fracNum.slice(0,-1);
+                        if (this.fracFocus === 'den') this.fracDen = this.fracDen.slice(0, -1);
+                        else this.fracNum = this.fracNum.slice(0, -1);
                     } else if (k === '/') {
                         this.fracFocus = 'den';
                     } else if (k !== '.') {
@@ -422,24 +556,20 @@
                     }
                 } else if (this.type === 'algebraic') {
                     if (k === '⌫') {
-                        if (this.algCur) this.algCur = this.algCur.slice(0,-1);
-                        else this.algExpr = this.algExpr.trimEnd().slice(0,-1).trimEnd();
+                        if (this.algCur) this.algCur = this.algCur.slice(0, -1);
+                        else this.algExpr = this.algExpr.trimEnd().slice(0, -1).trimEnd();
                     } else if (k !== '.') {
                         this.algCur += k;
                     }
                 } else {
-                    if (k === '⌫') this.value = this.value.slice(0,-1);
+                    if (k === '⌫') this.value = this.value.slice(0, -1);
                     else if (k === '.' && this.value.includes('.')) return;
                     else this.value += k;
                 }
                 this._updateDisplay();
             },
 
-            algVar(v) {
-                this.algExpr += this.algCur + v;
-                this.algCur = '';
-                this._updateDisplay();
-            },
+            algVar(v) { this.algExpr += this.algCur + v; this.algCur = ''; this._updateDisplay(); },
 
             algOp(op) {
                 if (this.algExpr || this.algCur) {
@@ -462,18 +592,15 @@
                 if (btn) btn.classList.add('selected');
             },
 
-            // fillblank: tap blank-slot
             tapBlank(el) {
                 document.querySelectorAll('.blank-slot').forEach(b => b.classList.remove('focused'));
                 el.classList.add('focused');
                 this.blankFocused = el;
             },
 
-            // fillblank: tap word chip
             fillWord(word, chipEl) {
                 if (!this.blankFocused) return;
                 const prev = this.blankFocused.dataset.filled;
-                // unuse previous chip
                 if (prev) {
                     document.querySelectorAll('.word-chip').forEach(c => {
                         if (c.dataset.word === prev) c.classList.remove('used');
@@ -484,19 +611,18 @@
                 this.blankFocused.classList.add('filled');
                 this.blankFocused.classList.remove('focused');
                 if (chipEl) chipEl.classList.add('used');
-                // auto-focus next blank
                 const next = document.querySelector('.blank-slot:not(.filled)');
                 if (next) this.tapBlank(next);
                 else this.blankFocused = null;
             },
 
             getAnswer() {
-                switch(this.type) {
-                    case 'fraction':   return (this.fracNum && this.fracDen) ? `${this.fracNum}/${this.fracDen}` : '';
-                    case 'unit':       return this.value + this.unit;
-                    case 'choice':     return this.choiceVal || '';
-                    case 'algebraic':  return (this.algExpr + this.algCur).trim();
-                    default:           return this.value;
+                switch (this.type) {
+                    case 'fraction':  return (this.fracNum && this.fracDen) ? `${this.fracNum}/${this.fracDen}` : '';
+                    case 'unit':      return this.value + this.unit;
+                    case 'choice':    return this.choiceVal || '';
+                    case 'algebraic': return (this.algExpr + this.algCur).trim();
+                    default:          return this.value;
                 }
             },
 
@@ -513,16 +639,14 @@
                     if (!numEl) return;
                     numEl.textContent = this.fracNum || '?';
                     denEl.textContent = this.fracDen || '?';
-                    numEl.style.opacity = this.fracFocus === 'num' ? '1' : '0.45';
-                    denEl.style.opacity = this.fracFocus === 'den' ? '1' : '0.45';
+                    numEl.style.opacity = this.fracFocus === 'num' ? '1' : '0.4';
+                    denEl.style.opacity = this.fracFocus === 'den' ? '1' : '0.4';
                 } else {
                     const valEl = document.getElementById('kdValue');
                     const unitEl = document.getElementById('kdUnit');
                     if (!valEl) return;
                     if (this.type === 'algebraic') {
-                        const full = (this.algExpr + this.algCur).trim();
-                        valEl.textContent = full || '?';
-                        valEl.style.color = '';
+                        valEl.textContent = (this.algExpr + this.algCur).trim() || '?';
                     } else {
                         valEl.textContent = this.value || '?';
                     }
@@ -533,12 +657,20 @@
                 }
             },
         };
+
         // ─────────────────────────────────────────────────────────
 
         document.addEventListener('DOMContentLoaded', () => {
             Layout.init();
             currentStudentId = Layout.currentStudent?.id;
             if (!currentStudentId) return;
+
+            const studentName = Layout.currentStudent?.name || '';
+            if (studentName) {
+                document.getElementById('studentInitial').textContent = studentName[0];
+                document.getElementById('studentNameLabel').textContent = studentName;
+                document.getElementById('cardCategory').textContent = studentName + '의 개념 카드';
+            }
 
             document.getElementById('gachaBtn').onclick = pullCard;
             document.getElementById('showAnswerBtn').onclick = () => {
@@ -548,26 +680,31 @@
             };
             document.getElementById('successBtn').onclick = () => submitFeedback(true);
             document.getElementById('failBtn').onclick   = () => submitFeedback(false);
-
             document.getElementById('newProblemBtn').onclick = () => loadPractice(currentCard._inferredTopic || currentCard.topic);
             document.getElementById('practiceSubmitBtn').onclick = submitPractice;
             document.getElementById('practiceTreeSubmitBtn').onclick = submitPractice;
         });
 
         async function pullCard() {
+            const btn = document.getElementById('gachaBtn');
+            btn.disabled = true;
             try {
                 currentCard = await API.getRandomCard(currentStudentId);
                 displayCard(currentCard);
             } catch (e) {
+                btn.disabled = false;
                 if (e.message === 'NO_CARDS') Layout.showToast('카드가 없습니다. 추가해주세요!', true);
                 else Layout.showToast('카드 뽑기 실패', true);
             }
         }
 
         function displayCard(card) {
-            const qTxt = document.getElementById('cardQuestion');
+            // DrawZone 숨김
+            document.getElementById('drawZone').classList.add('hidden');
+
+            const qTxt    = document.getElementById('cardQuestion');
             const qImgBox = document.getElementById('cardQuestionImage');
-            const qImg = document.getElementById('cardQuestionImg');
+            const qImg    = document.getElementById('cardQuestionImg');
 
             if (card.type === 'image' && card.questionImage) {
                 qTxt.classList.add('hidden');
@@ -580,15 +717,18 @@
             }
 
             document.getElementById('cardAnswer').textContent = card.answer || '-';
-            document.getElementById('boxLabel').textContent = `상자 ${card.box}`;
-            const colors = ['', 'bg-red-500', 'bg-yellow-500', 'bg-blue-500', 'bg-emerald-500'];
-            document.getElementById('boxDot').className = `h-2 w-2 rounded-full ${colors[card.box]}`;
+
+            // 상자 accent bar 색상 업데이트
+            document.getElementById('boxAccentBar').style.background = BOX_COLORS[card.box] || '#d8dadc';
 
             document.getElementById('answerBox').classList.add('hidden');
             document.getElementById('showAnswerBtn').classList.remove('hidden');
             document.getElementById('feedbackBtns').classList.add('hidden');
 
-            // 연습 문제 섹션: 명시된 topic 또는 텍스트에서 추론한 topic 사용
+            const studentName = Layout.currentStudent?.name || '';
+            document.getElementById('cardCategory').textContent =
+                card.topic || (studentName ? studentName + '의 개념' : '개념 카드');
+
             const practiceSection = document.getElementById('practiceSection');
             const topic = inferTopicClient(card);
             if (topic && PROBLEM_GENERATORS[topic]) {
@@ -600,7 +740,6 @@
             }
         }
 
-        // 서버의 inferTopic과 동일한 로직 (클라이언트 버전)
         function inferTopicClient(card) {
             if (card.topic && PROBLEM_GENERATORS[card.topic]) return card.topic;
             const q = (card.question || '').toLowerCase();
@@ -612,14 +751,10 @@
             if (/동류항/.test(all))                                      return '동류항';
             if (/보조선|ㄱ자|ㄷ자|복잡한.도형|도형.나누/.test(all))    return '복잡한도형';
             if (/km²|m²|cm²|mm²|넓이.단위|단위.변환.*넓이/.test(all)) return '단위변환';
-
-            // 김시우 특화 — 초5 도형 취약 유형
             if (/원에 내접|내접하는 마름모|원.*마름모.*넓이|마름모.*원.*넓이/.test(all)) return '원내접마름모';
             if (/종이.접|접어서|접었을 때|접힌.*삼각형|합동.*삼각형/.test(all))         return '종이접기';
             if (/넓이.*주어.*변|변.*길이.*구|역산|높이.*구하|세로.*구하/.test(all))      return '넓이역산';
             if (/색칠.*부분|색칠한.*넓이|색칠.*면적|빈 부분.*빼/.test(all))             return '색칠부분';
-
-            // question 우선 (answer에만 있으면 정의 카드 오염 위험)
             if (/거듭제곱|밑.*지수|지수.*밑/.test(q))  return '거듭제곱';
             if (/역수/.test(q))                          return '역수';
             if (/약분|기약분수|통분/.test(q))            return '약분';
@@ -627,18 +762,14 @@
             if (/소수|합성수/.test(q))                   return '소수';
             if (/제곱근|√/.test(q))                      return '제곱근';
             if (/대소관계|크기.*비교/.test(q))           return '대소관계';
-
-            // 도형 공식 카드 (answer에 ×/÷ 포함된 짧은 공식)
             const isFormula = a.length < 60 && /[×÷]/.test(a);
             if (/삼각형.*(넓이|공식)/.test(all))                         return '삼각형';
             if (/직사각형|정사각형/.test(q) || (isFormula && /직사각형/.test(a))) return '직사각형';
             if (/마름모/.test(all))                                       return '마름모';
             if (/사다리꼴/.test(all))                                     return '사다리꼴';
-
             return null;
         }
 
-        // 수체계 트리 HTML 생성 (blank-slot 방식)
         function buildTreeHTML(blankIds) {
             const gen = PROBLEM_GENERATORS['수체계'];
             const node = (id, label) => {
@@ -646,7 +777,7 @@
                     const aliases = gen.aliases[id] || [label];
                     return `<span class="blank-slot" data-id="${id}" data-aliases='${JSON.stringify(aliases)}' onclick="IC.tapBlank(this)">빈칸</span>`;
                 }
-                return `<span class="font-bold text-slate-700 dark:text-slate-200">${label}</span>`;
+                return `<span class="font-bold text-on-surface dark:text-inverse-on-surface">${label}</span>`;
             };
             return `
             <div class="font-mono text-sm leading-loose text-left inline-block">
@@ -661,7 +792,6 @@
             </div>`;
         }
 
-        // 수체계 워드뱅크 HTML 생성
         function buildWordBank() {
             const allWords = ['유리수','정수','양의 정수 (자연수)','0','음의 정수','정수가 아닌 유리수','유한소수','순환소수'];
             const shuffled = [...allWords].sort(() => Math.random() - 0.5);
@@ -679,7 +809,6 @@
             document.getElementById('practiceSteps').classList.add('hidden');
 
             if (currentProblem.type === 'fillblank') {
-                // 수체계 트리 모드 (워드뱅크)
                 document.getElementById('practiceFractionView').classList.add('hidden');
                 document.getElementById('smartInputArea').classList.add('hidden');
                 document.getElementById('practiceTreeView').classList.remove('hidden');
@@ -688,11 +817,9 @@
                     buildTreeHTML(currentProblem.blankIds) + buildWordBank();
                 document.getElementById('practiceTreeSubmitBtn').disabled = false;
                 IC.blankFocused = null;
-                // 첫 번째 빈칸 자동 포커스
                 const first = document.querySelector('.blank-slot');
                 if (first) IC.tapBlank(first);
             } else {
-                // 일반 문제 모드 (키패드)
                 document.getElementById('practiceTreeView').classList.add('hidden');
                 document.getElementById('practiceTreeSubmitRow').classList.add('hidden');
                 document.getElementById('practiceFractionView').classList.remove('hidden');
@@ -702,7 +829,6 @@
                 document.getElementById('practiceHintArea').classList.add('hidden');
                 document.getElementById('practiceHintBtnWrap').classList.toggle('hidden', !sub);
                 document.getElementById('practiceInstruction').textContent = gen.instruction || '답을 구하시오';
-                // 도형 SVG 렌더링
                 const shapeView = document.getElementById('practiceShapeView');
                 if (currentProblem.shape && window.ShapeRenderer) {
                     shapeView.innerHTML = ShapeRenderer.render(currentProblem.shape, { width: 320, height: 220 });
@@ -711,7 +837,6 @@
                     shapeView.classList.add('hidden');
                     shapeView.innerHTML = '';
                 }
-                // 키패드 초기화
                 IC.init(gen, currentProblem);
                 document.getElementById('practiceSubmitBtn').disabled = false;
             }
@@ -721,33 +846,28 @@
             if (!currentProblem) return;
             const resultBox = document.getElementById('practiceResult');
             const resultMsg = document.getElementById('practiceResultMsg');
-            const stepsBox = document.getElementById('practiceSteps');
-            resultBox.classList.remove('hidden', 'bg-emerald-50', 'bg-rose-50', 'dark:bg-emerald-900/10', 'dark:bg-rose-900/10');
-            stepsBox.innerHTML = '<p class="text-xs font-bold text-slate-400 uppercase mb-2">풀이</p>';
+            const stepsBox  = document.getElementById('practiceSteps');
+            resultBox.classList.remove('hidden', 'result-correct', 'result-wrong');
+            stepsBox.innerHTML = '<p class="text-xs font-bold text-outline uppercase mb-2">풀이</p>';
 
             let correct;
 
             if (currentProblem.type === 'fillblank') {
-                // 수체계 트리 채점 (blank-slot 방식)
                 const slots = document.querySelectorAll('.blank-slot');
                 let hasWrong = false;
                 slots.forEach(slot => {
                     const aliases = JSON.parse(slot.dataset.aliases || '[]');
-                    const filled = slot.dataset.filled || '';
+                    const filled  = slot.dataset.filled || '';
                     const ok = aliases.some(a => a === filled);
                     slot.classList.remove('focused', 'filled');
                     slot.classList.toggle('correct', ok);
                     slot.classList.toggle('wrong', !ok);
-                    if (!ok) {
-                        hasWrong = true;
-                        slot.textContent = `✗ ${aliases[0]}`;
-                    }
+                    if (!ok) { hasWrong = true; slot.textContent = `✗ ${aliases[0]}`; }
                 });
                 correct = !hasWrong;
                 document.getElementById('practiceTreeSubmitBtn').disabled = true;
                 document.querySelectorAll('.word-chip').forEach(c => c.disabled = true);
             } else {
-                // 키패드 입력 채점
                 const gen = PROBLEM_GENERATORS[currentCard._inferredTopic || currentCard.topic];
                 const userInput = IC.getAnswer();
                 if (!userInput) return;
@@ -757,7 +877,7 @@
                 if (!correct && currentProblem.steps) {
                     currentProblem.steps.forEach(step => {
                         const p = document.createElement('p');
-                        p.className = 'text-sm text-slate-600 dark:text-slate-300 font-mono';
+                        p.className = 'text-sm text-on-surface-variant font-mono';
                         p.textContent = step;
                         stepsBox.appendChild(p);
                     });
@@ -766,13 +886,15 @@
             }
 
             if (correct) {
-                resultBox.classList.add('bg-emerald-50', 'dark:bg-emerald-900/10');
+                resultBox.classList.add('result-correct');
                 resultMsg.textContent = '✓ 정답!';
-                resultMsg.className = 'font-bold text-center mb-3 text-emerald-600 dark:text-emerald-400';
+                resultMsg.className = 'font-semibold text-center mb-2 text-tertiary font-headline';
             } else {
-                resultBox.classList.add('bg-rose-50', 'dark:bg-rose-900/10');
-                resultMsg.textContent = currentProblem.type === 'fillblank' ? '✗ 틀렸습니다' : `✗ 오답 — 정답: ${currentProblem.answer}`;
-                resultMsg.className = 'font-bold text-center mb-3 text-rose-600 dark:text-rose-400';
+                resultBox.classList.add('result-wrong');
+                resultMsg.textContent = currentProblem.type === 'fillblank'
+                    ? '✗ 다시 확인해볼까요?'
+                    : `✗ 정답: ${currentProblem.answer}`;
+                resultMsg.className = 'font-semibold text-center mb-2 text-on-error-container font-headline';
             }
         }
 
@@ -780,24 +902,35 @@
             if (!currentCard) return;
             try {
                 await API.submitFeedback(currentCard.id, success, currentStudentId);
-                Layout.showToast(success ? '정답!' : '다시 해보세요!');
+                Layout.showToast(success ? '잘 기억하고 있어요!' : '한 번 더 연습해봐요');
 
-                // Reset UI
+                // 카드 초기화
                 document.getElementById('cardQuestion').textContent = '카드를 뽑아보세요!';
                 document.getElementById('cardQuestion').classList.remove('hidden');
                 document.getElementById('cardQuestionImage').classList.add('hidden');
                 document.getElementById('answerBox').classList.add('hidden');
                 document.getElementById('showAnswerBtn').classList.add('hidden');
                 document.getElementById('feedbackBtns').classList.add('hidden');
+                document.getElementById('boxAccentBar').style.background = '#e0c0b1';
+                document.getElementById('practiceSection').classList.add('hidden');
+
+                const studentName = Layout.currentStudent?.name || '';
+                document.getElementById('cardCategory').textContent = studentName ? studentName + '의 개념 카드' : '개념 가챠';
                 currentCard = null;
+
+                // DrawZone 다시 표시
+                const dz = document.getElementById('drawZone');
+                dz.classList.remove('hidden');
+                document.getElementById('gachaBtn').disabled = false;
+
                 Layout.loadStats();
             } catch (e) {
                 Layout.showToast('저장 실패', true);
             }
         }
 
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches)
+            document.documentElement.classList.add('dark');
     </script>
 </body>
-
 </html>
