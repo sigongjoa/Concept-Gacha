@@ -18,6 +18,39 @@ const API = {
     },
 
     // ============================================
+    // 인증 API
+    // ============================================
+    async login(name, pin) {
+        return this._fetch('/api/auth/login', {
+            method: 'POST',
+            body: JSON.stringify({ name, pin })
+        })
+    },
+
+    async teacherLogin(pin) {
+        return this._fetch('/api/auth/teacher', {
+            method: 'POST',
+            body: JSON.stringify({ pin })
+        })
+    },
+
+    async setStudentPin(id, pin, teacherPin) {
+        return this._fetch(`/api/students/${id}/pin`, {
+            method: 'PUT',
+            headers: { 'X-Teacher-Pin': teacherPin },
+            body: JSON.stringify({ pin })
+        })
+    },
+
+    async setTeacherPin(currentPin, newPin) {
+        return this._fetch('/api/auth/teacher-pin', {
+            method: 'PUT',
+            headers: { 'X-Teacher-Pin': currentPin },
+            body: JSON.stringify({ newPin })
+        })
+    },
+
+    // ============================================
     // 학생 관리 API
     // ============================================
     async getStudents() {

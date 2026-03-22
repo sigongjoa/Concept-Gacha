@@ -58,15 +58,19 @@ function loadData() {
     if (fs.existsSync(DATA_FILE)) {
       const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
       // 새 필드 기본값 보장 (하위 호환)
-      if (!data.curricula) data.curricula = [];
-      if (!data.progress)  data.progress  = [];
-      data.students.forEach(s => { if (!s.enrolledCurricula) s.enrolledCurricula = []; });
+      if (!data.curricula)   data.curricula  = [];
+      if (!data.progress)    data.progress   = [];
+      if (!data.teacherPin)  data.teacherPin = '1234';
+      data.students.forEach(s => {
+        if (!s.enrolledCurricula) s.enrolledCurricula = [];
+        if (!s.pin) s.pin = '0000';
+      });
       return data;
     }
   } catch (e) {
     console.error('데이터 로드 실패:', e);
   }
-  return { students: [], cards: [], curricula: [], progress: [] };
+  return { students: [], cards: [], curricula: [], progress: [], teacherPin: '1234' };
 }
 
 // 커리큘럼 카드의 학생별 진도 조회/생성 헬퍼
@@ -93,10 +97,10 @@ function saveData(data) {
 
 // ============ 학생 API ============
 
-// 모든 학생 목록
+// 모든 학생 목록 (PIN 제외)
 app.get('/api/students', (req, res) => {
   const data = loadData();
-  res.json(data.students);
+  res.json(data.students.map(({ pin, ...s }) => s));
 });
 
 // 특정 학생 정보
@@ -127,6 +131,7 @@ app.post('/api/students', (req, res) => {
   const newStudent = {
     id: Date.now().toString(),
     name: name.trim(),
+    pin: '0000',
     createdAt: new Date().toISOString(),
   };
 
@@ -168,6 +173,53 @@ app.patch('/api/students/:id', (req, res) => {
 
   saveData(data);
   res.json(student);
+});
+
+// ============ 인증 API ============
+
+// 학생 로그인
+app.post('/api/auth/login', (req, res) => {
+  const { name, pin } = req.body;
+  if (!name || !pin) return res.status(400).json({ error: '이름과 PIN을 입력해주세요' });
+  const data = loadData();
+  const student = data.students.find(s => s.name === name.trim() && s.pin === pin);
+  if (!student) return res.status(401).json({ error: '이름 또는 PIN이 올바르지 않습니다' });
+  const { pin: _, ...safeStudent } = student;
+  res.json(safeStudent);
+});
+
+// 선생님 로그인
+app.post('/api/auth/teacher', (req, res) => {
+  const { pin } = req.body;
+  const data = loadData();
+  if (pin !== data.teacherPin) return res.status(401).json({ error: 'PIN이 올바르지 않습니다' });
+  res.json({ ok: true });
+});
+
+// 학생 PIN 변경 (선생님 전용)
+app.put('/api/students/:id/pin', (req, res) => {
+  const teacherPin = req.headers['x-teacher-pin'];
+  const data = loadData();
+  if (teacherPin !== data.teacherPin) return res.status(401).json({ error: '선생님 인증 필요' });
+  const { pin } = req.body;
+  if (!pin || !/^\d{4}$/.test(pin)) return res.status(400).json({ error: '4자리 숫자 PIN을 입력해주세요' });
+  const student = data.students.find(s => s.id === req.params.id);
+  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
+  student.pin = pin;
+  saveData(data);
+  res.json({ success: true });
+});
+
+// 선생님 PIN 변경
+app.put('/api/auth/teacher-pin', (req, res) => {
+  const teacherPin = req.headers['x-teacher-pin'];
+  const data = loadData();
+  if (teacherPin !== data.teacherPin) return res.status(401).json({ error: '현재 PIN이 올바르지 않습니다' });
+  const { newPin } = req.body;
+  if (!newPin || !/^\d{4}$/.test(newPin)) return res.status(400).json({ error: '4자리 숫자 PIN을 입력해주세요' });
+  data.teacherPin = newPin;
+  saveData(data);
+  res.json({ success: true });
 });
 
 // ============ 커리큘럼 API ============

@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>개념 가챠 - 학생 선택</title>
+    <title>개념 가챠 - 로그인</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
@@ -59,9 +59,10 @@
                         'label':    ['Inter', 'Noto Sans KR', 'sans-serif'],
                     },
                     borderRadius: {
-                        'DEFAULT': '1rem',
-                        'lg': '2rem',
-                        'xl': '3rem',
+                        'DEFAULT': '0.75rem',
+                        'lg': '1rem',
+                        'xl': '1.25rem',
+                        '2xl': '1.5rem',
                         'full': '9999px',
                     },
                 },
@@ -76,8 +77,27 @@
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
         }
-        .student-btn:hover .student-avatar { transform: scale(1.1); }
-        .student-avatar { transition: transform 0.2s; }
+        .key-btn {
+            transition: transform 0.08s, background 0.08s;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .key-btn:active { transform: scale(0.92); }
+        .pin-dot {
+            transition: background 0.15s, transform 0.15s;
+        }
+        .pin-dot.filled {
+            background: #9d4300;
+            transform: scale(1.15);
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%       { transform: translateX(-8px); }
+            40%       { transform: translateX(8px); }
+            60%       { transform: translateX(-6px); }
+            80%       { transform: translateX(6px); }
+        }
+        .shake { animation: shake 0.4s ease; }
     </style>
 </head>
 
@@ -89,124 +109,155 @@
     <div class="fixed bottom-0 -right-24 w-80 h-80 rounded-full pointer-events-none -z-10"
         style="background:rgba(225,224,255,0.25); filter:blur(100px);"></div>
 
-    <div class="w-full max-w-md py-12">
+    <div class="w-full max-w-sm py-8">
 
         <!-- ── Brand Hero ─────────────────────────────────────── -->
-        <div class="text-center mb-10 px-4">
-            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4
-                        shadow-[0px_10px_30px_rgba(157,67,0,0.30)]"
+        <div class="text-center mb-8 px-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4
+                        shadow-[0px_8px_24px_rgba(157,67,0,0.28)]"
                 style="background: linear-gradient(135deg, #9d4300, #f97316)">
-                <span class="material-symbols-outlined text-white text-3xl"
+                <span class="material-symbols-outlined text-white text-2xl"
                     style="font-variation-settings:'FILL' 1">auto_awesome</span>
             </div>
-            <h1 class="font-headline text-4xl font-bold text-primary mb-2 tracking-tight">Concept Gacha</h1>
-            <p class="text-on-surface-variant text-sm leading-relaxed">
-                몰랐던 것을 기록하고<br/>랜덤으로 꺼내서 기억하자
-            </p>
+            <h1 class="font-headline text-3xl font-bold text-primary mb-1 tracking-tight">Concept Gacha</h1>
+            <p class="text-on-surface-variant text-xs">이름과 PIN으로 로그인하세요</p>
         </div>
 
-        <!-- ── Student Card ───────────────────────────────────── -->
-        <div class="bg-surface-container-lowest rounded-xl overflow-hidden
-                    shadow-[0px_20px_40px_rgba(88,66,55,0.06)]">
+        <!-- ── Login Card ─────────────────────────────────────── -->
+        <div class="bg-surface-container-lowest rounded-2xl overflow-hidden
+                    shadow-[0px_16px_40px_rgba(88,66,55,0.08)]">
 
-            <!-- Header -->
-            <div class="px-8 pt-8 pb-4">
-                <div class="flex items-center gap-2 mb-5">
-                    <span class="material-symbols-outlined text-secondary-container text-xl"
-                        style="font-variation-settings:'FILL' 1">group</span>
-                    <h2 class="font-headline text-lg font-bold text-on-surface">학생 선택</h2>
-                </div>
+            <div class="px-7 pt-7 pb-5 space-y-5">
 
-                <!-- Student List -->
-                <div id="studentList" class="space-y-2.5 mb-6">
-                    <div class="text-center py-8 text-outline text-sm">불러오는 중...</div>
-                </div>
-
-                <!-- Add Student -->
-                <div class="flex gap-2">
+                <!-- Name Input -->
+                <div>
+                    <label class="text-xs font-bold text-outline uppercase tracking-widest mb-2 block">이름</label>
                     <input
                         type="text"
-                        id="newStudentName"
-                        placeholder="새 학생 이름"
-                        class="flex-1 px-4 py-3 rounded-DEFAULT
+                        id="nameInput"
+                        placeholder="이름을 입력하세요"
+                        autocomplete="off"
+                        class="w-full px-4 py-3 rounded-DEFAULT
                                bg-surface-container-low border-0 outline-none
-                               text-on-surface placeholder-outline text-sm
-                               focus:bg-surface-container transition-colors
-                               focus:ring-2 focus:ring-primary/20"
-                        onkeydown="if(event.key==='Enter') addStudent()"
+                               text-on-surface placeholder-outline text-sm font-bold
+                               focus:bg-white focus:ring-2 focus:ring-primary/20
+                               transition-colors"
                     />
-                    <button
-                        onclick="addStudent()"
-                        class="px-5 py-3 rounded-DEFAULT text-on-primary font-bold text-sm
-                               transition-all active:scale-95 shadow-[0_6px_20px_rgba(157,67,0,0.25)]"
-                        style="background: linear-gradient(135deg, #9d4300, #f97316)">
-                        추가
+                </div>
+
+                <!-- PIN Display -->
+                <div>
+                    <label class="text-xs font-bold text-outline uppercase tracking-widest mb-3 block">PIN</label>
+                    <div id="pinDots" class="flex justify-center gap-4 py-2">
+                        <div class="pin-dot w-4 h-4 rounded-full border-2 border-outline-variant bg-transparent"></div>
+                        <div class="pin-dot w-4 h-4 rounded-full border-2 border-outline-variant bg-transparent"></div>
+                        <div class="pin-dot w-4 h-4 rounded-full border-2 border-outline-variant bg-transparent"></div>
+                        <div class="pin-dot w-4 h-4 rounded-full border-2 border-outline-variant bg-transparent"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error message -->
+            <div id="errorMsg" class="hidden mx-7 mb-3 px-4 py-2.5 rounded-DEFAULT bg-error-container text-on-error-container text-sm font-bold text-center"></div>
+
+            <!-- ── Numeric Keypad ──────────────────────────────── -->
+            <div class="px-7 pb-7">
+                <div class="grid grid-cols-3 gap-2.5">
+                    <!-- 1-9 -->
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('1')">1</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('2')">2</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('3')">3</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('4')">4</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('5')">5</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('6')">6</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('7')">7</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('8')">8</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('9')">9</button>
+                    <!-- Bottom row -->
+                    <div></div>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('0')">0</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-outline" onclick="pressBackspace()">
+                        <span class="material-symbols-outlined text-xl">backspace</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Footer hint -->
-            <div class="px-8 py-4 bg-surface-container-low/50">
-                <p class="text-xs text-outline text-center">학생을 선택하면 학습을 시작합니다</p>
+            <!-- Bottom hint -->
+            <div class="px-7 pb-5 bg-surface-container-low/40">
+                <p class="text-xs text-outline text-center pt-4">4자리 PIN 입력 시 자동으로 로그인됩니다</p>
+                <a href="/admin.html" class="block text-center text-xs text-secondary mt-2 font-bold hover:underline">선생님이신가요? 관리자 페이지 →</a>
             </div>
         </div>
-
     </div>
 
     <script type="module" src="js/api.js"></script>
-    <script type="module">
-        window.selectStudent = function(id, name) {
-            localStorage.setItem('currentStudent', JSON.stringify({ id, name }));
-            window.location.href = 'gacha.html';
-        };
+    <script>
+        let pin = '';
 
-        window.addStudent = async function() {
-            const input = document.getElementById('newStudentName');
-            const name = input.value.trim();
-            if (!name) return;
-            try {
-                await API.addStudent(name);
-                input.value = '';
-                loadStudents();
-            } catch (e) {
-                alert('추가 실패: ' + e.message);
-            }
-        };
+        function pressKey(digit) {
+            if (pin.length >= 4) return;
+            pin += digit;
+            updateDots();
+            if (pin.length === 4) setTimeout(doLogin, 120);
+        }
 
-        async function loadStudents() {
-            const list = document.getElementById('studentList');
-            try {
-                const students = await API.getStudents();
-                if (students.length === 0) {
-                    list.innerHTML = `
-                        <div class="text-center py-8 text-outline text-sm">
-                            <span class="material-symbols-outlined block text-3xl mb-2 text-surface-dim">person_add</span>
-                            등록된 학생이 없습니다.<br/>아래에서 학생을 추가하세요.
-                        </div>`;
-                    return;
+        function pressBackspace() {
+            pin = pin.slice(0, -1);
+            updateDots();
+            hideError();
+        }
+
+        function updateDots() {
+            const dots = document.querySelectorAll('#pinDots .pin-dot');
+            dots.forEach((dot, i) => {
+                if (i < pin.length) {
+                    dot.classList.add('filled');
+                    dot.style.borderColor = '#9d4300';
+                } else {
+                    dot.classList.remove('filled');
+                    dot.style.borderColor = '';
                 }
-                list.innerHTML = students.map(s => `
-                    <button
-                        onclick="selectStudent('${s.id}', '${s.name.replace(/'/g, "\\'")}')"
-                        class="student-btn w-full flex items-center gap-4 px-5 py-4 rounded-DEFAULT
-                               bg-surface-container-low hover:bg-primary-fixed/40
-                               transition-all active:scale-98 text-left group">
-                        <div class="student-avatar w-10 h-10 rounded-full
-                                    bg-primary-fixed text-primary
-                                    flex items-center justify-center font-bold text-lg font-headline">
-                            ${s.name.charAt(0)}
-                        </div>
-                        <span class="flex-1 font-bold text-on-surface">${s.name}</span>
-                        <span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">arrow_forward_ios</span>
-                    </button>
-                `).join('');
+            });
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('errorMsg');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+            const dots = document.getElementById('pinDots');
+            dots.classList.add('shake');
+            setTimeout(() => dots.classList.remove('shake'), 400);
+            pin = '';
+            updateDots();
+        }
+
+        function hideError() {
+            document.getElementById('errorMsg').classList.add('hidden');
+        }
+
+        async function doLogin() {
+            const name = document.getElementById('nameInput').value.trim();
+            if (!name) {
+                showError('이름을 입력해주세요');
+                document.getElementById('nameInput').focus();
+                return;
+            }
+            try {
+                const student = await API.login(name, pin);
+                localStorage.setItem('currentStudent', JSON.stringify({ id: student.id, name: student.name }));
+                window.location.href = 'gacha.html';
             } catch (e) {
-                list.innerHTML = '<div class="text-center py-6 text-error text-sm">로드 실패</div>';
+                showError(e.message || '로그인 실패');
             }
         }
 
+        // keyboard support
+        document.getElementById('nameInput').addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9') pressKey(e.key);
+            else if (e.key === 'Backspace' && e.target.value === '') pressBackspace();
+        });
+
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
-        loadStudents();
     </script>
 </body>
 

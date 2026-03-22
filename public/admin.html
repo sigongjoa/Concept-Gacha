@@ -6,110 +6,323 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>개념 가챠 - 관리자</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <style>
-        body {
-            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+        body { font-family: 'Inter', 'Noto Sans KR', sans-serif; }
+        .key-btn { transition: transform 0.08s, background 0.08s; user-select: none; }
+        .key-btn:active { transform: scale(0.92); }
+        .pin-dot { transition: background 0.15s, transform 0.15s; }
+        .pin-dot.filled { background: #9d4300; transform: scale(1.15); }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-6px); }
+            80% { transform: translateX(6px); }
         }
+        .shake { animation: shake 0.4s ease; }
     </style>
 </head>
 
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 h-screen flex overflow-hidden">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 min-h-screen">
 
-    <aside
-        class="w-72 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col justify-between z-20 hidden lg:flex">
-    </aside>
-
-    <main class="flex-1 p-6 lg:p-12 overflow-y-auto">
-        <div class="flex justify-between items-center mb-10">
-            <h1 class="text-3xl font-black">관리자 대시보드</h1>
-            <button class="p-3 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800"
-                onclick="document.documentElement.classList.toggle('dark')">
-                <span class="material-symbols-outlined">dark_mode</span>
-            </button>
-        </div>
-
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            <!-- Student Management -->
-            <section
-                class="bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-2xl border border-slate-100 dark:border-slate-800">
-                <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-orange-500">group</span> 학생 관리
-                </h2>
-                <div class="space-y-4" id="adminStudentList">
-                    <div class="text-center py-10 text-slate-400">학생 목록을 불러오는 중...</div>
+    <!-- ── Teacher PIN Gate Overlay ──────────────────────────── -->
+    <div id="pinGate" class="fixed inset-0 z-50 bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+        <div class="w-full max-w-xs bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800">
+            <!-- Header -->
+            <div class="px-6 pt-6 pb-4 text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full mb-3"
+                    style="background: linear-gradient(135deg, #9d4300, #f97316)">
+                    <span class="material-symbols-outlined text-white text-xl" style="font-variation-settings:'FILL' 1">shield_person</span>
                 </div>
-            </section>
+                <h2 class="font-bold text-lg text-slate-800 dark:text-slate-100">선생님 인증</h2>
+                <p class="text-slate-400 text-xs mt-1">4자리 PIN을 입력하세요</p>
+            </div>
 
-            <!-- Card Management for Selected Student -->
-            <section
-                class="bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-2xl border border-slate-100 dark:border-slate-800">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold flex items-center gap-2">
-                        <span class="material-symbols-outlined text-teal-500">style</span> 카드 관리
+            <!-- PIN dots -->
+            <div id="gatePinDots" class="flex justify-center gap-4 py-3">
+                <div class="pin-dot w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-700"></div>
+                <div class="pin-dot w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-700"></div>
+                <div class="pin-dot w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-700"></div>
+                <div class="pin-dot w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-700"></div>
+            </div>
+
+            <!-- Error -->
+            <div id="gateError" class="hidden mx-5 mb-3 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold text-center"></div>
+
+            <!-- Keypad -->
+            <div class="px-5 pb-5">
+                <div class="grid grid-cols-3 gap-2">
+                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('1')">1</button>
+                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('2')">2</button>
+                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('3')">3</button>
+                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('4')">4</button>
+                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('5')">5</button>
+                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('6')">6</button>
+                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('7')">7</button>
+                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('8')">8</button>
+                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('9')">9</button>
+                    <div></div>
+                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('0')">0</button>
+                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-400" onclick="gateBackspace()">
+                        <span class="material-symbols-outlined text-lg">backspace</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Toast ──────────────────────────────────────────────── -->
+    <div id="toast" class="fixed top-4 right-4 z-40 hidden px-4 py-3 rounded-xl text-sm font-bold shadow-lg text-white"></div>
+
+    <!-- ── Main Content ───────────────────────────────────────── -->
+    <div id="mainContent" class="hidden">
+        <div class="max-w-4xl mx-auto p-6 lg:p-10">
+
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <p class="text-xs font-bold text-orange-500 uppercase tracking-widest mb-1">Admin</p>
+                    <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100">관리자 대시보드</h1>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="document.documentElement.classList.toggle('dark')"
+                        class="p-2.5 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                        <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">dark_mode</span>
+                    </button>
+                    <button onclick="logout()"
+                        class="p-2.5 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
+                        <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">logout</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+                <!-- ── Student Management ──────────────────────── -->
+                <section class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-100 dark:border-slate-800">
+                    <h2 class="text-base font-bold mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-orange-500 text-xl" style="font-variation-settings:'FILL' 1">group</span>
+                        학생 관리
                     </h2>
-                    <select id="studentFilter"
-                        class="bg-slate-50 dark:bg-slate-950 border-none rounded-lg text-sm p-2 outline-none">
-                        <option value="">학생 선택</option>
-                    </select>
-                </div>
-                <div class="space-y-4" id="adminCardList">
-                    <div class="text-center py-10 text-slate-400">학생을 선택하여 카드를 관리하세요.</div>
-                </div>
-            </section>
+                    <div class="space-y-3" id="adminStudentList">
+                        <div class="text-center py-8 text-slate-400 text-sm">학생 목록을 불러오는 중...</div>
+                    </div>
+
+                    <!-- Add Student -->
+                    <div class="flex gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <input
+                            type="text"
+                            id="newStudentName"
+                            placeholder="새 학생 이름"
+                            class="flex-1 px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border-0 outline-none text-sm font-bold focus:ring-2 focus:ring-orange-200 transition-all"
+                            onkeydown="if(event.key==='Enter') addStudent()"
+                        />
+                        <button onclick="addStudent()"
+                            class="px-4 py-2.5 rounded-lg text-white font-bold text-sm transition-all active:scale-95"
+                            style="background: linear-gradient(135deg, #9d4300, #f97316)">
+                            추가
+                        </button>
+                    </div>
+                </section>
+
+                <!-- ── Card Management ─────────────────────────── -->
+                <section class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-100 dark:border-slate-800">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-base font-bold flex items-center gap-2">
+                            <span class="material-symbols-outlined text-teal-500 text-xl">style</span>
+                            카드 관리
+                        </h2>
+                        <select id="studentFilter"
+                            class="bg-slate-50 dark:bg-slate-950 border-none rounded-lg text-sm p-2 outline-none">
+                            <option value="">학생 선택</option>
+                        </select>
+                    </div>
+                    <div class="space-y-3" id="adminCardList">
+                        <div class="text-center py-8 text-slate-400 text-sm">학생을 선택하여 카드를 관리하세요.</div>
+                    </div>
+                </section>
+
+                <!-- ── PIN Management ──────────────────────────── -->
+                <section class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-100 dark:border-slate-800">
+                    <h2 class="text-base font-bold mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-indigo-500 text-xl" style="font-variation-settings:'FILL' 1">pin</span>
+                        학생 PIN 관리
+                    </h2>
+                    <div class="space-y-3" id="pinStudentList">
+                        <div class="text-center py-8 text-slate-400 text-sm">학생 목록을 불러오는 중...</div>
+                    </div>
+                </section>
+
+                <!-- ── Teacher PIN Change ──────────────────────── -->
+                <section class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-100 dark:border-slate-800">
+                    <h2 class="text-base font-bold mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-purple-500 text-xl" style="font-variation-settings:'FILL' 1">shield_person</span>
+                        선생님 PIN 변경
+                    </h2>
+                    <p class="text-xs text-slate-400 mb-4">현재 PIN: <span id="currentPinMask">••••</span></p>
+                    <div class="flex gap-2">
+                        <input type="password" id="newTeacherPin" placeholder="새 PIN 4자리" maxlength="4"
+                            class="flex-1 px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border-0 outline-none text-sm font-bold focus:ring-2 focus:ring-purple-200 tracking-widest"
+                            pattern="\d{4}" inputmode="numeric" />
+                        <button onclick="changeTeacherPin()"
+                            class="px-4 py-2.5 rounded-lg bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 font-bold text-sm hover:bg-purple-200 dark:hover:bg-purple-900/40 transition-all active:scale-95">
+                            변경
+                        </button>
+                    </div>
+                </section>
+
+            </div>
         </div>
-    </main>
+    </div>
 
     <script type="module" src="js/api.js"></script>
     <script src="js/layout.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        // ── PIN Gate ──────────────────────────────────────────────
+        let gatePin = '';
+        let teacherPin = '';
+
+        function gateKey(digit) {
+            if (gatePin.length >= 4) return;
+            gatePin += digit;
+            updateGateDots();
+            if (gatePin.length === 4) setTimeout(doTeacherLogin, 120);
+        }
+
+        function gateBackspace() {
+            gatePin = gatePin.slice(0, -1);
+            updateGateDots();
+            document.getElementById('gateError').classList.add('hidden');
+        }
+
+        function updateGateDots() {
+            const dots = document.querySelectorAll('#gatePinDots .pin-dot');
+            dots.forEach((dot, i) => {
+                if (i < gatePin.length) {
+                    dot.classList.add('filled');
+                    dot.style.borderColor = '#9d4300';
+                } else {
+                    dot.classList.remove('filled');
+                    dot.style.borderColor = '';
+                }
+            });
+        }
+
+        async function doTeacherLogin() {
+            try {
+                await API.teacherLogin(gatePin);
+                teacherPin = gatePin;
+                sessionStorage.setItem('teacherAuth', gatePin);
+                document.getElementById('pinGate').classList.add('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+                initAdmin();
+            } catch (e) {
+                const errEl = document.getElementById('gateError');
+                errEl.textContent = 'PIN이 올바르지 않습니다';
+                errEl.classList.remove('hidden');
+                const dots = document.getElementById('gatePinDots');
+                dots.classList.add('shake');
+                setTimeout(() => dots.classList.remove('shake'), 400);
+                gatePin = '';
+                updateGateDots();
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem('teacherAuth');
+            teacherPin = '';
+            gatePin = '';
+            updateGateDots();
+            document.getElementById('pinGate').classList.remove('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+        }
+
+        // ── Toast ─────────────────────────────────────────────────
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.background = isError ? '#ba1a1a' : '#1a6b3c';
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 2500);
+        }
+
+        // ── Admin Logic ───────────────────────────────────────────
+        function initAdmin() {
             Layout.init();
             loadAllStudents();
-
             document.getElementById('studentFilter').onchange = (e) => {
                 const sid = e.target.value;
                 if (sid) loadStudentCards(sid);
-                else document.getElementById('adminCardList').innerHTML = '<div class="text-center py-10 text-slate-400">학생을 선택하여 카드를 관리하세요.</div>';
+                else document.getElementById('adminCardList').innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">학생을 선택하여 카드를 관리하세요.</div>';
             };
-        });
+        }
+
+        async function addStudent() {
+            const input = document.getElementById('newStudentName');
+            const name = input.value.trim();
+            if (!name) return;
+            try {
+                await API.addStudent(name);
+                input.value = '';
+                showToast(`${name} 추가됨`);
+                loadAllStudents();
+            } catch (e) {
+                showToast(e.message, true);
+            }
+        }
 
         async function loadAllStudents() {
             const list = document.getElementById('adminStudentList');
+            const pinList = document.getElementById('pinStudentList');
             const filter = document.getElementById('studentFilter');
             try {
                 const students = await API.getStudents();
 
-                // Update Student List
-                list.innerHTML = students.map(s => `
-                    <div class="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 group">
-                        <div class="flex items-center gap-3">
-                            <div onclick="selectStudentForCards('${s.id}')" class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center font-bold cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-sm group-hover:bg-orange-200 dark:group-hover:bg-orange-900/40">${s.name.charAt(0)}</div>
-                            <input type="text" value="${s.name}" onblur="renameStudent('${s.id}', this.value)" class="bg-transparent font-bold border-none outline-none focus:ring-1 focus:ring-orange-500 rounded px-2"/>
+                list.innerHTML = students.length === 0
+                    ? '<div class="text-center py-8 text-slate-400 text-sm">등록된 학생이 없습니다.</div>'
+                    : students.map(s => `
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center font-bold cursor-pointer hover:scale-110 active:scale-95 transition-all text-sm"
+                                    onclick="selectStudentForCards('${s.id}')">${s.name.charAt(0)}</div>
+                                <input type="text" value="${s.name}"
+                                    onblur="renameStudent('${s.id}', this.value)"
+                                    class="bg-transparent font-bold border-none outline-none focus:ring-1 focus:ring-orange-300 rounded px-1 text-sm"/>
+                            </div>
+                            <button onclick="deleteStudent('${s.id}')" class="text-slate-300 hover:text-red-500 transition-colors">
+                                <span class="material-symbols-outlined text-xl">delete</span>
+                            </button>
                         </div>
-                        <button onclick="deleteStudent('${s.id}')" class="text-slate-300 hover:text-red-500 transition-colors">
-                            <span class="material-symbols-outlined text-xl">delete</span>
-                        </button>
-                    </div>
-                `).join('');
+                    `).join('');
 
-                // Update Filter
-                filter.innerHTML = '<option value="">학생 선택</option>' + students.map(s => `
-                    <option value="${s.id}">${s.name}</option>
-                `).join('');
+                pinList.innerHTML = students.length === 0
+                    ? '<div class="text-center py-8 text-slate-400 text-sm">등록된 학생이 없습니다.</div>'
+                    : students.map(s => `
+                        <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                            <div class="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center font-bold text-sm flex-shrink-0">${s.name.charAt(0)}</div>
+                            <span class="flex-1 font-bold text-sm">${s.name}</span>
+                            <input type="password" placeholder="새 PIN" maxlength="4" inputmode="numeric" pattern="\\d{4}"
+                                id="pin-${s.id}"
+                                class="w-20 px-2 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none text-sm font-bold tracking-widest text-center focus:ring-2 focus:ring-indigo-200"/>
+                            <button onclick="changeStudentPin('${s.id}')"
+                                class="px-3 py-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-200 dark:hover:bg-indigo-900/40 transition-all active:scale-95">
+                                변경
+                            </button>
+                        </div>
+                    `).join('');
+
+                filter.innerHTML = '<option value="">학생 선택</option>' + students.map(s =>
+                    `<option value="${s.id}">${s.name}</option>`).join('');
 
             } catch (e) {
-                list.innerHTML = '<div class="text-center py-10 text-red-400">로드 실패</div>';
+                list.innerHTML = '<div class="text-center py-8 text-red-400 text-sm">로드 실패</div>';
             }
         }
 
-        async function selectStudentForCards(sid) {
-            const filter = document.getElementById('studentFilter');
-            filter.value = sid;
+        function selectStudentForCards(sid) {
+            document.getElementById('studentFilter').value = sid;
             loadStudentCards(sid);
         }
 
@@ -117,10 +330,10 @@
             if (!newName.trim()) return;
             try {
                 await API.updateStudent(id, newName);
-                Layout.showToast('이름이 변경되었습니다');
+                showToast('이름이 변경되었습니다');
                 loadAllStudents();
             } catch (e) {
-                Layout.showToast(e.message, true);
+                showToast(e.message, true);
             }
         }
 
@@ -128,52 +341,54 @@
             if (!confirm('학생을 삭제하면 모든 데이터가 사라집니다. 정말 삭제하시겠습니까?')) return;
             try {
                 await API.deleteStudent(id);
-                Layout.showToast('삭제되었습니다');
+                showToast('삭제되었습니다');
                 loadAllStudents();
-                document.getElementById('adminCardList').innerHTML = '<div class="text-center py-10 text-slate-400">학생을 선택하여 카드를 관리하세요.</div>';
+                document.getElementById('adminCardList').innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">학생을 선택하여 카드를 관리하세요.</div>';
             } catch (e) {
-                Layout.showToast('삭제 실패', true);
+                showToast('삭제 실패', true);
             }
         }
 
         async function loadStudentCards(sid) {
             const list = document.getElementById('adminCardList');
-            list.innerHTML = '<div class="text-center py-10 text-slate-400">카드를 불러오는 중...</div>';
+            list.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">카드를 불러오는 중...</div>';
             try {
                 const cards = await API.getCards(sid);
                 if (cards.length === 0) {
-                    list.innerHTML = '<div class="text-center py-10 text-slate-400">등록된 카드가 없습니다.</div>';
+                    list.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">등록된 카드가 없습니다.</div>';
                     return;
                 }
-
                 list.innerHTML = cards.map(c => `
-                    <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                        <div class="flex-1 min-w-0 space-y-2">
+                    <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                        <div class="flex-1 min-w-0 space-y-1.5">
                             ${c.type === 'text'
-                        ? `<input type="text" value="${c.question}" onblur="updateCardContent('${c.id}', '${sid}', {question: this.value})" class="w-full bg-transparent font-bold border-none outline-none focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="질문 입력"/>`
-                        : `<div class="flex items-center gap-2 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-500 font-bold"><span class="material-symbols-outlined text-xs">image</span> 이미지 질문</div>`
-                    }
+                                ? `<input type="text" value="${c.question.replace(/"/g, '&quot;')}" onblur="updateCardContent('${c.id}', {question: this.value})"
+                                    class="w-full bg-transparent font-bold border-none outline-none focus:ring-1 focus:ring-teal-300 rounded px-1 text-sm"/>`
+                                : `<div class="flex items-center gap-2 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-500 font-bold">
+                                    <span class="material-symbols-outlined text-xs">image</span> 이미지 질문</div>`
+                            }
                             <div class="flex items-center gap-2">
-                                <span class="text-xs text-slate-400 font-bold px-2">정답:</span>
-                                <input type="text" value="${c.answer}" onblur="updateCardContent('${c.id}', '${sid}', {answer: this.value})" class="flex-1 bg-transparent text-sm border-none outline-none focus:ring-1 focus:ring-teal-500 rounded px-2" placeholder="정답 입력"/>
+                                <span class="text-xs text-slate-400 font-bold px-1">정답:</span>
+                                <input type="text" value="${c.answer.replace(/"/g, '&quot;')}" onblur="updateCardContent('${c.id}', {answer: this.value})"
+                                    class="flex-1 bg-transparent text-sm border-none outline-none focus:ring-1 focus:ring-teal-300 rounded px-1"/>
                             </div>
                         </div>
-                        <button onclick="deleteCard('${c.id}', '${sid}')" class="text-slate-300 hover:text-red-500 transition-colors">
+                        <button onclick="deleteCard('${c.id}', '${sid}')" class="text-slate-300 hover:text-red-500 transition-colors flex-shrink-0">
                             <span class="material-symbols-outlined text-xl">delete</span>
                         </button>
                     </div>
                 `).join('');
             } catch (e) {
-                list.innerHTML = '<div class="text-center py-10 text-red-400">로드 실패</div>';
+                list.innerHTML = '<div class="text-center py-8 text-red-400 text-sm">로드 실패</div>';
             }
         }
 
-        async function updateCardContent(cid, sid, data) {
+        async function updateCardContent(cid, data) {
             try {
                 await API.updateCard(cid, data);
-                Layout.showToast('카드가 업데이트되었습니다');
+                showToast('카드가 업데이트되었습니다');
             } catch (e) {
-                Layout.showToast('업데이트 실패', true);
+                showToast('업데이트 실패', true);
             }
         }
 
@@ -181,12 +396,63 @@
             if (!confirm('정말 삭제하시겠습니까?')) return;
             try {
                 await API.deleteCard(cid);
-                Layout.showToast('삭제되었습니다');
+                showToast('삭제되었습니다');
                 loadStudentCards(sid);
             } catch (e) {
-                Layout.showToast('삭제 실패', true);
+                showToast('삭제 실패', true);
             }
         }
+
+        async function changeStudentPin(id) {
+            const input = document.getElementById(`pin-${id}`);
+            const newPin = input.value.trim();
+            if (!/^\d{4}$/.test(newPin)) {
+                showToast('4자리 숫자를 입력하세요', true);
+                return;
+            }
+            try {
+                await API.setStudentPin(id, newPin, teacherPin);
+                input.value = '';
+                showToast('PIN이 변경되었습니다');
+            } catch (e) {
+                showToast(e.message, true);
+            }
+        }
+
+        async function changeTeacherPin() {
+            const input = document.getElementById('newTeacherPin');
+            const newPin = input.value.trim();
+            if (!/^\d{4}$/.test(newPin)) {
+                showToast('4자리 숫자를 입력하세요', true);
+                return;
+            }
+            try {
+                await API.setTeacherPin(teacherPin, newPin);
+                teacherPin = newPin;
+                sessionStorage.setItem('teacherAuth', newPin);
+                input.value = '';
+                showToast('선생님 PIN이 변경되었습니다');
+            } catch (e) {
+                showToast(e.message, true);
+            }
+        }
+
+        // ── Init ──────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = sessionStorage.getItem('teacherAuth');
+            if (saved) {
+                teacherPin = saved;
+                API.teacherLogin(saved)
+                    .then(() => {
+                        document.getElementById('pinGate').classList.add('hidden');
+                        document.getElementById('mainContent').classList.remove('hidden');
+                        initAdmin();
+                    })
+                    .catch(() => {
+                        sessionStorage.removeItem('teacherAuth');
+                    });
+            }
+        });
 
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
     </script>
