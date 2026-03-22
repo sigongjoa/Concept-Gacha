@@ -70,6 +70,11 @@
                     </button>
                 </div>
             </div>
+            <div class="px-5 pb-5 text-center">
+                <a href="/index.html" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                    ← 학생 로그인 페이지로
+                </a>
+            </div>
         </div>
     </div>
 
@@ -284,16 +289,23 @@
                     ? '<div class="text-center py-8 text-slate-400 text-sm">등록된 학생이 없습니다.</div>'
                     : students.map(s => `
                         <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                            <div class="flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center font-bold cursor-pointer hover:scale-110 active:scale-95 transition-all text-sm"
+                            <div class="flex items-center gap-3 flex-1 min-w-0">
+                                <div class="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center font-bold cursor-pointer hover:scale-110 active:scale-95 transition-all text-sm flex-shrink-0"
                                     onclick="selectStudentForCards('${s.id}')">${s.name.charAt(0)}</div>
                                 <input type="text" value="${s.name}"
                                     onblur="renameStudent('${s.id}', this.value)"
-                                    class="bg-transparent font-bold border-none outline-none focus:ring-1 focus:ring-orange-300 rounded px-1 text-sm"/>
+                                    class="bg-transparent font-bold border-none outline-none focus:ring-1 focus:ring-orange-300 rounded px-1 text-sm min-w-0 flex-1"/>
                             </div>
-                            <button onclick="deleteStudent('${s.id}')" class="text-slate-300 hover:text-red-500 transition-colors">
-                                <span class="material-symbols-outlined text-xl">delete</span>
-                            </button>
+                            <div class="flex items-center gap-1 flex-shrink-0">
+                                <button onclick="goToStudent('${s.id}', '${s.name.replace(/'/g, "\\'")}')"
+                                    class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 text-xs font-bold hover:bg-orange-200 dark:hover:bg-orange-900/40 transition-all active:scale-95">
+                                    <span class="material-symbols-outlined text-sm">open_in_new</span>
+                                    이동
+                                </button>
+                                <button onclick="deleteStudent('${s.id}')" class="p-1.5 text-slate-300 hover:text-red-500 transition-colors">
+                                    <span class="material-symbols-outlined text-xl">delete</span>
+                                </button>
+                            </div>
                         </div>
                     `).join('');
 
@@ -319,6 +331,12 @@
             } catch (e) {
                 list.innerHTML = '<div class="text-center py-8 text-red-400 text-sm">로드 실패</div>';
             }
+        }
+
+        function goToStudent(id, name) {
+            localStorage.setItem('currentStudent', JSON.stringify({ id, name }));
+            sessionStorage.setItem('fromAdmin', '1');
+            window.location.href = '/gacha.html';
         }
 
         function selectStudentForCards(sid) {
