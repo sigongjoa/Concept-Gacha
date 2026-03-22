@@ -436,6 +436,14 @@
                         <div id="practiceSteps" class="space-y-1 hidden">
                             <p class="text-xs font-bold text-outline uppercase mb-2">풀이</p>
                         </div>
+                        <button id="nextCardBtn"
+                            class="hidden w-full mt-3 py-3 rounded-lg font-label font-semibold text-sm
+                                   text-on-primary shadow-[0_4px_16px_rgba(157,67,0,0.20)]
+                                   transition-all active:scale-[0.97] flex items-center justify-center gap-2"
+                            style="background: linear-gradient(135deg, #9d4300, #f97316)">
+                            <span class="material-symbols-outlined text-[16px]" style="font-variation-settings:'FILL' 1">auto_awesome</span>
+                            다음 카드 뽑기
+                        </button>
                     </div>
                 </div>
             </div>
@@ -827,6 +835,8 @@
             document.getElementById('practiceTopicLabel').textContent = gen.label;
             document.getElementById('practiceResult').classList.add('hidden');
             document.getElementById('practiceSteps').classList.add('hidden');
+            document.getElementById('nextCardBtn').classList.add('hidden');
+            document.getElementById('nextCardBtn').classList.remove('flex');
 
             if (currentProblem.type === 'fillblank') {
                 document.getElementById('practiceFractionView').classList.add('hidden');
@@ -916,6 +926,12 @@
                     : `✗ 정답: ${currentProblem.answer}`;
                 resultMsg.className = 'font-semibold text-center mb-2 text-on-error-container font-headline';
             }
+
+            // 채점 완료 → "다음 카드 뽑기" 버튼 표시
+            const nextBtn = document.getElementById('nextCardBtn');
+            nextBtn.classList.remove('hidden');
+            nextBtn.classList.add('flex');
+            nextBtn.onclick = () => submitFeedback(correct);
         }
 
         async function submitFeedback(success) {
