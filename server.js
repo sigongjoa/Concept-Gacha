@@ -1090,7 +1090,7 @@ app.post('/api/debug/generator', (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🎴 개념 가챠 서버: http://localhost:${PORT}`);
 });
