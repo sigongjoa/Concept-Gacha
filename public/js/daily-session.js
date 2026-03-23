@@ -58,40 +58,31 @@ export async function getOrCreateTodaySession(studentId, target = 10) {
  * @param {number} boxAfter
  */
 export async function recordCardResult(sessionId, cardId, result, boxBefore, boxAfter) {
-    // session_cards에 기록
-    const { error: scErr } = await supabase
-        .from('session_cards')
-        .insert({
+    // session_cards 기록 + cards_drawn 증가를 동시에 처리
+    const [scResult, sessionResult] = await Promise.all([
+        supabase.from('session_cards').insert({
             session_id: sessionId,
             card_id: cardId,
             result,
             box_before: boxBefore,
             box_after: boxAfter,
-        })
+        }),
+        supabase.rpc('increment_cards_drawn', { session_id: sessionId }),
+    ])
 
-    if (scErr) throw new Error('결과 기록 실패: ' + scErr.message)
+    if (scResult.error) throw new Error('결과 기록 실패: ' + scResult.error.message)
+    if (sessionResult.error) {
+        // RPC 없으면 fallback: read-then-write (race condition 가능하지만 단일 사용자 환경에서 허용)
+        const { data: cur } = await supabase
+            .from('daily_sessions').select('cards_drawn').eq('id', sessionId).single()
+        await supabase
+            .from('daily_sessions')
+            .update({ cards_drawn: (cur?.cards_drawn ?? 0) + 1 })
+            .eq('id', sessionId)
+    }
 
-    // cards_drawn을 직접 increment
-    const { data: cur } = await supabase
-        .from('daily_sessions')
-        .select('cards_drawn')
-        .eq('id', sessionId)
-        .single()
-
-    const { error: incErr } = await supabase
-        .from('daily_sessions')
-        .update({ cards_drawn: (cur?.cards_drawn ?? 0) + 1 })
-        .eq('id', sessionId)
-
-    if (incErr) throw new Error('세션 업데이트 실패: ' + incErr.message)
-
-    // 업데이트된 세션 반환
     const { data: final } = await supabase
-        .from('daily_sessions')
-        .select('*')
-        .eq('id', sessionId)
-        .single()
-
+        .from('daily_sessions').select('*').eq('id', sessionId).single()
     return final
 }
 
