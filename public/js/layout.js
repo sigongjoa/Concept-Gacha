@@ -10,8 +10,9 @@ const Layout = {
     loadStudent() {
         const saved = localStorage.getItem('currentStudent');
         if (!saved) {
-            // 학생이 없으면 선택 페이지로 이동 (이미 index.html이 아니면)
-            if (!window.location.pathname.endsWith('index.html') && window.location.pathname !== '/') {
+            // admin.html은 선생님 페이지 - 학생 없어도 리다이렉트 안 함
+            const isAdmin = window.location.pathname.endsWith('admin.html');
+            if (!isAdmin && !window.location.pathname.endsWith('index.html') && window.location.pathname !== '/') {
                 window.location.href = 'index.html';
             }
             return null;
