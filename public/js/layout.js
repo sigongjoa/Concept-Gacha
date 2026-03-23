@@ -8,7 +8,7 @@ const Layout = {
     },
 
     loadStudent() {
-        const saved = localStorage.getItem('currentStudent');
+        const saved = sessionStorage.getItem('currentStudent');
         if (!saved) {
             // admin.html은 선생님 페이지 - 학생 없어도 리다이렉트 안 함
             const isAdmin = window.location.pathname.endsWith('admin.html');
@@ -119,7 +119,7 @@ const Layout = {
         const changeBtn = document.getElementById('changeStudentBtn');
         if (changeBtn) {
             changeBtn.onclick = () => {
-                localStorage.removeItem('currentStudent');
+                sessionStorage.removeItem('currentStudent');
                 window.location.href = 'index.html';
             };
         }

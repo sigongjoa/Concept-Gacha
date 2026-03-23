@@ -585,7 +585,7 @@
 
         // DOMContentLoaded 이후 studentId 감지
         document.addEventListener('DOMContentLoaded', () => {
-            const saved = localStorage.getItem('currentStudent')
+            const saved = sessionStorage.getItem('currentStudent')
             if (saved) {
                 const { id } = JSON.parse(saved)
                 initDailyBanner(id)

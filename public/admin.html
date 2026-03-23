@@ -229,7 +229,6 @@
             try {
                 const res = await API.teacherLogin(gatePin);
                 teacherToken = res.token;
-                sessionStorage.setItem('teacherToken', teacherToken);
                 document.getElementById('pinGate').classList.add('hidden');
                 document.getElementById('mainContent').classList.remove('hidden');
                 initAdmin();
@@ -246,7 +245,6 @@
         }
 
         function logout() {
-            sessionStorage.removeItem('teacherToken');
             teacherToken = '';
             gatePin = '';
             updateGateDots();
@@ -362,7 +360,7 @@
         }
 
         function goToStudent(id, name) {
-            localStorage.setItem('currentStudent', JSON.stringify({ id, name }));
+            sessionStorage.setItem('currentStudent', JSON.stringify({ id, name }));
             sessionStorage.setItem('fromAdmin', '1');
             window.location.href = 'gacha.html';
         }
@@ -498,14 +496,10 @@
         }
 
         // ── Init ──────────────────────────────────────────────────
+        // 페이지 로드 시 항상 PIN 게이트 표시 (보안: 토큰 비영속)
         document.addEventListener('DOMContentLoaded', () => {
-            const savedToken = sessionStorage.getItem('teacherToken');
-            if (savedToken) {
-                teacherToken = savedToken;
-                document.getElementById('pinGate').classList.add('hidden');
-                document.getElementById('mainContent').classList.remove('hidden');
-                initAdmin();
-            }
+            document.getElementById('pinGate').classList.remove('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
         });
 
         // 토큰 만료 시 자동 로그아웃 처리

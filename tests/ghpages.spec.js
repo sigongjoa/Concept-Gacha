@@ -71,8 +71,8 @@ test.describe('관리자 로그인', () => {
 
         await page.goto(`${BASE}/admin.html`, { waitUntil: 'networkidle' });
 
-        // PIN 입력 UI 확인
-        const pinButtons = page.locator('.kp-btn');
+        // PIN 입력 UI 확인 (admin은 .key-btn 클래스 사용)
+        const pinButtons = page.locator('.key-btn');
         await expect(pinButtons.first()).toBeVisible({ timeout: 5000 });
 
         // PIN 1234 입력

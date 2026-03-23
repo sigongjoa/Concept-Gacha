@@ -244,7 +244,7 @@
             }
             try {
                 const student = await API.login(name, pin);
-                localStorage.setItem('currentStudent', JSON.stringify({ id: student.id, name: student.name }));
+                sessionStorage.setItem('currentStudent', JSON.stringify({ id: student.id, name: student.name }));
                 window.location.href = 'gacha.html';
             } catch (e) {
                 showError(e.message || '로그인 실패');

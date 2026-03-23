@@ -24,8 +24,6 @@ async function hashPin(pin, salt) {
 }
 
 async function verifyPin(plain, storedHash, salt) {
-    // 평문 저장 임시 지원 (마이그레이션 초기)
-    if (storedHash?.startsWith('PLAIN:')) return storedHash.slice(6) === plain
     const hash = await hashPin(plain, salt)
     return hash === storedHash
 }

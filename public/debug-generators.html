@@ -130,7 +130,7 @@
 
         async function buildTopicList() {
             // 현재 학생 카드 가져오기
-            const studentId = localStorage.getItem('currentStudent');
+            const studentId = sessionStorage.getItem('currentStudent');
             if (studentId) {
                 try {
                     const cards = await API.getCards(studentId);
