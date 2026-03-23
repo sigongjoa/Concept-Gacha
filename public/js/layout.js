@@ -49,6 +49,10 @@ const Layout = {
                     <span class="material-symbols-outlined">style</span>
                     카드 뽑기
                 </a>
+                <a class="nav-link flex items-center gap-4 px-5 py-4 rounded-2xl font-medium transition-all korean-text border" href="dashboard.html">
+                    <span class="material-symbols-outlined">bar_chart</span>
+                    학습 현황
+                </a>
                 <a class="nav-link flex items-center gap-4 px-5 py-4 rounded-2xl font-medium transition-all korean-text border" href="add.html">
                     <span class="material-symbols-outlined">add_circle</span>
                     카드 추가

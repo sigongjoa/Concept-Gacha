@@ -231,8 +231,48 @@
     <!-- ── Main ───────────────────────────────────────────────── -->
     <main class="pt-16 pb-32 px-4 max-w-lg mx-auto space-y-3">
 
+        <!-- ── Daily Progress Banner ────────────────────────── -->
+        <div id="dailyBanner" class="mt-4 px-1">
+            <!-- 진행 중 -->
+            <div id="dailyProgress"
+                class="bg-surface-container-lowest rounded-xl px-4 py-3 shadow-[0px_2px_10px_rgba(88,66,55,0.07)]
+                       flex items-center gap-3">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[10px] font-bold text-primary uppercase tracking-[0.12em] font-label">오늘의 학습</span>
+                        <span class="text-xs font-bold text-on-surface font-label">
+                            <span id="dailyDrawn">0</span><span class="text-outline font-normal"> / </span><span id="dailyTarget">10</span>
+                        </span>
+                    </div>
+                    <div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+                        <div id="dailyBar"
+                            class="h-full rounded-full transition-all duration-500"
+                            style="width:0%; background: linear-gradient(90deg, #9d4300, #f97316)"></div>
+                    </div>
+                </div>
+                <a href="dashboard.html"
+                    class="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-primary-fixed text-primary
+                           hover:bg-primary-fixed-dim transition-colors active:scale-90">
+                    <span class="material-symbols-outlined text-[16px]">bar_chart</span>
+                </a>
+            </div>
+
+            <!-- 오늘 완료 -->
+            <div id="dailyDone" class="hidden rounded-xl px-4 py-3 flex items-center gap-3"
+                style="background: rgba(0,176,122,0.10); border: 1px solid rgba(0,176,122,0.20)">
+                <span class="material-symbols-outlined text-tertiary text-[20px]"
+                    style="font-variation-settings:'FILL' 1">task_alt</span>
+                <div class="flex-1">
+                    <p class="text-sm font-bold text-tertiary font-label">오늘 목표 달성! 🎉</p>
+                    <p class="text-[10px] text-outline font-label">내일도 학습을 이어가세요</p>
+                </div>
+                <a href="dashboard.html"
+                    class="shrink-0 text-[10px] font-bold text-tertiary underline font-label">기록 보기</a>
+            </div>
+        </div>
+
         <!-- ── Draw Zone (카드 없을 때 표시) ─────────────────── -->
-        <div id="drawZone" class="pt-4">
+        <div id="drawZone" class="pt-1">
             <button id="gachaBtn"
                 class="w-full h-13 rounded-full font-label font-semibold text-sm uppercase tracking-[0.08em]
                        text-on-primary shadow-[0_6px_20px_rgba(157,67,0,0.22)]
@@ -489,6 +529,69 @@
         style="background:rgba(225,224,255,0.18); filter:blur(80px);"></div>
 
     <script type="module" src="js/api.js"></script>
+    <!-- Daily Session module -->
+    <script type="module">
+        import { getOrCreateTodaySession, recordCardResult } from './js/daily-session.js'
+
+        // 전역으로 노출 (non-module 스크립트에서 접근)
+        window._dailySession = null
+
+        async function initDailyBanner(studentId) {
+            try {
+                const { session, remaining } = await getOrCreateTodaySession(studentId)
+                window._dailySession = session
+                updateDailyBanner(session.cards_drawn, session.cards_target)
+            } catch (e) {
+                console.warn('Daily session init failed:', e)
+            }
+        }
+
+        function updateDailyBanner(drawn, target) {
+            const pct = Math.round((drawn / target) * 100)
+            const el = {
+                drawn:    document.getElementById('dailyDrawn'),
+                target:   document.getElementById('dailyTarget'),
+                bar:      document.getElementById('dailyBar'),
+                progress: document.getElementById('dailyProgress'),
+                done:     document.getElementById('dailyDone'),
+            }
+            if (el.drawn)  el.drawn.textContent  = drawn
+            if (el.target) el.target.textContent = target
+            if (el.bar)    el.bar.style.width    = pct + '%'
+
+            if (drawn >= target) {
+                el.progress?.classList.add('hidden')
+                el.done?.classList.remove('hidden')
+            } else {
+                el.progress?.classList.remove('hidden')
+                el.done?.classList.add('hidden')
+            }
+        }
+
+        window._recordDailyResult = async function(cardId, success, boxBefore, boxAfter) {
+            if (!window._dailySession) return
+            try {
+                const updated = await recordCardResult(
+                    window._dailySession.id, cardId, success ? 'success' : 'fail', boxBefore, boxAfter
+                )
+                if (updated) {
+                    window._dailySession = updated
+                    updateDailyBanner(updated.cards_drawn, updated.cards_target)
+                }
+            } catch (e) {
+                console.warn('Daily record failed:', e)
+            }
+        }
+
+        // DOMContentLoaded 이후 studentId 감지
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('currentStudent')
+            if (saved) {
+                const { id } = JSON.parse(saved)
+                initDailyBanner(id)
+            }
+        })
+    </script>
     <script src="js/layout.js"></script>
     <script src="js/problem-generators.js"></script>
     <script src="js/shape-renderer.js"></script>
@@ -937,8 +1040,17 @@
         async function submitFeedback(success) {
             if (!currentCard) return;
             try {
+                const boxBefore = currentCard.box;
                 await API.submitFeedback(currentCard.id, success, currentStudentId);
                 Layout.showToast(success ? '잘 기억하고 있어요!' : '한 번 더 연습해봐요');
+
+                // 일일 세션 기록
+                const boxAfter = success
+                    ? Math.min(boxBefore + 1, 5)
+                    : Math.max(boxBefore - 1, 1);
+                if (window._recordDailyResult) {
+                    window._recordDailyResult(currentCard.id, success, boxBefore, boxAfter);
+                }
 
                 // 카드 초기화
                 document.getElementById('cardQuestion').textContent = '카드를 뽑아보세요!';

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html class="light" lang="ko">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>개념 가챠 - 학습 현황</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'surface':                    '#f7f9fb',
+                        'surface-dim':                '#d8dadc',
+                        'surface-container-lowest':   '#ffffff',
+                        'surface-container-low':      '#f2f4f6',
+                        'surface-container':          '#eceef0',
+                        'surface-container-high':     '#e6e8ea',
+                        'surface-container-highest':  '#e0e3e5',
+                        'primary':                    '#9d4300',
+                        'primary-container':          '#f97316',
+                        'primary-fixed':              '#ffdbca',
+                        'primary-fixed-dim':          '#ffb690',
+                        'on-primary':                 '#ffffff',
+                        'secondary':                  '#4648d4',
+                        'secondary-container':        '#6063ee',
+                        'secondary-fixed':            '#e1e0ff',
+                        'secondary-fixed-dim':        '#c0c1ff',
+                        'on-secondary':               '#ffffff',
+                        'on-secondary-container':     '#fffbff',
+                        'tertiary':                   '#006c49',
+                        'tertiary-container':         '#00b07a',
+                        'on-tertiary':                '#ffffff',
+                        'on-tertiary-container':      '#003b26',
+                        'error':                      '#ba1a1a',
+                        'error-container':            '#ffdad6',
+                        'on-error-container':         '#93000a',
+                        'on-surface':                 '#191c1e',
+                        'on-surface-variant':         '#584237',
+                        'outline':                    '#8c7164',
+                        'outline-variant':            '#e0c0b1',
+                        'inverse-surface':            '#2d3133',
+                        'inverse-on-surface':         '#eff1f3',
+                    },
+                    fontFamily: {
+                        'headline': ['Plus Jakarta Sans', 'Noto Sans KR', 'sans-serif'],
+                        'body':     ['Inter', 'Noto Sans KR', 'sans-serif'],
+                        'label':    ['Inter', 'Noto Sans KR', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        'sm': '4px', 'DEFAULT': '8px', 'md': '10px',
+                        'lg': '12px', 'xl': '16px', '2xl': '20px', 'full': '9999px',
+                    },
+                },
+            },
+        };
+    </script>
+
+    <style>
+        body { font-family: 'Inter', 'Noto Sans KR', sans-serif; min-height: 100dvh; }
+        .glass { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+
+        /* 히트맵 셀 */
+        .heatmap-cell {
+            width: 12px; height: 12px;
+            border-radius: 3px;
+            background: #e0e3e5;
+            transition: background 0.2s;
+            cursor: default;
+        }
+        .heatmap-cell.done   { background: #f97316; }
+        .heatmap-cell.today  { background: #9d4300; ring: 2px solid #9d4300; }
+        .heatmap-cell.future { background: transparent; border: 1.5px solid #e0e3e5; }
+        .dark .heatmap-cell         { background: #2d3133; }
+        .dark .heatmap-cell.done    { background: #f97316; }
+        .dark .heatmap-cell.future  { background: transparent; border-color: #3a3f42; }
+
+        /* 박스 바 */
+        .box-bar { height: 8px; border-radius: 4px; transition: width 0.6s ease; }
+
+        /* 로딩 스켈레톤 */
+        .skeleton {
+            background: linear-gradient(90deg, #e0e3e5 25%, #eceef0 50%, #e0e3e5 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            border-radius: 8px;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
+</head>
+
+<body class="bg-surface font-body text-on-surface overflow-x-hidden">
+
+    <!-- TopAppBar -->
+    <header class="fixed top-0 w-full z-50 glass bg-surface/80 border-b border-outline-variant/20">
+        <div class="flex justify-between items-center px-5 h-14 max-w-2xl mx-auto">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center flex-shrink-0">
+                    <span class="font-bold text-primary text-xs font-headline" id="studentInitial">?</span>
+                </div>
+                <span class="font-headline font-bold text-primary tracking-tight" id="studentNameLabel">학습 현황</span>
+            </div>
+            <button onclick="document.documentElement.classList.toggle('dark')"
+                class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-surface-container-low transition-colors active:scale-90">
+                <span class="material-symbols-outlined text-[20px] text-on-surface-variant">dark_mode</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="pt-16 pb-32 px-4 max-w-lg mx-auto space-y-4">
+
+        <!-- ── 오늘의 학습 카드 ── -->
+        <section class="mt-4 bg-surface-container-lowest rounded-xl p-5 shadow-[0px_4px_20px_rgba(88,66,55,0.09)]">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <p class="text-[10px] font-bold text-primary uppercase tracking-[0.12em] font-label mb-1">오늘의 학습</p>
+                    <div class="flex items-baseline gap-1.5">
+                        <span class="text-4xl font-black font-headline text-on-surface" id="drawnCount">—</span>
+                        <span class="text-lg text-outline font-bold">/</span>
+                        <span class="text-2xl font-bold text-outline font-headline" id="targetCount">10</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div id="streakBadge"
+                        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-primary text-sm font-bold font-label">
+                        🔥 <span id="streakCount">0</span>일 연속
+                    </div>
+                </div>
+            </div>
+
+            <!-- 프로그레스 바 -->
+            <div class="w-full h-3 rounded-full bg-surface-container-high overflow-hidden mb-2">
+                <div id="progressBar"
+                    class="h-full rounded-full transition-all duration-700"
+                    style="width: 0%; background: linear-gradient(90deg, #9d4300, #f97316)"></div>
+            </div>
+            <div class="flex justify-between items-center">
+                <p class="text-xs text-outline font-label" id="progressLabel">오늘 학습을 시작해보세요!</p>
+                <p class="text-xs font-bold text-primary font-label" id="progressPct">0%</p>
+            </div>
+
+            <!-- 완료 배너 -->
+            <div id="completedBanner" class="hidden mt-3 p-3 rounded-lg text-center"
+                style="background: rgba(0,176,122,0.12); border: 1px solid rgba(0,176,122,0.22)">
+                <p class="text-sm font-bold text-tertiary">🎉 오늘 목표 달성! 내일 또 만나요</p>
+            </div>
+        </section>
+
+        <!-- ── 이번 주 현황 ── -->
+        <section class="bg-surface-container-lowest rounded-xl p-5 shadow-[0px_4px_20px_rgba(88,66,55,0.09)]">
+            <p class="text-[10px] font-bold text-primary uppercase tracking-[0.12em] font-label mb-3">이번 주</p>
+            <div class="flex gap-2" id="weekGrid">
+                <!-- JS로 렌더링 -->
+            </div>
+        </section>
+
+        <!-- ── 박스 분포 ── -->
+        <section class="bg-surface-container-lowest rounded-xl p-5 shadow-[0px_4px_20px_rgba(88,66,55,0.09)]">
+            <div class="flex items-center justify-between mb-3">
+                <p class="text-[10px] font-bold text-primary uppercase tracking-[0.12em] font-label">박스 분포</p>
+                <p class="text-xs text-outline font-label" id="totalCardsLabel">총 — 장</p>
+            </div>
+            <div class="space-y-2.5" id="boxBars">
+                <!-- JS로 렌더링 -->
+                <div class="skeleton h-8 w-full"></div>
+                <div class="skeleton h-8 w-full"></div>
+                <div class="skeleton h-8 w-full"></div>
+            </div>
+        </section>
+
+        <!-- ── 30일 히트맵 ── -->
+        <section class="bg-surface-container-lowest rounded-xl p-5 shadow-[0px_4px_20px_rgba(88,66,55,0.09)]">
+            <div class="flex items-center justify-between mb-3">
+                <p class="text-[10px] font-bold text-primary uppercase tracking-[0.12em] font-label">30일 학습 기록</p>
+                <div class="flex items-center gap-1.5 text-[10px] text-outline font-label">
+                    <div class="w-3 h-3 rounded-sm bg-surface-container-high"></div>미완
+                    <div class="w-3 h-3 rounded-sm ml-1.5" style="background:#f97316"></div>완료
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <div class="flex gap-1" id="heatmapGrid">
+                    <!-- JS로 렌더링 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ── 빠른 이동 ── -->
+        <section class="grid grid-cols-2 gap-3">
+            <a href="gacha.html"
+                class="flex items-center gap-3 p-4 bg-surface-container-lowest rounded-xl shadow-[0px_2px_10px_rgba(88,66,55,0.07)]
+                       hover:bg-primary-fixed/40 transition-colors active:scale-[0.97]">
+                <span class="material-symbols-outlined text-primary text-[22px]"
+                    style="font-variation-settings:'FILL' 1">auto_awesome</span>
+                <div>
+                    <p class="text-sm font-bold text-on-surface font-label">카드 뽑기</p>
+                    <p class="text-[10px] text-outline font-label">학습 시작</p>
+                </div>
+            </a>
+            <a href="list.html"
+                class="flex items-center gap-3 p-4 bg-surface-container-lowest rounded-xl shadow-[0px_2px_10px_rgba(88,66,55,0.07)]
+                       hover:bg-secondary-fixed/40 transition-colors active:scale-[0.97]">
+                <span class="material-symbols-outlined text-secondary text-[22px]">style</span>
+                <div>
+                    <p class="text-sm font-bold text-on-surface font-label">전체 카드</p>
+                    <p class="text-[10px] text-outline font-label">목록 보기</p>
+                </div>
+            </a>
+        </section>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 w-full z-40
+                flex justify-around items-center
+                px-4 pb-7 pt-3
+                glass bg-surface/80 border-t border-outline-variant/20">
+        <a href="index.html"
+            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            <span class="material-symbols-outlined text-[22px]">group</span>
+            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Students</span>
+        </a>
+        <a href="gacha.html"
+            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            <span class="material-symbols-outlined text-[22px]">auto_awesome</span>
+            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Gacha</span>
+        </a>
+        <a href="add.html"
+            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            <span class="material-symbols-outlined text-[22px]">add_circle</span>
+            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Add</span>
+        </a>
+        <div class="flex flex-col items-center justify-center px-4 py-1.5 rounded-full bg-primary-fixed text-primary">
+            <span class="material-symbols-outlined text-[22px]" style="font-variation-settings:'FILL' 1">bar_chart</span>
+            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Stats</span>
+        </div>
+        <a href="admin.html"
+            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            <span class="material-symbols-outlined text-[22px]">settings</span>
+            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Admin</span>
+        </a>
+    </nav>
+
+    <!-- Ambient Orbs -->
+    <div class="fixed top-0 -left-24 w-72 h-72 rounded-full pointer-events-none -z-10"
+        style="background:rgba(255,219,202,0.25); filter:blur(80px);"></div>
+    <div class="fixed bottom-32 -right-20 w-72 h-72 rounded-full pointer-events-none -z-10"
+        style="background:rgba(225,224,255,0.18); filter:blur(80px);"></div>
+
+    <script type="module">
+        import { supabase } from './js/supabase-client.js'
+        import {
+            getOrCreateTodaySession,
+            getSessionHistory,
+            getStreak,
+            getWeeklyStatus
+        } from './js/daily-session.js'
+
+        const BOX_COLORS = ['', '#f87171', '#facc15', '#60a5fa', '#34d399', '#f97316']
+        const BOX_NAMES  = ['', 'Box 1', 'Box 2', 'Box 3', 'Box 4', 'Box 5']
+        const DAY_LABELS = ['월', '화', '수', '목', '금', '토', '일']
+
+        async function init() {
+            const saved = localStorage.getItem('currentStudent')
+            if (!saved) { window.location.href = 'index.html'; return }
+            const student = JSON.parse(saved)
+
+            // 학생 이니셜 + 이름
+            document.getElementById('studentInitial').textContent = student.name[0] || '?'
+            document.getElementById('studentNameLabel').textContent = student.name + ' 학습 현황'
+
+            await Promise.all([
+                loadTodaySession(student.id),
+                loadWeeklyStatus(student.id),
+                loadBoxStats(student.id),
+                loadHeatmap(student.id),
+            ])
+        }
+
+        async function loadTodaySession(studentId) {
+            try {
+                const { session, remaining, streak } = await getOrCreateTodaySession(studentId)
+                const drawn  = session.cards_drawn
+                const target = session.cards_target
+                const pct    = Math.round((drawn / target) * 100)
+
+                document.getElementById('drawnCount').textContent  = drawn
+                document.getElementById('targetCount').textContent = target
+                document.getElementById('progressBar').style.width = pct + '%'
+                document.getElementById('progressPct').textContent = pct + '%'
+                document.getElementById('streakCount').textContent = streak
+
+                if (drawn === 0) {
+                    document.getElementById('progressLabel').textContent = '오늘 학습을 시작해보세요!'
+                } else if (session.completed) {
+                    document.getElementById('progressLabel').textContent = '오늘 목표를 완료했어요!'
+                    document.getElementById('completedBanner').classList.remove('hidden')
+                } else {
+                    document.getElementById('progressLabel').textContent = `${remaining}개 남았어요`
+                }
+            } catch (e) {
+                console.error(e)
+            }
+        }
+
+        async function loadWeeklyStatus(studentId) {
+            const grid = document.getElementById('weekGrid')
+            try {
+                const week = await getWeeklyStatus(studentId)
+                const today = new Date().getDay()
+                const todayIdx = today === 0 ? 6 : today - 1
+
+                grid.innerHTML = week.map((done, i) => {
+                    const isToday = i === todayIdx
+                    const isFuture = done === null
+
+                    let cellClass = 'flex-1 flex flex-col items-center gap-1.5'
+                    let dotClass = 'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-label transition-all'
+
+                    if (isToday) {
+                        dotClass += ' bg-primary text-on-primary shadow-md scale-110'
+                    } else if (done === true) {
+                        dotClass += ' bg-primary-fixed text-primary'
+                    } else if (isFuture) {
+                        dotClass += ' bg-surface-container text-outline/40'
+                    } else {
+                        dotClass += ' bg-surface-container text-outline'
+                    }
+
+                    const icon = done === true
+                        ? `<span class="material-symbols-outlined text-[14px]" style="font-variation-settings:'FILL' 1">check</span>`
+                        : DAY_LABELS[i]
+
+                    return `
+                        <div class="${cellClass}">
+                            <div class="${dotClass}">${icon}</div>
+                            <span class="text-[9px] font-bold uppercase tracking-wider font-label ${isToday ? 'text-primary' : 'text-outline'}">${DAY_LABELS[i]}</span>
+                        </div>
+                    `
+                }).join('')
+            } catch (e) {
+                grid.innerHTML = '<p class="text-xs text-outline">로드 실패</p>'
+            }
+        }
+
+        async function loadBoxStats(studentId) {
+            const container = document.getElementById('boxBars')
+            try {
+                const { data: cards } = await supabase
+                    .from('cards')
+                    .select('box')
+                    .eq('student_id', studentId)
+
+                if (!cards?.length) {
+                    container.innerHTML = '<p class="text-sm text-outline text-center py-2">카드가 없습니다</p>'
+                    document.getElementById('totalCardsLabel').textContent = '총 0장'
+                    return
+                }
+
+                const boxCount = [0, 0, 0, 0, 0, 0]
+                cards.forEach(c => { if (c.box >= 1 && c.box <= 5) boxCount[c.box]++ })
+                const total = cards.length
+                document.getElementById('totalCardsLabel').textContent = `총 ${total}장`
+
+                container.innerHTML = [1,2,3,4,5].map(box => {
+                    const count = boxCount[box]
+                    const pct   = total > 0 ? Math.round((count / total) * 100) : 0
+                    return `
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-[10px] font-bold font-label w-9 text-right shrink-0"
+                                  style="color: ${BOX_COLORS[box]}">${BOX_NAMES[box]}</span>
+                            <div class="flex-1 h-2 rounded-full bg-surface-container-high overflow-hidden">
+                                <div class="box-bar h-full" style="width:${pct}%; background:${BOX_COLORS[box]}"></div>
+                            </div>
+                            <span class="text-xs font-bold text-on-surface-variant font-label w-10 shrink-0">${count}장</span>
+                        </div>
+                    `
+                }).join('')
+            } catch (e) {
+                container.innerHTML = '<p class="text-xs text-outline">로드 실패</p>'
+            }
+        }
+
+        async function loadHeatmap(studentId) {
+            const grid = document.getElementById('heatmapGrid')
+            try {
+                const history = await getSessionHistory(studentId, 30)
+                const completedMap = new Map(history.map(s => [s.session_date, s.completed]))
+
+                const today = new Date()
+                const todayStr = today.toISOString().split('T')[0]
+
+                // 30일치 날짜 배열 (오래된 순)
+                const days = Array.from({ length: 30 }, (_, i) => {
+                    const d = new Date(today)
+                    d.setDate(today.getDate() - (29 - i))
+                    return d.toISOString().split('T')[0]
+                })
+
+                // 7행으로 나눠서 세로 방향으로 배치 (GitHub 잔디 스타일)
+                const cols = Math.ceil(days.length / 7)
+                const colGroups = Array.from({ length: cols }, (_, ci) =>
+                    days.slice(ci * 7, ci * 7 + 7)
+                )
+
+                grid.innerHTML = colGroups.map(col => `
+                    <div class="flex flex-col gap-1">
+                        ${col.map(ds => {
+                            const isToday  = ds === todayStr
+                            const isFuture = ds > todayStr
+                            const isDone   = completedMap.get(ds) === true
+
+                            let cls = 'heatmap-cell'
+                            if (isFuture) cls += ' future'
+                            else if (isDone) cls += ' done'
+                            if (isToday) cls += ' today ring-1 ring-primary ring-offset-1'
+
+                            return `<div class="${cls}" title="${ds}${isDone ? ' ✓' : ''}"></div>`
+                        }).join('')}
+                    </div>
+                `).join('')
+            } catch (e) {
+                grid.innerHTML = '<p class="text-xs text-outline">로드 실패</p>'
+            }
+        }
+
+        init()
+    </script>
+</body>
+</html>
