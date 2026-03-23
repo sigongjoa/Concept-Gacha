@@ -3,10 +3,10 @@ const { test, expect } = require('@playwright/test');
 
 // ── 공통 헬퍼 ────────────────────────────────────────────────────────────────
 
-/** localStorage에 테스트용 학생 세팅 */
+/** sessionStorage에 테스트용 학생 세팅 */
 async function setStudent(page, id = 'test-student-1', name = '홍길동') {
     await page.addInitScript(({ id, name }) => {
-        localStorage.setItem('currentStudent', JSON.stringify({ id, name }));
+        sessionStorage.setItem('currentStudent', JSON.stringify({ id, name }));
     }, { id, name });
 }
 

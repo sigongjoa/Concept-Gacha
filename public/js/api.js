@@ -32,6 +32,33 @@ async function verifyPin(plain, storedHash, salt) {
 let _teacherToken = null
 let _teacherExpiry = 0
 
+// ── Rate Limiting (클라이언트 측, 페이지 새로고침 초기화) ────
+const _rl = {
+    teacher: { count: 0, lockedUntil: 0 },
+    student: {},   // key: student name
+}
+const RL_MAX = 5
+const RL_LOCKOUT_MS = 30_000
+
+function _checkRateLimit(record) {
+    const now = Date.now()
+    if (record.lockedUntil > now) {
+        const sec = Math.ceil((record.lockedUntil - now) / 1000)
+        throw new Error(`PIN 시도 횟수 초과. ${sec}초 후 다시 시도하세요`)
+    }
+    record.count = (record.count || 0) + 1
+    if (record.count >= RL_MAX) {
+        record.lockedUntil = now + RL_LOCKOUT_MS
+        record.count = 0
+        throw new Error('PIN 시도 횟수 초과. 30초 후 다시 시도하세요')
+    }
+}
+
+function _rlReset(record) {
+    record.count = 0
+    record.lockedUntil = 0
+}
+
 // ── 전역 에러 헬퍼 ───────────────────────────────────────────
 function sb(result) {
     if (result.error) throw new Error(result.error.message)
@@ -44,28 +71,35 @@ const API = {
     // 인증 API
     // ============================================
     async login(name, pin) {
-        // 학생 이름으로 조회
+        // rate limit 확인
+        if (!_rl.student[name]) _rl.student[name] = { count: 0, lockedUntil: 0 }
+        _checkRateLimit(_rl.student[name])
+
+        // 학생 이름으로 조회 (pin/pin_salt는 검증용으로만 사용)
         const { data: students, error } = await supabase
             .from('students')
-            .select('*')
+            .select('id, name, pin, pin_salt, created_at')
             .eq('name', name)
         if (error) throw new Error(error.message)
         if (!students?.length) throw new Error('학생을 찾을 수 없습니다')
 
         const student = students[0]
 
-        // PIN 미설정 학생은 기본 PIN '0000'으로 통과
-        if (!student.pin) {
-            if (pin !== '0000') throw new Error('PIN이 올바르지 않습니다')
-            return student
-        }
+        // PIN 미설정 학생은 로그인 불가 (교사에게 PIN 설정 요청)
+        if (!student.pin) throw new Error('PIN이 설정되지 않았습니다. 선생님에게 문의하세요')
 
         const ok = await verifyPin(pin, student.pin, student.pin_salt)
         if (!ok) throw new Error('PIN이 올바르지 않습니다')
-        return student
+
+        // 로그인 성공 → rate limit 초기화, PIN 필드 제외하고 반환
+        _rlReset(_rl.student[name])
+        return { id: student.id, name: student.name, created_at: student.created_at }
     },
 
     async teacherLogin(pin) {
+        // rate limit 확인
+        _checkRateLimit(_rl.teacher)
+
         const { data, error } = await supabase
             .from('teacher_settings')
             .select('pin, pin_salt')
@@ -76,7 +110,8 @@ const API = {
         const ok = await verifyPin(pin, data.pin, data.pin_salt)
         if (!ok) throw new Error('PIN이 올바르지 않습니다')
 
-        // 30분짜리 인메모리 토큰 발급
+        // 로그인 성공 → rate limit 초기화, 30분 인메모리 토큰 발급
+        _rlReset(_rl.teacher)
         _teacherToken = crypto.randomUUID()
         _teacherExpiry = Date.now() + 30 * 60 * 1000
         return { token: _teacherToken }
@@ -110,7 +145,7 @@ const API = {
     },
 
     async getStudent(id) {
-        return sb(await supabase.from('students').select('*').eq('id', id).single())
+        return sb(await supabase.from('students').select('id, name, created_at').eq('id', id).single())
     },
 
     async addStudent(name) {
