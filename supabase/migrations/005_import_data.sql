@@ -1,14 +1,11 @@
 -- ============================================
--- data.json → Supabase 마이그레이션 v2
--- 학생 6명 + 카드 40개
+-- data.json → Supabase 마이그레이션 v3
 -- ============================================
 
--- 0. cards 테이블에 누락 컬럼 추가
+-- 0. cards 테이블 컬럼/제약 보정
 ALTER TABLE cards
   ADD COLUMN IF NOT EXISTS topic          TEXT,
   ADD COLUMN IF NOT EXISTS question_image TEXT;
-
--- box 체크 제약 4→5로 확장 (기존 제약 삭제 후 재생성)
 ALTER TABLE cards DROP CONSTRAINT IF EXISTS cards_box_check;
 ALTER TABLE cards ADD CONSTRAINT cards_box_check CHECK (box BETWEEN 1 AND 5);
 
@@ -17,7 +14,7 @@ INSERT INTO teacher_settings (id, pin, pin_salt)
 VALUES (1, '9117a4737b5e872ff5ca453c560ca9ed7d8af71d8b3a67438e3a2d2bab7fb4a7', '764cb6da70279180a45289a9a00fb6b7')
 ON CONFLICT (id) DO UPDATE SET pin = EXCLUDED.pin, pin_salt = EXCLUDED.pin_salt;
 
--- 2. 학생 삽입
+-- 2. 학생
 INSERT INTO students (name, pin, pin_salt, created_at)
 VALUES ('최예지', '333b848072995623c9c93b2026f115b27ca8d6ee4062168a35f893b4b525c653', '9ebcd0bad2e7974a57d50ed5fe6779c9', '2026-01-21T06:11:12.943Z')
 ON CONFLICT (name) DO UPDATE SET pin = EXCLUDED.pin, pin_salt = EXCLUDED.pin_salt;
@@ -37,7 +34,7 @@ INSERT INTO students (name, pin, pin_salt, created_at)
 VALUES ('영어유저', 'b3091e530c63974563288dddfbaa16b0a4ea6afafff860c64857dcc0f3d8a868', '5eb272b89a20d275d0e0f591bef516d6', '2026-03-12T05:15:35.189Z')
 ON CONFLICT (name) DO UPDATE SET pin = EXCLUDED.pin, pin_salt = EXCLUDED.pin_salt;
 
--- 3. 카드 삽입
+-- 3. 카드
 INSERT INTO cards (student_id, type, question, question_image, answer, topic, box, success_count, fail_count, created_at, last_review)
 SELECT id, 'image', 'Updated Question via Curl', '1768979027018-435864782.jpg', '약분과 통분 설명', NULL, 1, 0, 1, '2026-01-21T07:04:00.624Z', '2026-03-15T16:01:50.700Z'
 FROM students WHERE name = '최예지';
@@ -153,8 +150,8 @@ INSERT INTO cards (student_id, type, question, question_image, answer, topic, bo
 SELECT id, 'text', '색칠된 부분의 넓이를 구하는 방법은?', NULL, '전체 − 색칠 안 된 부분, 또는 각 도형 넓이 합산', '색칠부분', 1, 0, 0, '2026-03-16T01:08:48.369Z', NULL
 FROM students WHERE name = '김시우';
 INSERT INTO cards (student_id, type, question, question_image, answer, topic, box, success_count, fail_count, created_at, last_review)
-SELECT id, 'text', '넓이의 단위 변환: 1m² = 몇 cm²인가요?', NULL, '10,000cm²  (1m = 100cm이므로 1m² = 100 × 100 = 10,000cm²)', '넓이단위', 1, 0, 0, '1773649037592', NULL
+SELECT id, 'text', '넓이의 단위 변환: 1m² = 몇 cm²인가요?', NULL, '10,000cm²  (1m = 100cm이므로 1m² = 100 × 100 = 10,000cm²)', '넓이단위', 1, 0, 0, '2026-03-16T08:17:17.000Z', NULL
 FROM students WHERE name = '김시우';
 INSERT INTO cards (student_id, type, question, question_image, answer, topic, box, success_count, fail_count, created_at, last_review)
-SELECT id, 'text', '단위 변환: 1km² = 몇 m²인가요?', NULL, '1,000,000m²  (1km = 1000m이므로 1km² = 1000 × 1000 = 1,000,000m²)', '단위변환', 1, 0, 0, '1773649037593', NULL
+SELECT id, 'text', '단위 변환: 1km² = 몇 m²인가요?', NULL, '1,000,000m²  (1km = 1000m이므로 1km² = 1000 × 1000 = 1,000,000m²)', '단위변환', 1, 0, 0, '2026-03-16T08:17:17.000Z', NULL
 FROM students WHERE name = '김시우';
