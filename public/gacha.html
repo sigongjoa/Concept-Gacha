@@ -909,6 +909,10 @@
             if (mcqResult) {
                 // MCQ 모드: 선택지 그리드 표시
                 mcqChoices.innerHTML = '';
+                // "25 — 설명" 타입: answerBox엔 전체 설명, 선택지엔 숫자만
+                if (mcqResult.fullAnswer) {
+                    document.getElementById('cardAnswer').textContent = mcqResult.fullAnswer;
+                }
                 mcqResult.choices.forEach(choice => {
                     const btn = document.createElement('button');
                     btn.className = 'mcq-btn';

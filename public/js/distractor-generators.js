@@ -84,9 +84,33 @@ const DISTRACTOR_BANKS = {
         }
     },
 
+    // ── 역수 ─────────────────────────────────────────────────────────────────
+    '역수': {
+        keywords: /역수/i,
+        banks: {
+            default: ['두 수의 합이 1이 되는 수', '두 수의 차가 0이 되는 수', '분자와 분모를 바꾼 수', '분모와 분자를 더한 수', '절댓값이 같고 부호가 반대인 수', '두 수를 더해서 0이 되는 수', '곱해서 2가 되는 수', '나누어서 1이 되는 수', '분자를 2배 한 수', '분모에 1을 더한 수', '소수점을 이동시킨 수', '제곱해서 1이 되는 수', '두 수를 빼서 1이 되는 수', '나누어서 0이 되는 수', '합이 2가 되는 수'],
+        }
+    },
+
+    // ── 동류항 ────────────────────────────────────────────────────────────────
+    '동류항': {
+        keywords: /동류항|문자부분|차수.*같|같은.*차수/i,
+        banks: {
+            default: ['계수가 같은 항', '상수항이 같은 항', '부호가 같은 항', '문자가 같고 계수가 다른 항', '차수만 같은 항', '문자가 없는 항', '계수와 문자가 모두 같은 항', '지수가 같은 항', '분수 계수를 가진 항', '음수 계수를 가진 항', '문자와 차수 중 하나만 같은 항', '같은 문자를 포함하는 모든 항', '상수항끼리', '최고차항이 같은 항', '절댓값이 같은 계수를 가진 항'],
+        }
+    },
+
+    // ── 대소관계 ──────────────────────────────────────────────────────────────
+    '대소관계': {
+        keywords: /대소관계|크기.*비교|비교.*크기|부등호|크다.*작다|양수.*음수|음수.*양수/i,
+        banks: {
+            default: ['크다, 작다, 같다', '양수 > 0 > 음수', '절댓값이 큰 수가 항상 크다', '음수끼리는 절댓값이 클수록 크다', '분수의 크기는 분모로 결정된다', '양수는 음수보다 항상 작다', '0은 모든 음수보다 작다', '음수끼리는 절댓값이 클수록 작다', '분모가 같으면 분자로 비교', '정수는 자연수보다 항상 크다', '부등호 방향은 항상 고정이다', '무리수는 유리수보다 항상 크다', '음의 분수는 양의 정수보다 크다', '절댓값이 같으면 대소관계 없다', '소수점 이하 자리가 많을수록 크다'],
+        }
+    },
+
     // ── 약분 / 분수 ───────────────────────────────────────────────────────────
     '약분': {
-        keywords: /약분|기약분수|통분|공약수|최대공약수/i,
+        keywords: /약분|기약분수|통분|공약수|최대공약수|서로소/i,
         banks: {
             default: ['분자와 분모를 2로 나눈다', '분자만 약수로 나눈다', '분모만 약수로 나눈다', '분자+분모를 공약수로 나눈다', '최소공배수로 나눈다', '분자÷분모', '공배수로 나눈다', '분자×분모', '최대공약수로 곱한다', '분모를 분자로 나눈다', '공약수로 곱한다', '소인수로 나눈다', '분자-분모를 나눈다', '2의 배수로만 나눈다', '분수 자체를 역수로'],
         }
@@ -102,7 +126,7 @@ const DISTRACTOR_BANKS = {
 
     // ── 도형 / 넓이 ───────────────────────────────────────────────────────────
     '도형': {
-        keywords: /삼각형|직사각형|마름모|사다리꼴|원|넓이|둘레|다각형/i,
+        keywords: /삼각형|직사각형|마름모|사다리꼴|원|넓이|둘레|다각형|꼭짓점|모서리|사각형|평행사변|대각선|선분/i,
         banks: {
             '삼각형넓이': ['밑변×높이', '밑변×높이×2', '밑변+높이', '(밑변+높이)/2', '밑변²', '높이²', '밑변/높이', '밑변×높이/3', '3×밑변', '밑변²×높이', '밑변×높이²', '√(밑변×높이)', '밑변+높이×2', '밑변×(높이/4)', '(밑변×높이)²'],
             '직사각형넓이': ['(가로+세로)×2', '가로+세로', '가로²', '세로²', '가로×세로×2', '가로/세로', '2가로×세로', '가로+세로×2', '(가로-세로)×2', 'π×가로', '가로²×세로', '√(가로×세로)', '가로×2+세로', '(가로×세로)²', '가로÷세로'],
@@ -253,18 +277,39 @@ function getDistractors(card, count = 5) {
     if (pool.length < 3) {
         const patternPool = generateFromPattern(correct);
         pool = [...pool, ...patternPool];
+
+        // "25 — 설명..." 형태: 앞 숫자로 numeric distractors 보충
+        const leadingNum = correct.match(/^(-?\d+(?:,\d+)*(?:\.\d+)?)\s*[—\-–]/);
+        if (leadingNum && pool.length < 3) {
+            const n = parseFloat(leadingNum[1].replace(/,/g, ''));
+            if (!isNaN(n)) {
+                const numPool = [n+1,n-1,n*2,n/2,n+2,n-2,n+5,n-5,n*3,n+10]
+                    .filter(v => v !== n && Number.isFinite(v))
+                    .map(v => Number.isInteger(v) ? String(v) : v.toFixed(1));
+                pool = [...pool, ...numPool];
+            }
+        }
+
         if (source === 'pattern' && pool.length < 2) return null; // 생성 불가
     }
 
+    // "NUM — 설명" 패턴: MCQ 선택지는 숫자만 표시 (answerBox엔 전체 표시)
+    let mcqCorrect = correct;
+    const leadingNumDisplay = correct.match(/^(-?\d+(?:,\d+)*(?:\.\d+)?)\s*[—\-–]/);
+    if (leadingNumDisplay && pool.some(d => /^-?\d/.test(d))) {
+        mcqCorrect = leadingNumDisplay[1];
+        pool = pool.filter(d => /^-?\d/.test(d) || d === mcqCorrect);
+    }
+
     // 중복 제거, 정답 제외, 셔플
-    const unique = [...new Set(pool)].filter(d => d !== correct);
+    const unique = [...new Set(pool)].filter(d => d !== mcqCorrect);
     const shuffled = unique.sort(() => Math.random() - 0.5);
 
     // count-1개 오답 + 정답 → 셔플
     const selected = shuffled.slice(0, count - 1);
-    const choices = [...selected, correct].sort(() => Math.random() - 0.5);
+    const choices = [...selected, mcqCorrect].sort(() => Math.random() - 0.5);
 
-    return { choices, correctAnswer: correct, source };
+    return { choices, correctAnswer: mcqCorrect, fullAnswer: correct, source };
 }
 
 // 전역 노출 (non-module 스크립트에서 사용)
