@@ -258,6 +258,29 @@ const API = {
     },
 
     // ============================================
+    // 오늘의 학습 결과
+    // ============================================
+    async getTodayResults(studentId) {
+        const today = new Date().toISOString().slice(0, 10)
+        const { data: session, error: sessionErr } = await supabase
+            .from('daily_sessions')
+            .select('id, cards_drawn, cards_target, completed, completed_at')
+            .eq('student_id', studentId)
+            .eq('session_date', today)
+            .maybeSingle()
+        if (sessionErr) throw new Error(sessionErr.message)
+        if (!session) return { session: null, cards: [] }
+
+        const { data: cards, error: cardsErr } = await supabase
+            .from('session_cards')
+            .select('id, result, box_before, box_after, reviewed_at, cards(id, topic, question, answer, box)')
+            .eq('session_id', session.id)
+            .order('reviewed_at')
+        if (cardsErr) throw new Error(cardsErr.message)
+        return { session, cards: cards || [] }
+    },
+
+    // ============================================
     // 이미지 업로드 (Supabase Storage)
     // ============================================
     async uploadImage(file, studentId) {

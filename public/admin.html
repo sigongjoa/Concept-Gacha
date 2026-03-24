@@ -178,6 +178,23 @@
                     </div>
                 </section>
 
+                <!-- ── Today's Learning Dashboard ─────────────── -->
+                <section class="xl:col-span-2 bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-100 dark:border-slate-800">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-base font-bold flex items-center gap-2">
+                            <span class="material-symbols-outlined text-green-500 text-xl" style="font-variation-settings:'FILL' 1">bar_chart</span>
+                            오늘의 학습 현황
+                            <span id="todayDateBadge" class="text-xs font-normal text-slate-400 ml-1"></span>
+                        </h2>
+                        <button onclick="loadTodayResults()" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="새로고침">
+                            <span class="material-symbols-outlined text-slate-400 text-xl">refresh</span>
+                        </button>
+                    </div>
+                    <div class="space-y-2" id="todayResultsList">
+                        <div class="text-center py-8 text-slate-400 text-sm">학습 현황을 불러오는 중...</div>
+                    </div>
+                </section>
+
             </div>
         </div>
     </div>
@@ -265,11 +282,126 @@
         function initAdmin() {
             Layout.init();
             loadAllStudents();
+            loadTodayResults();
             document.getElementById('studentFilter').onchange = (e) => {
                 const sid = e.target.value;
                 if (sid) loadStudentCards(sid);
                 else document.getElementById('adminCardList').innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">학생을 선택하여 카드를 관리하세요.</div>';
             };
+            // 오늘 날짜 배지
+            document.getElementById('todayDateBadge').textContent =
+                new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+        }
+
+        // ── 오늘의 학습 현황 ──────────────────────────────────────
+        async function loadTodayResults() {
+            const container = document.getElementById('todayResultsList');
+            container.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">불러오는 중...</div>';
+            try {
+                const students = await API.getStudents();
+                if (students.length === 0) {
+                    container.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">등록된 학생이 없습니다.</div>';
+                    return;
+                }
+                const allResults = await Promise.all(
+                    students.map(async s => ({ student: s, ...(await API.getTodayResults(s.id)) }))
+                );
+                renderTodayDashboard(allResults);
+            } catch (e) {
+                container.innerHTML = `<div class="text-center py-8 text-red-400 text-sm">로드 실패: ${escHtml(e.message)}</div>`;
+            }
+        }
+
+        function renderTodayDashboard(allResults) {
+            const container = document.getElementById('todayResultsList');
+            container.innerHTML = allResults.map((r, idx) => {
+                const { student, session, cards } = r;
+                const success = (cards || []).filter(c => c.result === 'success');
+                const fail    = (cards || []).filter(c => c.result === 'fail');
+                const drawn   = session ? session.cards_drawn : 0;
+                const target  = session ? session.cards_target : 10;
+                const pct     = target > 0 ? Math.round(drawn / target * 100) : 0;
+                const notStarted = !session;
+
+                const successRows = success.map(c => `
+                    <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/10">
+                        <span class="text-xs font-bold text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full flex-shrink-0">${escHtml(c.cards?.topic || '?')}</span>
+                        <span class="text-xs text-slate-600 dark:text-slate-400 flex-1 truncate">${escHtml(c.cards?.question || '')}</span>
+                        <span class="text-xs text-slate-400 flex-shrink-0 font-mono">Box ${c.box_before}→${c.box_after}</span>
+                    </div>`).join('');
+
+                const failRows = fail.map(c => `
+                    <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/10">
+                        <span class="text-xs font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-full flex-shrink-0">${escHtml(c.cards?.topic || '?')}</span>
+                        <span class="text-xs text-slate-600 dark:text-slate-400 flex-1 truncate">${escHtml(c.cards?.question || '')}</span>
+                        <span class="text-xs text-slate-400 flex-shrink-0 font-mono">Box ${c.box_before}→${c.box_after}</span>
+                        ${c.cards?.id ? `
+                        <button onclick="resetCardBox('${escHtml(c.cards.id)}')"
+                            class="text-xs px-2 py-1 rounded-lg bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 font-bold hover:bg-orange-200 dark:hover:bg-orange-900/40 transition-all active:scale-95 flex-shrink-0 flex items-center gap-0.5">
+                            <span class="material-symbols-outlined text-xs">restart_alt</span>Box 1
+                        </button>` : ''}
+                    </div>`).join('');
+
+                return `
+                <div class="rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+                    <button onclick="toggleStudentDetail(${idx})"
+                        class="w-full flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors text-left">
+                        <div class="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center font-bold text-sm flex-shrink-0">${escHtml(student.name.charAt(0))}</div>
+                        <span class="font-bold text-sm w-20 flex-shrink-0 truncate">${escHtml(student.name)}</span>
+                        ${notStarted
+                            ? `<span class="text-xs text-slate-400 flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span>아직 시작 안 함</span>`
+                            : `<div class="flex items-center gap-3 flex-1 min-w-0">
+                                <span class="text-xs font-bold text-slate-500 flex-shrink-0">${drawn}/${target}</span>
+                                <span class="text-xs font-bold text-green-600 flex items-center gap-0.5 flex-shrink-0">
+                                    <span class="material-symbols-outlined text-xs" style="font-variation-settings:'FILL' 1">check_circle</span>${success.length}
+                                </span>
+                                <span class="text-xs font-bold text-red-500 flex items-center gap-0.5 flex-shrink-0">
+                                    <span class="material-symbols-outlined text-xs" style="font-variation-settings:'FILL' 1">cancel</span>${fail.length}
+                                </span>
+                                <div class="flex-1 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 hidden sm:block min-w-0">
+                                    <div class="h-1.5 rounded-full" style="width:${pct}%; background:linear-gradient(to right,#fb923c,#22c55e)"></div>
+                                </div>
+                                <span class="text-xs text-slate-400 font-bold flex-shrink-0">${pct}%</span>
+                                ${session?.completed ? `<span class="material-symbols-outlined text-green-500 text-base flex-shrink-0" style="font-variation-settings:'FILL' 1">task_alt</span>` : ''}
+                               </div>`
+                        }
+                        <span class="material-symbols-outlined text-slate-300 text-sm transition-transform flex-shrink-0" id="chevron-${idx}">expand_more</span>
+                    </button>
+                    <div id="detail-${idx}" class="hidden px-4 pb-4 pt-2 space-y-1.5 bg-white dark:bg-slate-900">
+                        ${notStarted
+                            ? '<p class="text-sm text-slate-400 text-center py-4">오늘 학습 기록이 없습니다.</p>'
+                            : `${success.length > 0 ? `
+                                <p class="text-xs font-bold text-green-600 mt-2 mb-1 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">check_circle</span>맞춘 카드 (${success.length}개)
+                                </p>${successRows}` : ''}
+                             ${fail.length > 0 ? `
+                                <p class="text-xs font-bold text-red-500 mt-3 mb-1 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">cancel</span>틀린 카드 (${fail.length}개)
+                                </p>${failRows}` : ''}
+                             ${success.length === 0 && fail.length === 0 ? '<p class="text-sm text-slate-400 text-center py-4">기록된 카드가 없습니다.</p>' : ''}`
+                        }
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function toggleStudentDetail(idx) {
+            const detail  = document.getElementById(`detail-${idx}`);
+            const chevron = document.getElementById(`chevron-${idx}`);
+            const opening = detail.classList.contains('hidden');
+            detail.classList.toggle('hidden');
+            chevron.style.transform = opening ? 'rotate(180deg)' : '';
+        }
+
+        async function resetCardBox(cardId) {
+            if (!confirm('이 카드를 Box 1로 초기화할까요?')) return;
+            try {
+                await API.updateCard(cardId, { box: 1 });
+                showToast('Box 1로 초기화되었습니다');
+                loadTodayResults();
+            } catch (e) {
+                showToast(e.message, true);
+            }
         }
 
         async function addStudent() {
