@@ -890,7 +890,7 @@
             if (/역수/.test(q))                          return '역수';
             if (/약분|기약분수|통분/.test(q))            return '약분';
             if (/서로소/.test(q))                         return '서로소';
-            if (/소수|합성수/.test(q))                   return '소수';
+            if (/(?<![복유무])소수|합성수/.test(q))      return '소수';
             if (/제곱근|√/.test(q))                      return '제곱근';
             if (/대소관계|크기.*비교/.test(q))           return '대소관계';
             const isFormula = a.length < 60 && /[×÷]/.test(a);
