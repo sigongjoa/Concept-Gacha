@@ -787,6 +787,152 @@ const PROBLEM_GENERATORS = {
         generate() { return PROBLEM_GENERATORS['단위변환'].generate(); },
     },
 
+    // ─── 곱셈공식 동적 생성기 ─────────────────────────────────────────────────
+    // 숫자가 채워진 구체적 문제를 생성하고, 그 숫자에 맞는 매력적 오답을 계산
+    // - 오답은 bank에서 랜덤 뽑기가 아닌 해당 문제의 값으로 직접 계산
+    // - generate() 반환값에 distractors 포함 → gacha.html MCQ 모드에서 활용
+    '곱셈공식': {
+        label: '곱셈공식 전개',
+        inputType: 'algebraic',
+        checkAnswer(u, c) {
+            const norm = s => s.replace(/\s/g, '').toLowerCase()
+                .replace(/\+0x|0x\+|(?<!\d)0x/g, '')   // 0x 항 제거
+                .replace(/\+0(?!\d)/g, '');              // +0 제거
+            return norm(u) === norm(c);
+        },
+
+        generate() {
+            const r = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+
+            // 다항식 문자열 생성 헬퍼
+            // poly(cx, c) → "x² ± cx·x ± c" 형태
+            const poly = (cx, c) => {
+                const xp = cx === 0 ? '' : cx === 1 ? '+x' : cx === -1 ? '-x' : cx > 0 ? `+${cx}x` : `${cx}x`;
+                const cp = c === 0 ? '' : c > 0 ? `+${c}` : `${c}`;
+                return `x²${xp}${cp}`;
+            };
+
+            const TYPES = ['sq_plus', 'sq_minus', 'diff_sq', 'cross_pp', 'cross_pm'];
+            const t = TYPES[Math.floor(Math.random() * TYPES.length)];
+
+            // ── (x+a)² = x²+2ax+a² ──────────────────────────────────────────
+            if (t === 'sq_plus') {
+                const a = r(2, 9);
+                const ans = poly(2*a, a*a);
+                return {
+                    question: `(x+${a})²`,
+                    questionSub: '(a+b)² = a²+2ab+b²  — 전개하시오',
+                    answer: ans,
+                    distractors: [
+                        `x²+${a*a}`,          // ★가장 흔한 실수: 2ax 항 통째 누락
+                        poly(a, a*a),          // 2a 대신 a (절반 계수)
+                        poly(-2*a, a*a),       // 중간항 부호 반대
+                        poly(2*a, -a*a),       // 상수항 부호 반대
+                        poly(2*a, a),          // a² 대신 a (제곱 안 함)
+                    ].filter(d => d !== ans),
+                    steps: [
+                        `(x+${a})² = x² + 2·x·${a} + ${a}²`,
+                        `= x² + ${2*a}x + ${a*a}`,
+                        `⚠ x²+${a*a} 아님! 중간 항 ${2*a}x 빠뜨리지 말 것`,
+                    ],
+                };
+            }
+
+            // ── (x-a)² = x²-2ax+a² ──────────────────────────────────────────
+            if (t === 'sq_minus') {
+                const a = r(2, 9);
+                const ans = poly(-2*a, a*a);
+                return {
+                    question: `(x-${a})²`,
+                    questionSub: '(a-b)² = a²-2ab+b²  — 전개하시오',
+                    answer: ans,
+                    distractors: [
+                        `x²-${a*a}`,           // ★합차공식 (x+a)(x-a)와 혼동
+                        poly(2*a, a*a),         // 부호 전부 +로 (sq_plus와 혼동)
+                        poly(-a, a*a),          // 2a 대신 a
+                        poly(-2*a, -a*a),       // 상수항 부호 반대 (−a² 착각)
+                        poly(2*a, -a*a),        // 중간·상수 모두 부호 반대
+                    ].filter(d => d !== ans),
+                    steps: [
+                        `(x-${a})² = x² - 2·x·${a} + ${a}²`,
+                        `= x² - ${2*a}x + ${a*a}`,
+                        `⚠ x²-${a*a}는 (x+${a})(x-${a}) 결과! 헷갈리지 말 것`,
+                    ],
+                };
+            }
+
+            // ── (x+a)(x-a) = x²-a² ──────────────────────────────────────────
+            if (t === 'diff_sq') {
+                const a = r(2, 9);
+                const ans = `x²-${a*a}`;
+                return {
+                    question: `(x+${a})(x-${a})`,
+                    questionSub: '합차공식 (a+b)(a-b) = a²-b²  — 전개하시오',
+                    answer: ans,
+                    distractors: [
+                        poly(2*a, -a*a),        // ★중간항 소거 안 된다고 착각
+                        poly(-2*a, a*a),        // (x-a)²와 혼동
+                        `x²+${a*a}`,            // 부호 반대
+                        poly(a, -a*a),          // 중간항 소거 절반만
+                        poly(0, a*a),           // 부호 반대 (+ 착각)
+                    ].filter(d => d !== ans),
+                    steps: [
+                        `(x+${a})(x-${a}) = x² - ${a}x + ${a}x - ${a*a}`,
+                        `중간항: -${a}x + ${a}x = 0  → 소거!`,
+                        `= x² - ${a*a}`,
+                    ],
+                };
+            }
+
+            // ── (x+a)(x+b) = x²+(a+b)x+ab ──────────────────────────────────
+            if (t === 'cross_pp') {
+                const a = r(2, 7), b = r(2, 7);
+                const s = a + b, p = a * b;
+                const ans = poly(s, p);
+                return {
+                    question: `(x+${a})(x+${b})`,
+                    questionSub: '(x+a)(x+b) = x²+(a+b)x+ab  — 전개하시오',
+                    answer: ans,
+                    distractors: [
+                        poly(p, s),             // ★합·곱 자리 뒤바뀜
+                        poly(s, -p),            // 상수항 부호 반대
+                        poly(a, p),             // a+b 대신 a만
+                        poly(s, a),             // ab 대신 a만
+                        poly(s+1, p),           // 계산 실수 (+1)
+                    ].filter(d => d !== ans),
+                    steps: [
+                        `(x+${a})(x+${b}) = x² + (${a}+${b})x + ${a}×${b}`,
+                        `= x² + ${s}x + ${p}`,
+                        `합 ${s} → x 계수 / 곱 ${p} → 상수항`,
+                    ],
+                };
+            }
+
+            // ── (x+a)(x-b) = x²+(a-b)x-ab ──────────────────────────────────
+            let a = r(2, 7), b = r(2, 7);
+            while (a === b) b = r(2, 7);   // diff_sq와 중복 방지
+            const s = a - b, p = a * b;
+            const ans = poly(s, -p);
+            return {
+                question: `(x+${a})(x-${b})`,
+                questionSub: '(x+a)(x+b) 공식 — 부호 주의하며 전개하시오',
+                answer: ans,
+                distractors: [
+                    poly(a+b, -p),          // ★부호 무시하고 합 계산
+                    poly(s, p),             // 상수항 부호 반대
+                    poly(-s, -p),           // 중간항 부호 반대
+                    poly(a, -p),            // a-b 대신 a만
+                    poly(s, -b),            // ab 대신 b만
+                ].filter(d => d !== ans),
+                steps: [
+                    `(x+${a})(x-${b}) = x² + (${a}+(-${b}))x + ${a}×(-${b})`,
+                    `= x² + ${s >= 0 ? s : s}x - ${p}`,
+                    `합: ${a}+(-${b}) = ${s} / 곱: ${a}×(-${b}) = -${p}`,
+                ],
+            };
+        },
+    },
+
 };
 
 // ─── 내보내기 (module 환경과 전역 둘 다 지원) ───────────────

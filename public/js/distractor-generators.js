@@ -47,7 +47,7 @@ const DISTRACTOR_BANKS = {
 
     // ── 거듭제곱 / 지수 ───────────────────────────────────────────────────────
     '거듭제곱': {
-        keywords: /거듭제곱|지수|밑|지수법칙|a\^|aⁿ/i,
+        keywords: /거듭제곱|지수법칙|지수.*법칙|a\^|aⁿ|거듭제곱법칙/i,
         banks: {
             '곱법칙': ['aᵐ⁺ⁿ', 'aᵐ⁻ⁿ', 'aᵐ×ⁿ', 'aᵐ÷ⁿ', '(a+b)ᵐ⁺ⁿ', '2aᵐⁿ', 'aᵐ+aⁿ', 'aᵐ·bⁿ', 'a²ᵐⁿ', '(ab)ᵐ⁺ⁿ', 'aᵐn', 'aⁿm', 'aᵐ/aⁿ', 'aᵐ-aⁿ', 'a·mⁿ'],
             '나눗셈법칙': ['aᵐ⁺ⁿ', 'aᵐⁿ', 'aᵐ×ⁿ', '1/aᵐ⁻ⁿ', 'aⁿ⁻ᵐ', 'aᵐ÷n', '(a÷b)ᵐ', 'aᵐ-aⁿ', 'a/mⁿ', 'aⁿ/aᵐ', 'aᵐ+ⁿ', '(a-b)ᵐ⁻ⁿ', 'a·bᵐ⁻ⁿ', 'aⁿ·aᵐ', 'a⁰'],
@@ -167,6 +167,18 @@ const DISTRACTOR_BANKS = {
         }
     },
 
+    // ── 연산법칙 (교환·결합·분배) ─────────────────────────────────────────────
+    '연산법칙': {
+        keywords: /교환법칙|결합법칙|분배법칙|commutative|associative|distributive|a\+b.*b\+a|a×b.*b×a|a\(b\+c\)|a\(b-c\)/i,
+        banks: {
+            '교환법칙': ['b-a', 'a-b', '2a+b', 'a+b+1', 'a×b', 'a÷b', 'b÷a', 'a²+b', 'a+2b', 'a-b+1'],
+            '결합법칙': ['a+(b-c)', '(a-b)+c', 'a+b-c', '(a×b)+c', 'a-(b+c)', 'a+b+c+1', '(a+b)×c', 'a+b×c', 'a×b+c', 'a-b×c'],
+            '분배법칙': ['a×b×c', 'a×(b×c)', 'a+b+c', 'a×b+c', '(a+b)×c', 'a×b-a×c', 'a²×b+c', 'a×b+a+c', 'a×b+a-c', '(a×b)+(a+c)'],
+            '성립여부': ['덧셈', '곱셈', '덧셈과 곱셈', '모든 사칙연산', '뺄셈만', '나눗셈만', '덧셈과 뺄셈', '뺄셈과 나눗셈', '곱셈과 나눗셈', '덧셈과 나눗셈'],
+            default: ['b-a', 'a-b', 'a×b+c', '(a+b)×c', 'a+b×c', 'a×b×c', 'a+(b×c)', 'a×b+a+c', 'a-b-c', 'a²+b+c', '(a-b)×c', 'a+b-c'],
+        }
+    },
+
     // ── 방정식 근의 공식 / 판별식 ─────────────────────────────────────────────
     '이차방정식': {
         keywords: /이차방정식|근의.공식|판별식|근과.계수|짝수공식|완전제곱식/i,
@@ -222,8 +234,18 @@ function inferDistractorTopic(card) {
     const topic = (card.topic || '').toLowerCase();
     const q = (card.question || '').toLowerCase();
     const a = (card.answer || '').toLowerCase();
-    const all = topic + ' ' + q + ' ' + a;
 
+    // 1차: topic 필드만으로 매칭 (더 정확 - 오매칭 방지)
+    for (const [key, bank] of Object.entries(DISTRACTOR_BANKS)) {
+        if (bank.keywords.test(topic)) return key;
+    }
+    // 2차: question까지 포함해서 매칭
+    const qOnly = topic + ' ' + q;
+    for (const [key, bank] of Object.entries(DISTRACTOR_BANKS)) {
+        if (bank.keywords.test(qOnly)) return key;
+    }
+    // 3차: answer까지 포함 (최후 수단)
+    const all = qOnly + ' ' + a;
     for (const [key, bank] of Object.entries(DISTRACTOR_BANKS)) {
         if (bank.keywords.test(all)) return key;
     }

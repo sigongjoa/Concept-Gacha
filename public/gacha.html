@@ -663,6 +663,11 @@
                 this.algExpr = ''; this.algCur = '';
                 this.choiceVal = null; this.blankFocused = null;
 
+                // 동적 MCQ: problem.distractors가 있으면 choice 모드로 자동 전환
+                // algebraic 타이핑 대신 그 문제에 맞게 계산된 선택지 버튼으로 입력
+                const hasDynamicMcq = Array.isArray(problem.distractors) && problem.distractors.length > 0;
+                if (hasDynamicMcq) this.type = 'choice';
+
                 document.querySelectorAll('#numericKeypad button').forEach(b => b.disabled = false);
                 const sb = document.getElementById('practiceSubmitBtn');
                 if (sb) sb.disabled = false;
@@ -698,7 +703,15 @@
                 }
 
                 if (this.type === 'choice') {
-                    const choices = gen.choices || [];
+                    let choices;
+                    if (hasDynamicMcq) {
+                        // 동적 MCQ: 정답 + 오답 최대 4개를 랜덤 셔플
+                        const correct = problem.answer;
+                        const wrong = problem.distractors.slice(0, 4);
+                        choices = [correct, ...wrong].sort(() => Math.random() - 0.5);
+                    } else {
+                        choices = gen.choices || [];
+                    }
                     document.getElementById('choiceBtnPanel').innerHTML =
                         choices.map(c => `<button class="choice-btn" data-val="${c}" onclick="IC.pick('${c.replace(/'/g,"\\'")}', this)">${c}</button>`).join('');
                     document.getElementById('choiceBtnPanel').style.display = 'flex';
