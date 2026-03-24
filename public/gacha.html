@@ -644,6 +644,7 @@
         let currentCard = null;
         let currentStudentId = null;
         let currentProblem = null;
+        let _mcqCorrect = null;  // MCQ 선택 결과 (연습문제 채점 후 피드백 전달용)
 
         // 상자별 컬러
         const BOX_COLORS = ['#d8dadc', '#f87171', '#facc15', '#60a5fa', '#34d399', '#f97316'];
@@ -945,12 +946,17 @@
             document.getElementById('cardCategory').textContent =
                 card.topic || (studentName ? studentName + '의 개념' : '개념 카드');
 
+            _mcqCorrect = null;
             const practiceSection = document.getElementById('practiceSection');
             const topic = inferTopicClient(card);
             if (topic && PROBLEM_GENERATORS[topic]) {
                 card._inferredTopic = topic;
                 practiceSection.classList.remove('hidden');
                 loadPractice(topic);
+                // MCQ가 있으면 연습문제를 비활성 상태로 시작
+                if (mcqResult) {
+                    _setPracticeActive(false);
+                }
             } else {
                 practiceSection.classList.add('hidden');
             }
@@ -1023,8 +1029,10 @@
             document.getElementById('practiceTopicLabel').textContent = gen.label;
             document.getElementById('practiceResult').classList.add('hidden');
             document.getElementById('practiceSteps').classList.add('hidden');
-            document.getElementById('nextCardBtn').classList.add('hidden');
-            document.getElementById('nextCardBtn').classList.remove('flex');
+            const _nb = document.getElementById('nextCardBtn');
+            _nb.classList.add('hidden');
+            _nb.classList.remove('flex');
+            _nb.innerHTML = '<span class="material-symbols-outlined text-[16px]" style="font-variation-settings:\'FILL\' 1">auto_awesome</span>다음 카드 뽑기';
 
             if (currentProblem.type === 'fillblank') {
                 document.getElementById('practiceFractionView').classList.add('hidden');
@@ -1115,11 +1123,33 @@
                 resultMsg.className = 'font-semibold text-center mb-2 text-on-error-container font-headline';
             }
 
-            // 채점 완료 → "다음 카드 뽑기" 버튼 표시
+            // 채점 완료 → "다음 →" 버튼 표시
             const nextBtn = document.getElementById('nextCardBtn');
             nextBtn.classList.remove('hidden');
             nextBtn.classList.add('flex');
-            nextBtn.onclick = () => submitFeedback(correct);
+            // MCQ 결과가 있으면 MCQ 기준으로 피드백, 없으면 연습문제 결과로
+            const feedbackResult = _mcqCorrect !== null ? _mcqCorrect : correct;
+            nextBtn.innerHTML = _mcqCorrect !== null
+                ? '<span class="material-symbols-outlined text-[16px]" style="font-variation-settings:\'FILL\' 1">arrow_forward</span>다음 &rarr;'
+                : '<span class="material-symbols-outlined text-[16px]" style="font-variation-settings:\'FILL\' 1">auto_awesome</span>다음 카드 뽑기';
+            nextBtn.onclick = () => { _mcqCorrect = null; submitFeedback(feedbackResult); };
+        }
+
+        function _setPracticeActive(active) {
+            const submitBtn = document.getElementById('practiceSubmitBtn');
+            const treeBtn   = document.getElementById('practiceTreeSubmitBtn');
+            const section   = document.getElementById('practiceSection');
+            if (active) {
+                submitBtn.disabled = false;
+                treeBtn.disabled   = false;
+                section.style.opacity = '1';
+                section.style.pointerEvents = 'auto';
+            } else {
+                submitBtn.disabled = true;
+                treeBtn.disabled   = true;
+                section.style.opacity = '0.45';
+                section.style.pointerEvents = 'none';
+            }
         }
 
         function handleMcqChoice(btn, selected, correct, container) {
@@ -1129,20 +1159,29 @@
             const isCorrect = selected.trim() === correct.trim();
             if (isCorrect) {
                 btn.classList.add('correct');
-                // 정답 박스 표시
-                document.getElementById('answerBox').classList.remove('hidden');
-                // 알았다로 자동 처리 (0.7초 후)
-                setTimeout(() => submitFeedback(true), 700);
             } else {
                 btn.classList.add('wrong');
                 // 정답 버튼 하이라이트
                 container.querySelectorAll('.mcq-btn').forEach(b => {
                     if (b.textContent.trim() === correct.trim()) b.classList.add('correct');
                 });
-                // 정답 박스 표시
-                document.getElementById('answerBox').classList.remove('hidden');
-                // 몰랐다로 자동 처리 (1.2초 후)
-                setTimeout(() => submitFeedback(false), 1200);
+            }
+            // 정답 박스 표시
+            document.getElementById('answerBox').classList.remove('hidden');
+
+            // 연습문제가 있으면 활성화 후 스크롤 → 없으면 기존처럼 자동 진행
+            const hasPractice = currentCard && currentCard._inferredTopic;
+            if (hasPractice) {
+                _mcqCorrect = isCorrect;
+                _setPracticeActive(true);
+                // 연습문제 섹션으로 부드럽게 스크롤
+                setTimeout(() => {
+                    document.getElementById('practiceSection')
+                        .scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 300);
+            } else {
+                // 연습문제 없음 — 기존 자동 진행
+                setTimeout(() => submitFeedback(isCorrect), isCorrect ? 700 : 1200);
             }
         }
 
