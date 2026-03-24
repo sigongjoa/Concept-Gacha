@@ -416,6 +416,12 @@
                                 <input type="text" value="${escHtml(c.answer)}" data-field="answer"
                                     class="flex-1 bg-transparent text-sm border-none outline-none focus:ring-1 focus:ring-teal-300 rounded px-1"/>
                             </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-slate-400 font-bold px-1">오답:</span>
+                                <input type="text" value="${escHtml(Array.isArray(c.distractors) ? c.distractors.join(', ') : '')}"
+                                    data-field="distractors" placeholder="쉼표로 구분 (비우면 자동생성)"
+                                    class="flex-1 bg-transparent text-xs border-none outline-none focus:ring-1 focus:ring-teal-300 rounded px-1 text-slate-400"/>
+                            </div>
                         </div>
                         <button data-action="delete-card" class="text-slate-300 hover:text-red-500 transition-colors flex-shrink-0">
                             <span class="material-symbols-outlined text-xl">delete</span>
@@ -429,7 +435,14 @@
                     if (!input) return;
                     const row = input.closest('[data-card-id]');
                     if (!row) return;
-                    updateCardContent(row.dataset.cardId, { [input.dataset.field]: input.value });
+                    const field = input.dataset.field;
+                    let value = input.value;
+                    if (field === 'distractors') {
+                        value = value.trim()
+                            ? value.split(',').map(s => s.trim()).filter(Boolean)
+                            : null;
+                    }
+                    updateCardContent(row.dataset.cardId, { [field]: value });
                 }, true);
                 list.addEventListener('click', e => {
                     const btn = e.target.closest('[data-action="delete-card"]');

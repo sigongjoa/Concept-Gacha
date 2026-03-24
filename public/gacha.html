@@ -173,6 +173,45 @@
         .word-chip.used { opacity: 0.3; pointer-events: none; }
         .dark .word-chip { background: #2f2ebe; border-color: #4648d4; color: #e1e0ff; }
 
+        /* MCQ 선택지 버튼 */
+        .mcq-btn {
+            padding: 0.65rem 0.75rem;
+            border-radius: 10px;
+            border: 1.5px solid var(--md-sys-color-outline-variant, #cac4d0);
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-align: center;
+            background: transparent;
+            color: var(--md-sys-color-on-surface-variant, #49454f);
+            transition: all 0.15s;
+            touch-action: manipulation;
+            cursor: pointer;
+            word-break: keep-all;
+            line-height: 1.3;
+        }
+        .mcq-btn:hover:not(:disabled) {
+            border-color: #4648d4;
+            background: rgba(70,72,212,0.07);
+            color: #4648d4;
+        }
+        .mcq-btn:active:not(:disabled) { transform: scale(0.95); }
+        .mcq-btn.correct {
+            border-color: #00b07a;
+            background: rgba(0,176,122,0.13);
+            color: #00703e;
+            pointer-events: none;
+        }
+        .mcq-btn.wrong {
+            border-color: #e53935;
+            background: rgba(229,57,53,0.1);
+            color: #c62828;
+            pointer-events: none;
+        }
+        .mcq-btn:disabled { pointer-events: none; opacity: 0.5; }
+        .dark .mcq-btn { color: #cac4d0; border-color: #49454f; }
+        .dark .mcq-btn.correct { border-color: #00b07a; background: rgba(0,176,122,0.18); color: #4dd8a0; }
+        .dark .mcq-btn.wrong   { border-color: #ef9a9a; background: rgba(229,57,53,0.15); color: #ef9a9a; }
+
         .blank-slot {
             display: inline-block;
             min-width: 6rem;
@@ -326,7 +365,12 @@
                                 id="cardAnswer"></p>
                         </div>
 
-                        <!-- 정답 보기 버튼 -->
+                        <!-- MCQ 선택지 그리드 (distractors 있을 때) -->
+                        <div class="hidden" id="mcqGrid">
+                            <div class="grid grid-cols-2 gap-2" id="mcqChoices"></div>
+                        </div>
+
+                        <!-- 정답 보기 버튼 (distractors 없을 때 fallback) -->
                         <button class="w-full py-3 rounded-lg bg-surface-container-low dark:bg-surface-container
                                        text-on-surface-variant text-sm font-semibold hidden
                                        transition-all active:scale-[0.98] hover:bg-surface-container"
@@ -594,6 +638,7 @@
     </script>
     <script src="js/layout.js"></script>
     <script src="js/problem-generators.js"></script>
+    <script src="js/distractor-generators.js"></script>
     <script src="js/shape-renderer.js"></script>
     <script>
         let currentCard = null;
@@ -853,8 +898,31 @@
             document.getElementById('boxAccentBar').style.background = BOX_COLORS[card.box] || '#d8dadc';
 
             document.getElementById('answerBox').classList.add('hidden');
-            document.getElementById('showAnswerBtn').classList.remove('hidden');
             document.getElementById('feedbackBtns').classList.add('hidden');
+
+            // MCQ 선택지 생성 시도
+            const mcqResult = (typeof getDistractors === 'function') ? getDistractors(card, 6) : null;
+            const mcqGrid = document.getElementById('mcqGrid');
+            const mcqChoices = document.getElementById('mcqChoices');
+            const showAnswerBtn = document.getElementById('showAnswerBtn');
+
+            if (mcqResult) {
+                // MCQ 모드: 선택지 그리드 표시
+                mcqChoices.innerHTML = '';
+                mcqResult.choices.forEach(choice => {
+                    const btn = document.createElement('button');
+                    btn.className = 'mcq-btn';
+                    btn.textContent = choice;
+                    btn.onclick = () => handleMcqChoice(btn, choice, mcqResult.correctAnswer, mcqChoices);
+                    mcqChoices.appendChild(btn);
+                });
+                mcqGrid.classList.remove('hidden');
+                showAnswerBtn.classList.add('hidden');
+            } else {
+                // Fallback: 기존 "정답 보기" 방식
+                mcqGrid.classList.add('hidden');
+                showAnswerBtn.classList.remove('hidden');
+            }
 
             const studentName = Layout.currentStudent?.name || '';
             document.getElementById('cardCategory').textContent =
@@ -1037,6 +1105,30 @@
             nextBtn.onclick = () => submitFeedback(correct);
         }
 
+        function handleMcqChoice(btn, selected, correct, container) {
+            // 모든 버튼 비활성화
+            container.querySelectorAll('.mcq-btn').forEach(b => b.disabled = true);
+
+            const isCorrect = selected.trim() === correct.trim();
+            if (isCorrect) {
+                btn.classList.add('correct');
+                // 정답 박스 표시
+                document.getElementById('answerBox').classList.remove('hidden');
+                // 알았다로 자동 처리 (0.7초 후)
+                setTimeout(() => submitFeedback(true), 700);
+            } else {
+                btn.classList.add('wrong');
+                // 정답 버튼 하이라이트
+                container.querySelectorAll('.mcq-btn').forEach(b => {
+                    if (b.textContent.trim() === correct.trim()) b.classList.add('correct');
+                });
+                // 정답 박스 표시
+                document.getElementById('answerBox').classList.remove('hidden');
+                // 몰랐다로 자동 처리 (1.2초 후)
+                setTimeout(() => submitFeedback(false), 1200);
+            }
+        }
+
         async function submitFeedback(success) {
             if (!currentCard) return;
             try {
@@ -1058,6 +1150,7 @@
                 document.getElementById('cardQuestionImage').classList.add('hidden');
                 document.getElementById('answerBox').classList.add('hidden');
                 document.getElementById('showAnswerBtn').classList.add('hidden');
+                document.getElementById('mcqGrid').classList.add('hidden');
                 document.getElementById('feedbackBtns').classList.add('hidden');
                 document.getElementById('boxAccentBar').style.background = '#e0c0b1';
                 document.getElementById('practiceSection').classList.add('hidden');

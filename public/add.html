@@ -209,6 +209,17 @@
                     <p class="text-xs text-outline mt-2">선택하면 카드 학습 중 공식 적용 연습 문제가 자동 생성됩니다</p>
                 </div>
 
+                <!-- Distractors -->
+                <div>
+                    <label class="block text-[10px] font-bold text-primary uppercase tracking-widest mb-2 font-label">
+                        오답 선택지 <span class="normal-case font-normal text-outline ml-1">(선택 · 쉼표로 구분)</span>
+                    </label>
+                    <textarea id="inputDistractors"
+                        class="field-input resize-none"
+                        rows="2" placeholder="예: bi, a, a+bi, a-bi, √(a²+b²)"></textarea>
+                    <p class="text-xs text-outline mt-2">입력하면 학습 시 선택형 문제로 출제됩니다. 비워두면 자동 생성.</p>
+                </div>
+
                 <!-- Submit Button -->
                 <button id="addCardBtn"
                     class="w-full h-14 rounded-full font-label font-bold uppercase tracking-widest
@@ -336,6 +347,10 @@
             const answer = document.getElementById('inputAnswer').value.trim();
             const question = document.getElementById('inputQuestion').value.trim();
             const topic = document.getElementById('inputTopic').value;
+            const distractorsRaw = document.getElementById('inputDistractors').value.trim();
+            const distractors = distractorsRaw
+                ? distractorsRaw.split(',').map(s => s.trim()).filter(Boolean)
+                : null;
 
             if (cardType === 'text' && !question) return Layout.showToast('질문을 입력하세요', true);
             if (cardType === 'image' && !uploadedFilename) return Layout.showToast('이미지를 올려주세요', true);
@@ -351,12 +366,14 @@
                     question: cardType === 'text' ? question : '',
                     questionImage: cardType === 'image' ? uploadedFilename : null,
                     topic: topic || null,
+                    distractors: distractors,
                 };
                 await API.addCard(currentStudentId, data);
                 Layout.showToast('추가되었습니다!');
                 document.getElementById('inputAnswer').value = '';
                 document.getElementById('inputQuestion').value = '';
                 document.getElementById('inputTopic').value = '';
+                document.getElementById('inputDistractors').value = '';
                 uploadedFilename = null;
                 document.getElementById('previewBox').classList.add('hidden');
                 document.getElementById('placeholder').classList.remove('hidden');
