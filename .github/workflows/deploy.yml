@@ -21,20 +21,83 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
+      - name: Inject Supabase credentials
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          python3 - <<'PYEOF'
+          import os
+          url = os.environ['SUPABASE_URL']
+          key = os.environ['SUPABASE_ANON_KEY']
+          content = (
+              "// ============================================\n"
+              "// Supabase Client Configuration (CI generated)\n"
+              "// ============================================\n"
+              "import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'\n"
+              "\n"
+              f"const SUPABASE_URL = '{url}'\n"
+              f"const SUPABASE_ANON_KEY = '{key}'\n"
+              "\n"
+              "export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)\n"
+              "\n"
+              "export async function uploadImage(file, studentId) {\n"
+              "    const fileExt = file.name.split('.').pop()\n"
+              "    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`\n"
+              "    const filePath = `${studentId}/${fileName}`\n"
+              "    const { data, error } = await supabase.storage\n"
+              "        .from('card-images')\n"
+              "        .upload(filePath, file, { cacheControl: '3600', upsert: false })\n"
+              "    if (error) {\n"
+              "        console.error('Image upload error:', error)\n"
+              "        throw new Error('이미지 업로드 실패: ' + error.message)\n"
+              "    }\n"
+              "    const { data: { publicUrl } } = supabase.storage\n"
+              "        .from('card-images').getPublicUrl(filePath)\n"
+              "    return { filePath, publicUrl }\n"
+              "}\n"
+              "\n"
+              "export async function deleteImage(filePath) {\n"
+              "    if (!filePath) return\n"
+              "    const { error } = await supabase.storage.from('card-images').remove([filePath])\n"
+              "    if (error) console.error('Image delete error:', error)\n"
+              "}\n"
+              "\n"
+              "export async function testConnection() {\n"
+              "    try {\n"
+              "        const { data, error } = await supabase.from('students').select('count').limit(1)\n"
+              "        if (error) throw error\n"
+              "        console.log('Supabase 연결 성공!')\n"
+              "        return true\n"
+              "    } catch (error) {\n"
+              "        console.error('Supabase 연결 실패:', error)\n"
+              "        return false\n"
+              "    }\n"
+              "}\n"
+              "\n"
+              "if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {\n"
+              "    testConnection()\n"
+              "}\n"
+          )
+          with open('public/js/supabase-client.js', 'w') as f:
+              f.write(content)
+          print('supabase-client.js generated successfully')
+          PYEOF
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
-      
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           # public 폴더만 배포
           path: './public'
-      
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
