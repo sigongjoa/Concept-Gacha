@@ -933,6 +933,140 @@ const PROBLEM_GENERATORS = {
         },
     },
 
+    // ─── 연산법칙 동적 생성기 ─────────────────────────────────────────────────
+    // 교환·결합·분배법칙을 실제 숫자로 보여주는 문제 생성
+    // 추상 변수(a,b,c) 대신 구체적 숫자 → 계산 결과로 검증 가능
+    '연산법칙': {
+        label: '연산법칙 (교환·결합·분배)',
+        inputType: 'numeric',
+        checkAnswer(u, c) { return u.replace(/\s/g,'') === c.replace(/\s/g,''); },
+
+        generate() {
+            const r = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+            const TYPES = ['교환_덧셈', '교환_곱셈', '결합_덧셈', '결합_곱셈', '분배_더하기', '분배_빼기'];
+            const t = TYPES[Math.floor(Math.random() * TYPES.length)];
+
+            if (t === '교환_덧셈') {
+                const a = r(2, 15), b = r(2, 15);
+                const ans = String(a + b);
+                return {
+                    question: `${b} + ${a} = ?`,
+                    questionSub: `교환법칙: ${a} + ${b}와 같은가?`,
+                    answer: ans,
+                    distractors: [
+                        String(a + b + 1),
+                        String(a + b - 1),
+                        String(a * b),
+                        String(Math.abs(a - b)),
+                    ],
+                    steps: [
+                        `교환법칙: a+b = b+a`,
+                        `${b}+${a} = ${a}+${b} = ${a+b}`,
+                    ],
+                };
+            }
+
+            if (t === '교환_곱셈') {
+                const a = r(2, 9), b = r(2, 9);
+                const ans = String(a * b);
+                return {
+                    question: `${b} × ${a} = ?`,
+                    questionSub: `교환법칙: ${a} × ${b}와 같은가?`,
+                    answer: ans,
+                    distractors: [
+                        String(a * b + a),
+                        String(a * b - b),
+                        String(a + b),
+                        String(a * b * 2),
+                    ],
+                    steps: [
+                        `교환법칙: a×b = b×a`,
+                        `${b}×${a} = ${a}×${b} = ${a*b}`,
+                    ],
+                };
+            }
+
+            if (t === '결합_덧셈') {
+                const a = r(2, 9), b = r(2, 9), c = r(2, 9);
+                const ans = String(a + b + c);
+                return {
+                    question: `(${a} + ${b}) + ${c} = ?`,
+                    questionSub: `결합법칙: ${a} + (${b} + ${c})와 같은가?`,
+                    answer: ans,
+                    distractors: [
+                        String(a + b + c + 1),
+                        String(a + b),
+                        String(a * b + c),
+                        String(a + b * c),
+                    ],
+                    steps: [
+                        `(${a}+${b})+${c} = ${a+b}+${c} = ${a+b+c}`,
+                        `결합법칙으로: ${a}+(${b}+${c}) = ${a}+${b+c} = ${a+b+c} ✓`,
+                    ],
+                };
+            }
+
+            if (t === '결합_곱셈') {
+                const a = r(2, 5), b = r(2, 5), c = r(2, 5);
+                const ans = String(a * b * c);
+                return {
+                    question: `(${a} × ${b}) × ${c} = ?`,
+                    questionSub: `결합법칙: ${a} × (${b} × ${c})와 같은가?`,
+                    answer: ans,
+                    distractors: [
+                        String(a * b + c),
+                        String(a + b * c),
+                        String(a * b * c + 1),
+                        String((a + b) * c),
+                    ],
+                    steps: [
+                        `(${a}×${b})×${c} = ${a*b}×${c} = ${a*b*c}`,
+                        `결합법칙으로: ${a}×(${b}×${c}) = ${a}×${b*c} = ${a*b*c} ✓`,
+                    ],
+                };
+            }
+
+            if (t === '분배_더하기') {
+                const a = r(2, 9), b = r(2, 9), c = r(2, 9);
+                const ans = String(a * (b + c));
+                return {
+                    question: `${a} × (${b} + ${c}) = ?`,
+                    questionSub: `분배법칙: ${a}×${b} + ${a}×${c}`,
+                    answer: ans,
+                    distractors: [
+                        String(a * b + c),           // c에 a 안 곱함
+                        String(a * b * c),            // 더하기를 곱하기로
+                        String(a + b + c),            // 전부 더함
+                        String(a * (b + c) + a),      // 하나 더 더함
+                    ],
+                    steps: [
+                        `분배법칙: ${a}×(${b}+${c}) = ${a}×${b} + ${a}×${c}`,
+                        `= ${a*b} + ${a*c} = ${a*(b+c)}`,
+                    ],
+                };
+            }
+
+            // 분배_빼기
+            const a = r(2, 9), b = r(3, 12), c = r(2, b - 1);  // c < b → 양수 보장
+            const ans = String(a * (b - c));
+            return {
+                question: `${a} × (${b} - ${c}) = ?`,
+                questionSub: `분배법칙: ${a}×${b} - ${a}×${c}`,
+                answer: ans,
+                distractors: [
+                    String(a * b - c),           // c에 a 안 곱함
+                    String(a * b + a * c),        // 부호 반대 (더함)
+                    String(a * b * c),            // 빼기를 곱하기로
+                    String(a * (b - c) + 1),      // 계산 실수
+                ],
+                steps: [
+                    `분배법칙: ${a}×(${b}-${c}) = ${a}×${b} - ${a}×${c}`,
+                    `= ${a*b} - ${a*c} = ${a*(b-c)}`,
+                ],
+            };
+        },
+    },
+
 };
 
 // ─── 내보내기 (module 환경과 전역 둘 다 지원) ───────────────
