@@ -126,6 +126,30 @@ const DISTRACTOR_BANKS = {
             default: ['거리÷시간', '거리×시간', '시간÷거리', '거리+시간', '속력÷시간', '속력×거리', '(거리+속력)/2', '거리²/시간', '시간/속력', '속력+거리', '√(거리×시간)', '거리-시간', '거리×속력', '거리/(속력²)', '속력²/거리'],
         }
     },
+
+    // ── 곱셈공식 / 전개 / 인수분해 ───────────────────────────────────────────
+    '곱셈공식': {
+        keywords: /곱셈공식|전개|인수분해|완전제곱|합차공식|\(a\+b\)|\(a-b\)|합의.제곱|차의.제곱|이차식|다항식/i,
+        banks: {
+            '(a+b)²':  ['a²+b²', 'a²+ab+b²', 'a²+2ab-b²', 'a²-2ab+b²', '(a+b)(a+b)', '2ab+a²+b²', 'a²+b²+ab', 'a²+3ab+b²', 'a²+2ab', 'a²+b²+2', 'a²b²', '(a+b)·2', 'a+2ab+b', 'a²-b²', 'a²+4ab+b²'],
+            '(a-b)²':  ['a²+b²', 'a²-b²', 'a²-ab+b²', 'a²+2ab+b²', '(a-b)(a-b)', 'a²-2ab', 'a²+b²-2ab', 'a²-3ab+b²', 'a-2ab+b', 'a²-b', '(a+b)²', 'a²b²', 'a²-4ab+b²', 'a²-ab-b²', '2a²-2ab+b²'],
+            '(a+b)(a-b)': ['a²+b²', 'a²+2ab-b²', '(a+b)²', '(a-b)²', 'a²-2ab+b²', 'a+b·a-b', 'a²+ab-b²', 'a·b', '(ab)²', 'a²-ab+b²', 'a²-b', 'a-b²', 'a²·b²', '2ab', 'a²+b'],
+            '(a+b)³':  ['a³+b³', 'a³+3ab+b³', 'a³+3a²b+b³', 'a³+2a²b+2ab²+b³', 'a³-3a²b+3ab²-b³', '3a³+3a²b+3ab²+3b³', 'a³+3a²b+3ab+b³', 'a³+a²b+ab²+b³', '(a+b)(a²+ab+b²)', 'a³+b³+3ab', 'a³+6a²b+3ab²+b³', 'a³+3a²b+3ab²', 'a³+3ab²+b³', '(a+b)²·(a+b)', 'a³+3a²+3b²+b³'],
+            '(a-b)³':  ['a³-b³', 'a³-3ab-b³', 'a³-3a²b-b³', 'a³+3a²b+3ab²+b³', 'a³-2a²b+2ab²-b³', 'a³-3a²b+3ab²+b³', 'a³-a²b+ab²-b³', 'a³-3ab²+b³', '(a-b)(a²-ab+b²)', 'a³-b³-3ab', 'a³-6a²b+3ab²-b³', 'a³-3a²b+3ab', '(a-b)²·(a-b)', 'a³-3a+b³', 'a³-3b²-b³'],
+            'a²-b²':   ['(a+b)²', '(a-b)²', 'a²+b²', '(a-b)(a+b)', 'a·b', '(a+b)(a+b)', '(ab)²', 'a²+2ab-b²', 'a²-2ab+b²', 'a+b·a-b', 'a²·b²', '2a-2b', '(a²)(b²)', 'a²+ab-b²', 'a-b·a+b'],
+            'a³+b³':   ['(a+b)³', '(a+b)(a+b)', 'a³-b³', '(a+b)(a²+ab+b²)', '(a+b)(a²-ab+b²)', '(a-b)(a²+ab+b²)', 'a²b+ab²', '(a+b)²·a', 'a³+2ab+b³', 'a³+3a²b+3ab²+b³', '(a+b)(a²+b²)', 'a²+b²', '3a²b+3ab²', 'a·b·(a+b)', '(a+b)(a-b)·(a+b)'],
+            'a³-b³':   ['(a-b)³', '(a-b)(a-b)', 'a³+b³', '(a-b)(a²+ab+b²)', '(a+b)(a²-ab+b²)', '(a-b)(a²-ab-b²)', 'a²b-ab²', '(a-b)²·a', 'a³-2ab-b³', 'a³-3a²b+3ab²-b³', '(a-b)(a²+b²)', 'a²-b²', '3a²b-3ab²', 'a·b·(a-b)', '(a+b)(a-b)·(a-b)'],
+            default:   ['a²+b²', 'a²-b²', '(a+b)²', '(a-b)²', 'a³+b³', 'a³-b³', '2ab', 'a²+2ab+b²', 'a²-2ab+b²', 'a³+3a²b+b³', 'a³-3ab+b³', 'a²+ab+b²', 'a²-ab+b²', '(a+b)(a-b)', 'a·b'],
+        }
+    },
+
+    // ── 방정식 근의 공식 / 판별식 ─────────────────────────────────────────────
+    '이차방정식': {
+        keywords: /이차방정식|근의.공식|판별식|근과.계수|짝수공식|완전제곱식/i,
+        banks: {
+            default: ['(-b±√(b²-4ac))/2a', '(-b±√(b²+4ac))/2a', '(b±√(b²-4ac))/2a', '(-b±√(b²-4ac))/a', '(-b²±√(b²-4ac))/2a', '(-b±√(4ac-b²))/2a', '(-b±√(b²-4ac))/2', '(-b∓√(b²-4ac))/2a', '(b²-4ac)/2a', '√(b²-4ac)', 'b²-4ac', '(-b)/2a', '4ac-b²', '-b/a', 'c/a'],
+        }
+    },
 };
 
 // ─── 답 패턴 기반 자동 distractor 생성 ───────────────────────────────────────
@@ -183,11 +207,11 @@ function inferDistractorTopic(card) {
 }
 
 function pickBestSubBank(bankEntry, card) {
-    const q = card.question || '';
+    const haystack = (card.question || '') + ' ' + (card.answer || '');
     const banks = bankEntry.banks;
     for (const [subKey, items] of Object.entries(banks)) {
         if (subKey === 'default') continue;
-        if (q.includes(subKey)) return items;
+        if (haystack.includes(subKey)) return items;
     }
     return banks.default;
 }
