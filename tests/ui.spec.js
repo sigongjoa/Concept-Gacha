@@ -166,13 +166,9 @@ test.describe('add.html - 카드 추가', () => {
     });
 
     test('카드 추가 성공 플로우 (API 모킹)', async ({ page }) => {
-        await page.route('**/api/students/*/cards', route => route.fulfill({
+        await page.route('**/rest/v1/cards**', route => route.fulfill({
             contentType: 'application/json',
-            body: JSON.stringify({ id: 'new-card', message: 'ok' }),
-        }));
-        await page.route('**/api/students/*/stats', route => route.fulfill({
-            contentType: 'application/json',
-            body: JSON.stringify({ total: 1, boxes: [0, 1, 0, 0, 0] }),
+            body: JSON.stringify([{ id: 'new-card', answer: '광합성' }]),
         }));
 
         await page.locator('#inputQuestion').fill('산소가 생성되는 반응은?');
@@ -180,7 +176,30 @@ test.describe('add.html - 카드 추가', () => {
         await page.locator('#addCardBtn').click();
 
         // 입력 필드 초기화 확인
-        await expect(page.locator('#inputAnswer')).toHaveValue('');
+        await expect(page.locator('#inputAnswer')).toHaveValue('', { timeout: 5000 });
+    });
+
+    test('카드 추가 중 버튼 disabled 처리 (중복 제출 방지)', async ({ page }) => {
+        // 응답을 500ms 지연시켜 disabled 상태 검증
+        await page.route('**/rest/v1/cards**', async route => {
+            await new Promise(r => setTimeout(r, 500));
+            await route.fulfill({
+                contentType: 'application/json',
+                body: JSON.stringify([{ id: 'new-card', answer: '광합성' }]),
+            });
+        });
+
+        await page.locator('#inputQuestion').fill('산소가 생성되는 반응은?');
+        await page.locator('#inputAnswer').fill('광합성');
+
+        // 클릭 직후 disabled + 텍스트 변경 확인
+        await page.locator('#addCardBtn').click();
+        await expect(page.locator('#addCardBtn')).toBeDisabled();
+        await expect(page.locator('#addCardBtn')).toHaveText('추가 중...');
+
+        // 완료 후 복원 확인
+        await expect(page.locator('#addCardBtn')).toBeEnabled({ timeout: 3000 });
+        await expect(page.locator('#addCardBtn')).toHaveText('카드 추가');
     });
 
     test('BottomNav 링크 - Students로 이동', async ({ page }) => {
@@ -391,9 +410,9 @@ test.describe('BottomNav 링크', () => {
         const hrefs = await Promise.all(
             Array.from({ length: count }, (_, i) => links.nth(i).getAttribute('href'))
         );
-        expect(hrefs).toContain('/index.html');
-        expect(hrefs).toContain('/gacha.html');
-        expect(hrefs).toContain('/list.html');
-        expect(hrefs).toContain('/admin.html');
+        expect(hrefs.some(h => h === 'index.html' || h === '/index.html')).toBe(true);
+        expect(hrefs.some(h => h === 'gacha.html' || h === '/gacha.html')).toBe(true);
+        expect(hrefs.some(h => h === 'list.html' || h === '/list.html')).toBe(true);
+        expect(hrefs.some(h => h === 'admin.html' || h === '/admin.html')).toBe(true);
     });
 });

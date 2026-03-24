@@ -341,6 +341,9 @@
             if (cardType === 'image' && !uploadedFilename) return Layout.showToast('이미지를 올려주세요', true);
             if (!answer) return Layout.showToast('정답을 입력하세요', true);
 
+            const btn = document.getElementById('addCardBtn');
+            btn.disabled = true;
+            btn.textContent = '추가 중...';
             try {
                 const data = {
                     type: cardType,
@@ -360,6 +363,9 @@
                 Layout.loadStats();
             } catch (e) {
                 Layout.showToast('추가 실패', true);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '카드 추가';
             }
         }
 
