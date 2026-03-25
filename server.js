@@ -491,7 +491,7 @@ app.post('/api/sessions/:sessionId/record', async (req, res) => {
     const newDrawn = (cur?.cards_drawn ?? 0) + 1;
     const completed = newDrawn >= (cur?.cards_target ?? 10);
     const { data: final } = await supabase.from('daily_sessions')
-      .update({ cards_drawn: newDrawn, completed, completed_at: completed ? new Date().toISOString() : null })
+      .update({ cards_drawn: newDrawn })
       .eq('id', sessionId).select().single();
     res.json(final);
   } catch (e) { res.status(500).json({ error: e.message }); }

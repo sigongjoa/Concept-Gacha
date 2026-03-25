@@ -83,7 +83,7 @@ export async function recordCardResult(sessionId, cardId, result, boxBefore, box
     const newDrawn = (cur?.cards_drawn ?? 0) + 1;
     const completed = newDrawn >= (cur?.cards_target ?? 10);
     const { data: final } = await supabase.from('daily_sessions')
-        .update({ cards_drawn: newDrawn, completed, completed_at: completed ? new Date().toISOString() : null })
+        .update({ cards_drawn: newDrawn })
         .eq('id', sessionId).select().single();
     return final;
 }
