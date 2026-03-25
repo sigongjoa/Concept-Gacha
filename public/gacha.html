@@ -170,19 +170,19 @@
 
         /* MCQ 선택지 버튼 */
         .mcq-btn {
-            padding: 0.65rem 0.75rem;
+            padding: 0.875rem 1rem;
             border-radius: 10px;
             border: 1.5px solid #deb896;
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            text-align: center;
+            text-align: left;
             background: transparent;
             color: #5c3820;
             transition: all 0.15s;
             touch-action: manipulation;
             cursor: pointer;
             word-break: keep-all;
-            line-height: 1.3;
+            line-height: 1.4;
         }
         .mcq-btn:hover:not(:disabled) {
             border-color: #2a2b96;
@@ -271,12 +271,10 @@
         <!-- ── Daily Progress Banner ────────────────────────── -->
         <div id="dailyBanner" class="mt-4 px-1">
             <!-- 진행 중 -->
-            <div id="dailyProgress"
-                class="bg-surface-container-lowest rounded-xl px-4 py-3 shadow-[0px_2px_10px_rgba(88,66,55,0.07)]
-                       flex items-center gap-3">
+            <div id="dailyProgress" class="flex items-center gap-3">
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-[10px] font-bold text-primary uppercase tracking-[0.12em] font-label">오늘의 학습</span>
+                        <span class="text-xs font-bold text-on-surface-variant font-label">오늘의 학습</span>
                         <span class="text-xs font-bold text-on-surface font-label">
                             <span id="dailyDrawn">0</span><span class="text-outline font-normal"> / </span><span id="dailyTarget">10</span>
                         </span>
@@ -295,27 +293,27 @@
             </div>
 
             <!-- 오늘 완료 -->
-            <div id="dailyDone" class="hidden rounded-xl px-4 py-3 flex items-center gap-3
+            <div id="dailyDone" class="hidden px-4 py-2.5 rounded-xl flex items-center gap-3
                 bg-tertiary-container/15 border border-tertiary/20">
                 <span class="material-symbols-outlined text-tertiary text-[20px]"
                     style="font-variation-settings:'FILL' 1">task_alt</span>
                 <div class="flex-1">
                     <p class="text-sm font-bold text-tertiary font-label">오늘 목표 달성! 🎉</p>
-                    <p class="text-[10px] text-outline font-label">내일도 학습을 이어가세요</p>
+                    <p class="text-xs text-outline font-label">내일도 학습을 이어가세요</p>
                 </div>
                 <a href="dashboard.html"
-                    class="shrink-0 text-[10px] font-bold text-tertiary underline font-label">기록 보기</a>
+                    class="shrink-0 text-xs font-bold text-tertiary underline font-label">기록 보기</a>
             </div>
         </div>
 
         <!-- ── Draw Zone (카드 없을 때 표시) ─────────────────── -->
         <div id="drawZone" class="pt-1">
             <button id="gachaBtn"
-                class="w-full rounded-full font-label font-semibold text-sm uppercase tracking-[0.08em]
-                       bg-primary text-on-primary shadow-[0_4px_16px_rgba(194,56,0,0.28)]
-                       transition-all active:scale-[0.97] flex items-center justify-center gap-2.5"
-                style="height: 3.25rem;">
-                <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1">auto_awesome</span>
+                class="w-full h-16 rounded-2xl font-headline font-black text-lg text-on-primary bg-primary
+                       shadow-[0_5px_0_rgba(140,40,0,0.7),0_8px_24px_rgba(194,56,0,0.30)]
+                       transition-all active:translate-y-1 active:shadow-[0_1px_0_rgba(140,40,0,0.7)]
+                       flex items-center justify-center gap-2.5">
+                <span class="material-symbols-outlined text-[22px]" style="font-variation-settings:'FILL' 1">auto_awesome</span>
                 카드 뽑기
             </button>
         </div>
@@ -326,74 +324,66 @@
                         shadow-[0px_4px_20px_rgba(88,66,55,0.09)] transition-all duration-300"
                  id="heroCardOuter">
 
-                <!-- 상자 컬러 — 카드 왼쪽 accent bar -->
-                <div class="flex">
-                    <div id="boxAccentBar" class="w-[3px] flex-shrink-0 transition-colors duration-300"
-                         style="background: #e0c0b1"></div>
+                <!-- 상자 컬러 — 카드 상단 stripe -->
+                <div id="boxAccentBar" class="h-1 w-full transition-colors duration-300"
+                     style="background: #e0c0b1"></div>
 
-                    <div class="flex-1 px-6 py-6 space-y-4">
+                <div class="px-6 py-6 space-y-4">
 
-                        <!-- 카테고리 라벨 -->
-                        <span class="block text-[10px] font-bold text-primary dark:text-primary-fixed
-                                     uppercase tracking-[0.12em] font-label"
-                              id="cardCategory">개념 가챠</span>
+                    <!-- 카테고리 라벨 -->
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-bold text-primary bg-primary-fixed font-label"
+                          id="cardCategory">개념 가챠</span>
 
-                        <!-- 질문 -->
-                        <div class="space-y-2">
-                            <h2 class="font-headline text-[1.6rem] font-bold leading-[1.25] text-on-surface dark:text-inverse-on-surface"
-                                id="cardQuestion">카드를 뽑아보세요!</h2>
-                            <div id="cardQuestionImage" class="hidden">
-                                <img src="" class="max-h-56 mx-auto rounded-lg shadow-sm" id="cardQuestionImg" alt="" />
-                            </div>
-                            <div class="w-8 h-[3px] rounded-full bg-primary-fixed" id="accentLine"></div>
+                    <!-- 질문 -->
+                    <div class="space-y-2">
+                        <h2 class="font-headline text-2xl font-bold leading-snug text-on-surface dark:text-inverse-on-surface"
+                            id="cardQuestion">카드를 뽑아보세요!</h2>
+                        <div id="cardQuestionImage" class="hidden">
+                            <img src="" class="max-h-56 mx-auto rounded-lg shadow-sm" id="cardQuestionImg" alt="" />
                         </div>
+                    </div>
 
-                        <!-- 정답 박스 -->
-                        <div class="hidden rounded-lg p-4 bg-tertiary-container/15 border border-tertiary/20" id="answerBox">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="material-symbols-outlined text-tertiary text-[16px]"
-                                    style="font-variation-settings:'FILL' 1">check_circle</span>
-                                <span class="text-[10px] font-bold text-tertiary font-label uppercase tracking-wider">
-                                    Answer
-                                </span>
-                            </div>
-                            <p class="font-headline text-xl font-bold text-on-tertiary-container dark:text-tertiary-container"
-                                id="cardAnswer"></p>
+                    <!-- 정답 (인라인 reveal) -->
+                    <div class="hidden" id="answerBox">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="material-symbols-outlined text-tertiary text-[16px]"
+                                style="font-variation-settings:'FILL' 1">check_circle</span>
+                            <span class="text-xs font-bold text-tertiary font-label">정답</span>
                         </div>
+                        <p class="font-headline text-xl font-bold text-on-surface dark:text-inverse-on-surface pl-6"
+                            id="cardAnswer"></p>
+                    </div>
 
-                        <!-- MCQ 선택지 그리드 (distractors 있을 때) -->
-                        <div class="hidden" id="mcqGrid">
-                            <div class="grid grid-cols-2 gap-2" id="mcqChoices"></div>
-                        </div>
+                    <!-- MCQ 선택지 (distractors 있을 때) -->
+                    <div class="hidden" id="mcqGrid">
+                        <div class="flex flex-col gap-2" id="mcqChoices"></div>
+                    </div>
 
-                        <!-- 정답 보기 버튼 (distractors 없을 때 fallback) -->
-                        <button class="w-full py-3 rounded-lg bg-surface-container-low dark:bg-surface-container
-                                       text-on-surface-variant text-sm font-semibold hidden
-                                       transition-all active:scale-[0.98] hover:bg-surface-container
-                                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                            id="showAnswerBtn">정답 보기</button>
+                    <!-- 정답 보기 버튼 (distractors 없을 때 fallback) -->
+                    <button class="w-full py-3 rounded-lg bg-surface-container-low dark:bg-surface-container
+                                   text-on-surface-variant text-sm font-semibold hidden
+                                   transition-all active:scale-[0.98] hover:bg-surface-container
+                                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        id="showAnswerBtn">정답 보기</button>
 
-                        <!-- 피드백 버튼 -->
-                        <div class="hidden flex w-full gap-3" id="feedbackBtns">
-                            <button class="flex-1 py-3 rounded-lg border border-outline-variant
-                                           hover:border-tertiary hover:bg-tertiary/5 hover:text-tertiary
-                                           text-sm font-semibold transition-all
-                                           text-on-surface-variant active:scale-[0.97] flex items-center justify-center gap-1.5
-                                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary"
-                                id="successBtn" aria-label="알았다 — 다음 박스로 이동">
-                                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">check</span>
-                                알았다
-                            </button>
-                            <button class="flex-1 py-3 rounded-lg border border-outline-variant
-                                           hover:border-error/50 hover:bg-error-container/40 hover:text-on-error-container
-                                           text-sm font-semibold transition-all
-                                           text-on-surface-variant active:scale-[0.97] flex items-center justify-center gap-1.5
-                                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
-                                id="failBtn" aria-label="몰랐다 — 박스 1로 돌아가기">
-                                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">close</span>
-                                몰랐다
-                            </button>
-                        </div>
+                    <!-- 피드백 버튼 -->
+                    <div class="hidden flex w-full gap-3" id="feedbackBtns">
+                        <button class="flex-1 py-3.5 rounded-xl font-bold text-sm transition-all active:scale-[0.97]
+                                       bg-tertiary/10 text-tertiary border border-tertiary/30
+                                       hover:bg-tertiary/20 flex items-center justify-center gap-1.5
+                                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary"
+                            id="successBtn" aria-label="알았다 — 다음 박스로 이동">
+                            <span class="material-symbols-outlined text-[16px]" aria-hidden="true">check</span>
+                            알았다
+                        </button>
+                        <button class="flex-1 py-3.5 rounded-xl font-bold text-sm transition-all active:scale-[0.97]
+                                       bg-error-container/40 text-on-error-container border border-error/30
+                                       hover:bg-error-container/70 flex items-center justify-center gap-1.5
+                                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
+                            id="failBtn" aria-label="몰랐다 — 박스 1로 돌아가기">
+                            <span class="material-symbols-outlined text-[16px]" aria-hidden="true">close</span>
+                            몰랐다
+                        </button>
                     </div>
                 </div>
             </div>
@@ -401,27 +391,22 @@
 
         <!-- ── Practice Panel ─────────────────────────────────── -->
         <section class="hidden" id="practiceSection">
-            <div class="bg-surface-container dark:bg-surface-container rounded-xl p-5 space-y-4
-                        border border-outline-variant/30">
+            <div class="bg-surface-container-lowest dark:bg-inverse-surface rounded-xl p-5 space-y-4
+                        border border-outline-variant/30 shadow-[0px_2px_8px_rgba(88,66,55,0.05)]">
 
                 <!-- 헤더 -->
                 <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <div class="w-1 h-5 rounded-full bg-secondary-container flex-shrink-0"></div>
-                        <h3 class="font-headline font-bold text-base text-on-surface dark:text-inverse-on-surface"
-                            id="practiceTopicLabel"></h3>
-                    </div>
+                    <h3 class="font-headline font-bold text-base text-on-surface dark:text-inverse-on-surface"
+                        id="practiceTopicLabel"></h3>
                     <button id="newProblemBtn"
-                        class="text-xs px-3 py-1.5 rounded-lg bg-surface-container-lowest dark:bg-surface-container-high
+                        class="text-xs px-3 py-1.5 rounded-lg bg-surface-container-low
                                text-secondary font-semibold hover:bg-secondary-fixed transition-all
                                flex items-center gap-1 active:scale-95">
                         <span class="material-symbols-outlined text-[14px]">refresh</span> 다른 문제
                     </button>
                 </div>
 
-                <!-- 문제 카드 -->
-                <div class="bg-surface-container-lowest dark:bg-inverse-surface rounded-xl p-5
-                            shadow-[0px_2px_8px_rgba(88,66,55,0.05)]">
+                <div>
 
                     <div id="practiceFractionView">
                         <p class="text-on-surface dark:text-inverse-on-surface font-medium leading-relaxed"
@@ -537,28 +522,28 @@
                 px-4 pb-7 pt-3
                 bg-surface-container-lowest border-t border-outline-variant/30">
         <a href="index.html"
-            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
-            <span class="material-symbols-outlined text-[22px]">group</span>
-            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Students</span>
+            class="flex flex-col items-center gap-0.5 p-2 text-outline hover:text-primary rounded-xl transition-colors active:scale-90">
+            <span class="material-symbols-outlined">group</span>
+            <span class="font-bold text-[11px] mt-0.5 font-label">학생</span>
         </a>
-        <div class="flex flex-col items-center justify-center px-4 py-1.5 rounded-full bg-primary-fixed text-primary">
-            <span class="material-symbols-outlined text-[22px]" style="font-variation-settings:'FILL' 1">auto_awesome</span>
-            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Gacha</span>
+        <div class="flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-full bg-primary-fixed text-primary" aria-current="page">
+            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">auto_awesome</span>
+            <span class="font-bold text-[11px] mt-0.5 font-label">뽑기</span>
         </div>
         <a href="add.html"
-            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
-            <span class="material-symbols-outlined text-[22px]">add_circle</span>
-            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Add</span>
+            class="flex flex-col items-center gap-0.5 p-2 text-outline hover:text-primary rounded-xl transition-colors active:scale-90">
+            <span class="material-symbols-outlined">add_circle</span>
+            <span class="font-bold text-[11px] mt-0.5 font-label">추가</span>
         </a>
         <a href="list.html"
-            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
-            <span class="material-symbols-outlined text-[22px]">style</span>
-            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Cards</span>
+            class="flex flex-col items-center gap-0.5 p-2 text-outline hover:text-primary rounded-xl transition-colors active:scale-90">
+            <span class="material-symbols-outlined">style</span>
+            <span class="font-bold text-[11px] mt-0.5 font-label">목록</span>
         </a>
         <a href="admin.html"
-            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
-            <span class="material-symbols-outlined text-[22px]">settings</span>
-            <span class="font-bold text-[9px] uppercase tracking-wider mt-0.5 font-label">Admin</span>
+            class="flex flex-col items-center gap-0.5 p-2 text-outline hover:text-primary rounded-xl transition-colors active:scale-90">
+            <span class="material-symbols-outlined">settings</span>
+            <span class="font-bold text-[11px] mt-0.5 font-label">관리</span>
         </a>
     </nav>
 

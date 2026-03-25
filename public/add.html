@@ -59,10 +59,8 @@
                         'label':    ['Inter', 'Noto Sans KR', 'sans-serif'],
                     },
                     borderRadius: {
-                        'DEFAULT': '1rem',
-                        'lg': '2rem',
-                        'xl': '3rem',
-                        'full': '9999px',
+                        'sm': '6px', 'DEFAULT': '10px', 'lg': '14px',
+                        'xl': '18px', '2xl': '24px', 'full': '9999px',
                     },
                 },
             },
@@ -72,26 +70,22 @@
     <style>
         body { font-family: 'Inter', 'Noto Sans KR', sans-serif; min-height: 100dvh; }
         .font-headline { font-family: 'Plus Jakarta Sans', 'Noto Sans KR', sans-serif; }
-        .glass {
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-        }
         .field-input {
             width: 100%;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            background: #f2f4f6;
+            padding: 0.875rem 1rem;
+            border-radius: 12px;
+            background: #f5ead8;
             border: 2px solid transparent;
             outline: none;
-            color: #191c1e;
+            color: #1c0a00;
             transition: background 0.15s, border-color 0.15s;
             font-family: 'Inter', 'Noto Sans KR', sans-serif;
         }
         .field-input:focus {
             background: #ffffff;
-            border-color: rgba(157, 67, 0, 0.20);
+            border-color: rgba(194, 56, 0, 0.25);
         }
-        .field-input::placeholder { color: #8c7164; }
+        .field-input::placeholder { color: #9c6840; }
         select.field-input { cursor: pointer; }
     </style>
 </head>
@@ -99,25 +93,20 @@
 <body class="bg-surface font-body text-on-surface overflow-x-hidden">
 
     <!-- ── TopAppBar ──────────────────────────────────────────── -->
-    <header class="fixed top-0 w-full z-50 bg-white/70 dark:bg-inverse-surface/70 glass shadow-sm">
-        <div class="flex justify-between items-center px-6 py-3 max-w-2xl mx-auto">
+    <header class="fixed top-0 w-full z-50 bg-surface-container-lowest border-b border-outline-variant/30">
+        <div class="flex justify-between items-center px-5 h-14 max-w-2xl mx-auto">
             <div class="flex items-center gap-3">
-                <div id="studentAvatar"
-                    class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center overflow-hidden flex-shrink-0">
-                    <span class="font-bold text-primary text-sm font-headline" id="studentInitial">?</span>
+                <div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center flex-shrink-0">
+                    <span class="font-bold text-primary text-xs font-headline" id="studentInitial">?</span>
                 </div>
-                <h1 class="text-xl font-bold tracking-tight text-primary font-headline">
-                    Concept Gacha
-                </h1>
+                <span class="font-headline font-bold text-primary tracking-tight">카드 추가</span>
             </div>
-            <div class="flex items-center gap-1">
-                <button onclick="document.documentElement.classList.toggle('dark')"
-                    class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors active:scale-90">
-                    <span class="material-symbols-outlined text-on-surface-variant">dark_mode</span>
-                </button>
-            </div>
+            <button onclick="document.documentElement.classList.toggle('dark')"
+                class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-surface-container-low transition-colors active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                aria-label="다크모드 전환">
+                <span class="material-symbols-outlined text-[20px] text-on-surface-variant" aria-hidden="true">dark_mode</span>
+            </button>
         </div>
-        <div class="bg-surface-dim/30 h-px w-full"></div>
     </header>
 
     <!-- Sidebar placeholder (layout.js 호환용) -->
@@ -128,9 +117,8 @@
 
         <!-- Page Title -->
         <div class="mt-4">
-            <span class="text-primary font-bold font-label text-xs uppercase tracking-widest">Collection</span>
-            <h2 class="font-headline text-2xl font-bold text-on-surface mt-1">새 카드 추가</h2>
-            <div class="w-12 h-1.5 bg-primary-container rounded-full opacity-40 mt-2"></div>
+            <h2 class="font-headline text-2xl font-bold text-on-surface">새 카드 추가</h2>
+            <p class="text-sm text-on-surface-variant mt-1">질문과 정답을 입력하세요</p>
         </div>
 
         <!-- ── Form Card ──────────────────────────────────────── -->
@@ -222,16 +210,12 @@
 
                 <!-- Submit Button -->
                 <button id="addCardBtn"
-                    class="w-full h-14 rounded-full font-label font-bold uppercase tracking-widest
-                           text-on-primary shadow-[0_10px_30px_rgba(157,67,0,0.3)]
-                           transition-all active:scale-95"
-                    style="background: linear-gradient(135deg, #9d4300, #f97316)">
+                    class="w-full h-14 rounded-2xl font-headline font-black text-on-primary bg-primary
+                           shadow-[0_4px_0_rgba(140,40,0,0.7),0_6px_20px_rgba(194,56,0,0.25)]
+                           transition-all active:translate-y-1 active:shadow-[0_1px_0_rgba(140,40,0,0.7)]">
                     카드 추가
                 </button>
             </div>
-
-            <!-- Bottom accent bar -->
-            <div class="h-1.5" style="background: linear-gradient(to right, #9d4300, #f97316)"></div>
         </div>
 
     </main>
@@ -240,40 +224,32 @@
     <nav class="fixed bottom-0 left-0 w-full z-40
                 flex justify-around items-center
                 px-4 pb-8 pt-4
-                bg-white/70 dark:bg-inverse-surface/70 glass
-                rounded-t-xl
-                shadow-[0_-10px_40px_rgba(249,115,22,0.08)]">
+                bg-surface-container-lowest border-t border-outline-variant/30">
         <a href="index.html"
-            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            class="flex flex-col items-center gap-0.5 p-2 text-outline hover:text-primary rounded-xl transition-colors active:scale-90">
             <span class="material-symbols-outlined">group</span>
-            <span class="font-bold text-[10px] uppercase tracking-widest mt-1 font-label">Students</span>
+            <span class="font-bold text-[11px] mt-0.5 font-label">학생</span>
         </a>
         <a href="gacha.html"
-            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            class="flex flex-col items-center gap-0.5 p-2 text-outline hover:text-primary rounded-xl transition-colors active:scale-90">
             <span class="material-symbols-outlined">auto_awesome</span>
-            <span class="font-bold text-[10px] uppercase tracking-widest mt-1 font-label">Gacha</span>
+            <span class="font-bold text-[11px] mt-0.5 font-label">뽑기</span>
         </a>
-        <button class="flex flex-col items-center justify-center bg-primary-fixed text-primary rounded-full px-5 py-2 scale-110 shadow-inner">
+        <div class="flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-full bg-primary-fixed text-primary" aria-current="page">
             <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">add_circle</span>
-            <span class="font-bold text-[10px] uppercase tracking-widest mt-1 font-label">Add</span>
-        </button>
+            <span class="font-bold text-[11px] mt-0.5 font-label">추가</span>
+        </div>
         <a href="list.html"
-            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            class="flex flex-col items-center gap-0.5 p-2 text-outline hover:text-primary rounded-xl transition-colors active:scale-90">
             <span class="material-symbols-outlined">style</span>
-            <span class="font-bold text-[10px] uppercase tracking-widest mt-1 font-label">Cards</span>
+            <span class="font-bold text-[11px] mt-0.5 font-label">목록</span>
         </a>
         <a href="admin.html"
-            class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
+            class="flex flex-col items-center gap-0.5 p-2 text-outline hover:text-primary rounded-xl transition-colors active:scale-90">
             <span class="material-symbols-outlined">settings</span>
-            <span class="font-bold text-[10px] uppercase tracking-widest mt-1 font-label">Admin</span>
+            <span class="font-bold text-[11px] mt-0.5 font-label">관리</span>
         </a>
     </nav>
-
-    <!-- ── Ambient Orbs ───────────────────────────────────────── -->
-    <div class="fixed top-20 -left-20 w-64 h-64 rounded-full pointer-events-none -z-10"
-        style="background:rgba(255,219,202,0.30); filter:blur(100px);"></div>
-    <div class="fixed bottom-40 -right-20 w-80 h-80 rounded-full pointer-events-none -z-10"
-        style="background:rgba(225,224,255,0.20); filter:blur(100px);"></div>
 
     <script type="module" src="js/api.js"></script>
     <script src="js/layout.js"></script>
