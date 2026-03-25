@@ -870,8 +870,16 @@
                 document.getElementById('feedbackBtns').classList.remove('hidden');
                 _showExplanation(currentCard);
             });
-            document.getElementById('successBtn').addEventListener('click', () => submitFeedback(true));
-            document.getElementById('failBtn').addEventListener('click',    () => submitFeedback(false));
+            document.getElementById('successBtn').addEventListener('click', () => {
+                const result = _mcqCorrect !== null ? _mcqCorrect : true;
+                _mcqCorrect = null;
+                submitFeedback(result);
+            });
+            document.getElementById('failBtn').addEventListener('click', () => {
+                const result = _mcqCorrect !== null ? _mcqCorrect : false;
+                _mcqCorrect = null;
+                submitFeedback(result);
+            });
             document.getElementById('newProblemBtn').addEventListener('click', () => loadPractice(currentCard._inferredTopic || currentCard.topic));
             document.getElementById('practiceSubmitBtn').addEventListener('click', submitPractice);
             document.getElementById('practiceTreeSubmitBtn').addEventListener('click', submitPractice);
@@ -1190,10 +1198,10 @@
             document.getElementById('answerBox').classList.remove('hidden');
             _showExplanation(currentCard);
 
-            // 연습문제가 있으면 활성화 후 스크롤 → 없으면 기존처럼 자동 진행
+            // 연습문제가 있으면 활성화 후 스크롤 → 없으면 피드백 버튼 표시
+            _mcqCorrect = isCorrect;
             const hasPractice = currentCard && currentCard._inferredTopic;
             if (hasPractice) {
-                _mcqCorrect = isCorrect;
                 _setPracticeActive(true);
                 // 연습문제 섹션으로 부드럽게 스크롤
                 setTimeout(() => {
@@ -1201,8 +1209,8 @@
                         .scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }, 300);
             } else {
-                // 연습문제 없음 — 기존 자동 진행
-                setTimeout(() => submitFeedback(isCorrect), isCorrect ? 700 : 1200);
+                // 연습문제 없음 — 설명 읽고 피드백 버튼으로 직접 넘어가도록
+                document.getElementById('feedbackBtns').classList.remove('hidden');
             }
         }
 
