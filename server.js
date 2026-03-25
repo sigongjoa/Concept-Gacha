@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -8,13 +9,36 @@ const { execFile } = require('child_process');
 const { promisify } = require('util');
 const archiver = require('archiver');
 const execFileAsync = promisify(execFile);
+const { createClient } = require('@supabase/supabase-js');
+
+// ── Supabase 클라이언트 (서버 전용 — 크리덴셜 브라우저 비노출) ─────
+const _supabaseUrl = process.env.SUPABASE_URL;
+const _supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY;
+if (!_supabaseUrl || !_supabaseKey) {
+  console.warn('[WARN] SUPABASE_URL / SUPABASE_SERVICE_KEY 환경변수 미설정. Supabase API 비활성화.');
+}
+const supabase = (_supabaseUrl && _supabaseKey)
+  ? createClient(_supabaseUrl, _supabaseKey)
+  : null;
+
+function requireSB(res) {
+  if (!supabase) { res.status(503).json({ error: 'Supabase 환경변수 미설정 (.env 확인)' }); return false; }
+  return true;
+}
+function sbCheck({ data, error }) {
+  if (error) throw new Error(error.message);
+  return data;
+}
 
 const PRINT_DIR = path.join(__dirname, 'print');
 const PRINT_TMP = path.join(PRINT_DIR, 'tmp');
 if (!fs.existsSync(PRINT_TMP)) fs.mkdirSync(PRINT_TMP, { recursive: true });
 
 const app = express();
-app.use(cors({ origin: ['http://localhost:3002', 'http://127.0.0.1:3002'] }));
+const _corsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
+  : ['http://localhost:3002', 'http://127.0.0.1:3002'];
+app.use(cors({ origin: _corsOrigins }));
 app.use(express.json());
 app.use(express.static('public'));
 
@@ -166,90 +190,71 @@ function saveData(data) {
   try { _dataCacheMtime = fs.statSync(DATA_FILE).mtimeMs; } catch (_) {}
 }
 
-// ============ 학생 API ============
+// ============================================================
+// ── Supabase 기반 API (브라우저에 키 비노출) ──────────────────
+// ============================================================
 
-// 모든 학생 목록 (PIN 제외)
-app.get('/api/students', (req, res) => {
-  const data = loadData();
-  res.json(data.students.map(({ pin, ...s }) => s));
+// ── 학생 API ─────────────────────────────────────────────────
+
+app.get('/api/students', async (req, res) => {
+  if (!requireSB(res)) return;
+  try {
+    const data = sbCheck(await supabase.from('students').select('id, name, created_at').order('created_at'));
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // 특정 학생 정보
-app.get('/api/students/:id', (req, res) => {
-  const { id } = req.params;
-  const data = loadData();
-  const student = data.students.find(s => s.id === id);
-  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
-  const { pin: _, pinSalt: __, ...safeStudent } = student;
-  res.json(safeStudent);
+app.get('/api/students/:id', async (req, res) => {
+  if (!requireSB(res)) return;
+  try {
+    const data = sbCheck(await supabase.from('students').select('id, name, created_at').eq('id', req.params.id).single());
+    res.json(data);
+  } catch (e) { res.status(404).json({ error: e.message }); }
 });
 
-// 학생 추가
-app.post('/api/students', (req, res) => {
+// ── 학생 추가
+app.post('/api/students', async (req, res) => {
+  if (!requireSB(res)) return;
   const { name } = req.body;
-  if (!name || !name.trim()) return res.status(400).json({ error: '이름을 입력해주세요' });
+  if (!name?.trim()) return res.status(400).json({ error: '이름을 입력해주세요' });
   if (name.trim().length > 50) return res.status(400).json({ error: '이름은 50자 이하로 입력해주세요' });
-
-  const data = loadData();
-
-  // 중복 체크
-  if (data.students.find(s => s.name === name.trim())) {
-    return res.status(400).json({ error: '이미 존재하는 이름입니다' });
-  }
-
-  const pinSalt = generateSalt();
-  const newStudent = {
-    id: Date.now().toString(),
-    name: name.trim(),
-    pin: hashPin('0000', pinSalt),
-    pinSalt,
-    createdAt: new Date().toISOString(),
-  };
-
-  data.students.push(newStudent);
-  saveData(data);
-  res.json(newStudent);
+  try {
+    const salt = generateSalt();
+    const { data, error } = await supabase
+      .from('students').insert({ name: name.trim(), pin: hashPin('0000', salt), pin_salt: salt }).select('id, name, created_at').single();
+    if (error) return res.status(error.code === '23505' ? 400 : 500).json({ error: error.message });
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 학생 삭제
-app.delete('/api/students/:id', (req, res) => {
-  const { id } = req.params;
-  const data = loadData();
-
-  data.students = data.students.filter(s => s.id !== id);
-  data.cards = data.cards.filter(c => c.studentId !== id); // 해당 학생의 카드도 삭제
-
-  saveData(data);
-  res.json({ success: true });
+// ── 학생 삭제
+app.delete('/api/students/:id', async (req, res) => {
+  if (!requireSB(res)) return;
+  try {
+    sbCheck(await supabase.from('students').delete().eq('id', req.params.id));
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 학생 업데이트
-app.patch('/api/students/:id', (req, res) => {
-  const { id } = req.params;
+// ── 학생 업데이트 (PUT / PATCH 모두 지원)
+async function _updateStudent(req, res) {
+  if (!requireSB(res)) return;
   const { name } = req.body;
-  const data = loadData();
+  if (!name?.trim()) return res.status(400).json({ error: '이름을 입력해주세요' });
+  try {
+    const data = sbCheck(await supabase.from('students').update({ name: name.trim() }).eq('id', req.params.id).select('id, name, created_at').single());
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+}
+app.patch('/api/students/:id', _updateStudent);
+app.put('/api/students/:id', _updateStudent);
 
-  const student = data.students.find(s => s.id === id);
-  if (!student) {
-    return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
-  }
+// ── 인증 API ──────────────────────────────────────────────────
 
-  if (name && name.trim()) {
-    // 중복 체크 (자신 제외)
-    if (data.students.find(s => s.id !== id && s.name === name.trim())) {
-      return res.status(400).json({ error: '이미 존재하는 이름입니다' });
-    }
-    student.name = name.trim();
-  }
-
-  saveData(data);
-  res.json(student);
-});
-
-// ============ 인증 API ============
-
-// 학생 로그인 (rate limit + 해시 검증)
-app.post('/api/auth/login', (req, res) => {
+// 학생 로그인 (서버사이드 PIN 검증)
+app.post('/api/auth/login', async (req, res) => {
+  if (!requireSB(res)) return;
   const { name, pin } = req.body;
   if (!name || !pin) return res.status(400).json({ error: '이름과 PIN을 입력해주세요' });
 
@@ -257,362 +262,278 @@ app.post('/api/auth/login', (req, res) => {
   const key = `login:${ip}:${name.trim()}`;
   if (!checkRateLimit(key)) return res.status(429).json({ error: '시도 횟수 초과. 15분 후 다시 시도해주세요' });
 
-  const data = loadData();
-  const student = data.students.find(s => s.name === name.trim());
-  if (!student || hashPin(pin, student.pinSalt) !== student.pin) {
-    return res.status(401).json({ error: '이름 또는 PIN이 올바르지 않습니다' });
-  }
-  resetRateLimit(key);
-  const { pin: _, pinSalt: __, ...safeStudent } = student;
-  res.json(safeStudent);
+  try {
+    const { data: students, error } = await supabase
+      .from('students').select('id, name, pin, pin_salt, created_at').eq('name', name.trim());
+    if (error) return res.status(500).json({ error: error.message });
+    if (!students?.length) return res.status(401).json({ error: '이름 또는 PIN이 올바르지 않습니다' });
+
+    const student = students[0];
+    if (!student.pin) return res.status(401).json({ error: 'PIN이 설정되지 않았습니다. 선생님에게 문의하세요' });
+    if (hashPin(pin, student.pin_salt) !== student.pin) return res.status(401).json({ error: '이름 또는 PIN이 올바르지 않습니다' });
+
+    resetRateLimit(key);
+    res.json({ id: student.id, name: student.name, created_at: student.created_at });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 선생님 로그인 (rate limit + 토큰 반환)
-app.post('/api/auth/teacher', (req, res) => {
+// 선생님 로그인
+app.post('/api/auth/teacher', async (req, res) => {
+  if (!requireSB(res)) return;
   const { pin } = req.body;
   const ip = req.ip || 'unknown';
   const key = `teacher:${ip}`;
   if (!checkRateLimit(key)) return res.status(429).json({ error: '시도 횟수 초과. 15분 후 다시 시도해주세요' });
 
-  const data = loadData();
-  if (hashPin(pin, data.teacherPinSalt) !== data.teacherPin) {
-    return res.status(401).json({ error: 'PIN이 올바르지 않습니다' });
-  }
-  resetRateLimit(key);
-  const token = createTeacherToken();
-  res.json({ token });
+  try {
+    const { data, error } = await supabase.from('teacher_settings').select('pin, pin_salt').eq('id', 1).single();
+    if (error || !data) return res.status(500).json({ error: '선생님 설정을 찾을 수 없습니다' });
+    if (hashPin(pin, data.pin_salt) !== data.pin) return res.status(401).json({ error: 'PIN이 올바르지 않습니다' });
+    resetRateLimit(key);
+    res.json({ token: createTeacherToken() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 학생 PIN 변경 (선생님 토큰 필요 + 해시 저장)
-app.put('/api/students/:id/pin', (req, res) => {
+// 학생 PIN 변경
+app.put('/api/students/:id/pin', async (req, res) => {
+  if (!requireSB(res)) return;
   const token = req.headers['x-teacher-token'];
   if (!validateTeacherToken(token)) return res.status(401).json({ error: '선생님 인증 필요' });
   const { pin } = req.body;
   if (!pin || !/^\d{4}$/.test(pin)) return res.status(400).json({ error: '4자리 숫자 PIN을 입력해주세요' });
-  const data = loadData();
-  const student = data.students.find(s => s.id === req.params.id);
-  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
-  student.pinSalt = generateSalt();
-  student.pin = hashPin(pin, student.pinSalt);
-  saveData(data);
-  res.json({ success: true });
+  try {
+    const salt = generateSalt();
+    sbCheck(await supabase.from('students').update({ pin: hashPin(pin, salt), pin_salt: salt }).eq('id', req.params.id));
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 선생님 PIN 변경 (선생님 토큰 필요 + 해시 저장)
-app.put('/api/auth/teacher-pin', (req, res) => {
+// 선생님 PIN 변경
+app.put('/api/auth/teacher-pin', async (req, res) => {
+  if (!requireSB(res)) return;
   const token = req.headers['x-teacher-token'];
   if (!validateTeacherToken(token)) return res.status(401).json({ error: '선생님 인증 필요' });
   const { newPin } = req.body;
   if (!newPin || !/^\d{4}$/.test(newPin)) return res.status(400).json({ error: '4자리 숫자 PIN을 입력해주세요' });
-  const data = loadData();
-  data.teacherPinSalt = generateSalt();
-  data.teacherPin = hashPin(newPin, data.teacherPinSalt);
-  saveData(data);
-  res.json({ success: true });
+  try {
+    const salt = generateSalt();
+    sbCheck(await supabase.from('teacher_settings').update({ pin: hashPin(newPin, salt), pin_salt: salt, updated_at: new Date().toISOString() }).eq('id', 1));
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ============ 커리큘럼 API ============
+// ── 카드 API ──────────────────────────────────────────────────
 
-// 전체 커리큘럼 목록
-app.get('/api/curricula', (req, res) => {
-  const data = loadData();
-  res.json(data.curricula);
+// 학생 카드 목록
+app.get('/api/students/:studentId/cards', async (req, res) => {
+  if (!requireSB(res)) return;
+  try {
+    const data = sbCheck(await supabase.from('cards').select('*').eq('student_id', req.params.studentId).order('created_at'));
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 커리큘럼 생성
-app.post('/api/curricula', (req, res) => {
-  const { grade, semester, label } = req.body;
-  if (!grade || !semester) return res.status(400).json({ error: 'grade, semester 필수' });
-  const data = loadData();
-  const id = `${grade}-${semester}학기`.replace(/\s/g, '');
-  if (data.curricula.find(c => c.id === id))
-    return res.status(400).json({ error: '이미 존재하는 커리큘럼입니다' });
-  const cur = { id, grade, semester, label: label || `${grade} ${semester}학기`, createdAt: new Date().toISOString() };
-  data.curricula.push(cur);
-  saveData(data);
-  res.json(cur);
-});
-
-// 커리큘럼 삭제 (카드도 함께 삭제)
-app.delete('/api/curricula/:id', (req, res) => {
-  const data = loadData();
-  const cardIds = data.cards.filter(c => c.curriculumId === req.params.id).map(c => c.id);
-  data.curricula = data.curricula.filter(c => c.id !== req.params.id);
-  data.cards     = data.cards.filter(c => c.curriculumId !== req.params.id);
-  data.progress  = data.progress.filter(p => !cardIds.includes(p.cardId));
-  saveData(data);
-  res.json({ success: true });
-});
-
-// 커리큘럼 카드 목록
-app.get('/api/curricula/:id/cards', (req, res) => {
-  const data = loadData();
-  res.json(data.cards.filter(c => c.curriculumId === req.params.id)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
-});
-
-// 커리큘럼에 카드 추가
-app.post('/api/curricula/:id/cards', (req, res) => {
-  const { question, answer, type, questionImage, topic } = req.body;
-  const data = loadData();
-  if (!data.curricula.find(c => c.id === req.params.id))
-    return res.status(404).json({ error: '커리큘럼을 찾을 수 없습니다' });
-  const newCard = {
-    id: Date.now().toString(),
-    studentId: null,
-    curriculumId: req.params.id,
-    type: type || 'text',
-    question: question || '',
-    questionImage: questionImage || null,
-    answer: answer || '',
-    topic: topic || null,
-    createdAt: new Date().toISOString(),
-  };
-  data.cards.push(newCard);
-  saveData(data);
-  res.json(newCard);
-});
-
-// 학생 커리큘럼 등록/해제
-app.post('/api/students/:id/curricula', (req, res) => {
-  const { curriculumId } = req.body;
-  const data = loadData();
-  const student = data.students.find(s => s.id === req.params.id);
-  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
-  if (!data.curricula.find(c => c.id === curriculumId))
-    return res.status(404).json({ error: '커리큘럼을 찾을 수 없습니다' });
-  if (!student.enrolledCurricula.includes(curriculumId))
-    student.enrolledCurricula.push(curriculumId);
-  saveData(data);
-  res.json(student);
-});
-
-app.delete('/api/students/:id/curricula/:curriculumId', (req, res) => {
-  const data = loadData();
-  const student = data.students.find(s => s.id === req.params.id);
-  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
-  student.enrolledCurricula = student.enrolledCurricula.filter(c => c !== req.params.curriculumId);
-  saveData(data);
-  res.json(student);
-});
-
-// ============ 카드 API ============
-
-// 특정 학생의 모든 카드 (개인 카드 + 등록된 커리큘럼 카드)
-app.get('/api/students/:studentId/cards', (req, res) => {
-  const { studentId } = req.params;
-  const data = loadData();
-  const student = data.students.find(s => s.id === studentId);
-  const enrolled = student?.enrolledCurricula ?? [];
-
-  const personalCards = data.cards.filter(c => c.studentId === studentId);
-  const curriculumCards = data.cards
-    .filter(c => c.curriculumId && enrolled.includes(c.curriculumId))
-    .map(c => mergeProgress(c, studentId, data));
-
-  const all = [...personalCards, ...curriculumCards]
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  res.json(all);
-});
-
-// 이미지 업로드 API
+// 이미지 업로드 (파일 시스템, 변경 없음)
 app.post('/api/upload', upload.single('image'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: '이미지가 없습니다' });
-  }
+  if (!req.file) return res.status(400).json({ error: '이미지가 없습니다' });
   res.json({ filename: req.file.filename });
 });
 
 // 카드 추가
-app.post('/api/students/:studentId/cards', (req, res) => {
+app.post('/api/students/:studentId/cards', async (req, res) => {
+  if (!requireSB(res)) return;
   const { studentId } = req.params;
-  const { question, answer, type, questionImage, topic } = req.body;
-  if (question && question.length > 2000) return res.status(400).json({ error: '질문은 2000자 이하로 입력해주세요' });
-  if (answer && answer.length > 2000) return res.status(400).json({ error: '정답은 2000자 이하로 입력해주세요' });
-  const data = loadData();
-
-  const newCard = {
-    id: Date.now().toString(),
-    studentId,
-    type: type || 'text', // 'text' 또는 'image'
-    question: question || '',
-    questionImage: questionImage || null, // 이미지 파일명
-    answer: answer || '',
-    topic: topic || null, // 연습 문제 생성용 개념 태그
-    box: 1,
-    successCount: 0,
-    failCount: 0,
-    createdAt: new Date().toISOString(),
-    lastReview: null,
-  };
-
-  data.cards.push(newCard);
-  saveData(data);
-  res.json(newCard);
+  const { question, answer, type, question_image, topic, explanation } = req.body;
+  if (question?.length > 2000) return res.status(400).json({ error: '질문은 2000자 이하로 입력해주세요' });
+  if (answer?.length > 2000) return res.status(400).json({ error: '정답은 2000자 이하로 입력해주세요' });
+  try {
+    const { data, error } = await supabase.from('cards')
+      .insert({ student_id: studentId, type: type || 'text', question: question || '', answer: answer || '', question_image: question_image || null, topic: topic || null, explanation: explanation || null })
+      .select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 카드 업데이트 (성공/실패 또는 내용 수정)
-app.patch('/api/cards/:id', (req, res) => {
+// 카드 업데이트 (PUT / PATCH)
+async function _updateCard(req, res) {
+  if (!requireSB(res)) return;
   const { id } = req.params;
-  const { success, question, answer, type, questionImage } = req.body;
-  const data = loadData();
-
-  const card = data.cards.find(c => c.id === id);
-  if (!card) {
-    return res.status(404).json({ error: '카드를 찾을 수 없습니다' });
-  }
-
-  // 성공/실패 여부에 따른 상자 이동
-  if (success !== undefined) {
-    if (success) {
-      card.box = Math.min(card.box + 1, 4);
-      card.successCount++;
-    } else {
-      card.box = 1;
-      card.failCount++;
-    }
-    card.lastReview = new Date().toISOString();
-  }
-
-  // 내용 업데이트
-  if (question !== undefined) card.question = question;
-  if (answer !== undefined) card.answer = answer;
-  if (type !== undefined) card.type = type;
-  if (questionImage !== undefined) card.questionImage = questionImage;
-
-  saveData(data);
-  res.json(card);
-});
+  const { question, answer, type, question_image, box, success_count, fail_count, explanation } = req.body;
+  const updates = {};
+  if (question !== undefined) updates.question = question;
+  if (answer !== undefined) updates.answer = answer;
+  if (type !== undefined) updates.type = type;
+  if (question_image !== undefined) updates.question_image = question_image;
+  if (box !== undefined) updates.box = box;
+  if (success_count !== undefined) updates.success_count = success_count;
+  if (fail_count !== undefined) updates.fail_count = fail_count;
+  if (explanation !== undefined) updates.explanation = explanation;
+  try {
+    const data = sbCheck(await supabase.from('cards').update(updates).eq('id', id).select().single());
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+}
+app.patch('/api/cards/:id', _updateCard);
+app.put('/api/cards/:id', _updateCard);
 
 // 카드 삭제
-app.delete('/api/cards/:id', (req, res) => {
-  const { id } = req.params;
-  const data = loadData();
-  data.cards = data.cards.filter(c => c.id !== id);
-  saveData(data);
-  res.json({ success: true });
+app.delete('/api/cards/:id', async (req, res) => {
+  if (!requireSB(res)) return;
+  try {
+    sbCheck(await supabase.from('cards').delete().eq('id', req.params.id));
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 랜덤 카드 뽑기 (개인 카드 + 커리큘럼 카드 통합)
-app.get('/api/students/:studentId/cards/random', (req, res) => {
-  const { studentId } = req.params;
-  const data = loadData();
-  const student = data.students.find(s => s.id === studentId);
-  const enrolled = student?.enrolledCurricula ?? [];
+// 랜덤 카드 (Leitner 가중치)
+app.get('/api/students/:studentId/cards/random', async (req, res) => {
+  if (!requireSB(res)) return;
+  try {
+    const { data: cards, error } = await supabase.from('cards').select('*').eq('student_id', req.params.studentId);
+    if (error) return res.status(500).json({ error: error.message });
+    if (!cards?.length) return res.status(404).json({ error: 'NO_CARDS' });
 
-  const personalCards = data.cards.filter(c => c.studentId === studentId);
-  const curriculumCards = data.cards
-    .filter(c => c.curriculumId && enrolled.includes(c.curriculumId))
-    .map(c => mergeProgress(c, studentId, data));
-  const cards = [...personalCards, ...curriculumCards];
-
-  if (cards.length === 0) return res.status(404).json({ error: '카드가 없습니다' });
-
-  // 가중치 기반 랜덤 (상자1=4, 상자4=1)
-  const weighted = [];
-  cards.forEach(card => {
-    const weight = 5 - (card.box || 1);
-    for (let i = 0; i < weight; i++) weighted.push(card);
-  });
-
-  res.json(weighted[Math.floor(Math.random() * weighted.length)]);
+    const weights = cards.map(c => Math.max(6 - (c.box || 1), 1));
+    const total = weights.reduce((a, b) => a + b, 0);
+    let rand = Math.random() * total;
+    for (let i = 0; i < cards.length; i++) { rand -= weights[i]; if (rand <= 0) return res.json(cards[i]); }
+    res.json(cards[cards.length - 1]);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 특정 학생 통계 (개인 + 커리큘럼 카드 통합)
-app.get('/api/students/:studentId/stats', (req, res) => {
-  const { studentId } = req.params;
-  const data = loadData();
-  const student = data.students.find(s => s.id === studentId);
-  const enrolled = student?.enrolledCurricula ?? [];
-
-  const personalCards = data.cards.filter(c => c.studentId === studentId);
-  const curriculumCards = data.cards
-    .filter(c => c.curriculumId && enrolled.includes(c.curriculumId))
-    .map(c => mergeProgress(c, studentId, data));
-  const cards = [...personalCards, ...curriculumCards];
-
-  const stats = { total: cards.length, box1: 0, box2: 0, box3: 0, box4: 0 };
-  cards.forEach(c => { const b = Math.min(c.box || 1, 4); stats[`box${b}`]++; });
-  res.json(stats);
+// 학생 통계
+app.get('/api/students/:studentId/stats', async (req, res) => {
+  if (!requireSB(res)) return;
+  try {
+    const { data: cards } = await supabase.from('cards').select('box').eq('student_id', req.params.studentId);
+    const dist = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    (cards || []).forEach(c => { if (c.box >= 1 && c.box <= 5) dist[c.box]++; });
+    res.json({ distribution: dist, total: cards?.length || 0 });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 전체 통계 (모든 학생)
-app.get('/api/stats/all', (req, res) => {
-  const data = loadData();
-  const studentStats = data.students.map(student => {
-    const cards = data.cards.filter(c => c.studentId === student.id);
-    return {
-      student,
-      total: cards.length,
-      box1: cards.filter(c => c.box === 1).length,
-      box4: cards.filter(c => c.box === 4).length,
-    };
-  });
-  res.json(studentStats);
-});
-
-// PUT 별칭 (api.js에서 PUT 사용)
-app.put('/api/students/:id', (req, res) => {
-  req.method = 'PATCH';
-  const { id } = req.params;
-  const { name } = req.body;
-  const data = loadData();
-  const student = data.students.find(s => s.id === id);
-  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
-  if (name && name.trim()) {
-    if (data.students.find(s => s.id !== id && s.name === name.trim()))
-      return res.status(400).json({ error: '이미 존재하는 이름입니다' });
-    student.name = name.trim();
-  }
-  saveData(data);
-  res.json(student);
-});
-
-app.put('/api/cards/:id', (req, res) => {
-  const { id } = req.params;
-  const { question, answer, type, questionImage, box, successCount, failCount } = req.body;
-  const data = loadData();
-  const card = data.cards.find(c => c.id === id);
-  if (!card) return res.status(404).json({ error: '카드를 찾을 수 없습니다' });
-  if (question !== undefined) card.question = question;
-  if (answer !== undefined) card.answer = answer;
-  if (type !== undefined) card.type = type;
-  if (questionImage !== undefined) card.questionImage = questionImage;
-  if (box !== undefined) card.box = box;
-  if (successCount !== undefined) card.successCount = successCount;
-  if (failCount !== undefined) card.failCount = failCount;
-  saveData(data);
-  res.json(card);
+// 전체 학생 통계 (관리자)
+app.get('/api/stats/all', async (req, res) => {
+  if (!requireSB(res)) return;
+  try {
+    const [{ data: students }, { data: cards }] = await Promise.all([
+      supabase.from('students').select('id, name, created_at').order('created_at'),
+      supabase.from('cards').select('student_id, box'),
+    ]);
+    const result = (students || []).map(s => {
+      const sc = (cards || []).filter(c => c.student_id === s.id);
+      return { student: s, total: sc.length, box1: sc.filter(c => c.box === 1).length, box5: sc.filter(c => c.box === 5).length };
+    });
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // 피드백 (Leitner 박스 이동)
-app.post('/api/cards/:id/feedback', (req, res) => {
+app.post('/api/cards/:id/feedback', async (req, res) => {
+  if (!requireSB(res)) return;
   const { id } = req.params;
-  const { success, studentId } = req.body;
-  const data = loadData();
-  const card = data.cards.find(c => c.id === id);
-  if (!card) return res.status(404).json({ error: '카드를 찾을 수 없습니다' });
+  const { success } = req.body;
+  try {
+    const { data: card, error } = await supabase.from('cards').select('box, success_count, fail_count').eq('id', id).single();
+    if (error) return res.status(404).json({ error: '카드를 찾을 수 없습니다' });
 
-  if (card.curriculumId && studentId) {
-    // 커리큘럼 카드: progress 배열에서 진도 관리
-    let p = getProgress(data, studentId, id);
-    if (!p) {
-      p = { id: Date.now().toString(), studentId, cardId: id, box: 1, successCount: 0, failCount: 0, lastReview: null };
-      data.progress.push(p);
+    const newBox = success ? Math.min((card.box || 1) + 1, 5) : Math.max((card.box || 1) - 1, 1);
+    const data = sbCheck(await supabase.from('cards').update({
+      box: newBox,
+      success_count: success ? (card.success_count || 0) + 1 : (card.success_count || 0),
+      fail_count:    success ? (card.fail_count || 0)    : (card.fail_count || 0) + 1,
+      last_review:   new Date().toISOString(),
+    }).eq('id', id).select().single());
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Daily Session API ─────────────────────────────────────────
+
+// 오늘 세션 조회/생성
+app.get('/api/students/:studentId/session/today', async (req, res) => {
+  if (!requireSB(res)) return;
+  const { studentId } = req.params;
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    let { data: session, error } = await supabase.from('daily_sessions').select('*').eq('student_id', studentId).eq('session_date', today).maybeSingle();
+    if (error) return res.status(500).json({ error: error.message });
+    if (!session) {
+      const { data: ns, error: ce } = await supabase.from('daily_sessions').insert({ student_id: studentId, session_date: today, cards_target: 10 }).select().single();
+      if (ce) return res.status(500).json({ error: ce.message });
+      session = ns;
     }
-    if (success) { p.box = Math.min(p.box + 1, 5); p.successCount++; }
-    else          { p.box = 1; p.failCount++; }
-    p.lastReview = new Date().toISOString();
-    saveData(data);
-    return res.json({ ...card, ...p });
-  }
+    const remaining = Math.max(0, session.cards_target - session.cards_drawn);
+    // 스트릭 계산
+    const { data: hist } = await supabase.from('daily_sessions').select('session_date, completed').eq('student_id', studentId).order('session_date', { ascending: false }).limit(60);
+    const completedMap = new Map((hist || []).map(s => [s.session_date, s.completed]));
+    let streak = 0;
+    const now = new Date();
+    for (let i = 0; i < 60; i++) {
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      const ds = d.toISOString().split('T')[0];
+      if (i === 0) { if (completedMap.get(ds)) streak++; continue; }
+      if (completedMap.get(ds) === true) streak++; else break;
+    }
+    res.json({ session, remaining, streak });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
-  // 개인 카드: 기존 방식
-  if (success) { card.box = Math.min(card.box + 1, 5); card.successCount = (card.successCount || 0) + 1; }
-  else         { card.box = 1; card.failCount = (card.failCount || 0) + 1; }
-  card.lastReview = new Date().toISOString();
-  saveData(data);
-  res.json(card);
+// 카드 결과 기록
+app.post('/api/sessions/:sessionId/record', async (req, res) => {
+  if (!requireSB(res)) return;
+  const { sessionId } = req.params;
+  const { card_id, result, box_before, box_after } = req.body;
+  try {
+    await supabase.from('session_cards').insert({ session_id: sessionId, card_id, result, box_before, box_after });
+    const { data: cur } = await supabase.from('daily_sessions').select('cards_drawn, cards_target').eq('id', sessionId).single();
+    const newDrawn = (cur?.cards_drawn ?? 0) + 1;
+    const completed = newDrawn >= (cur?.cards_target ?? 10);
+    const { data: final } = await supabase.from('daily_sessions')
+      .update({ cards_drawn: newDrawn, completed, completed_at: completed ? new Date().toISOString() : null })
+      .eq('id', sessionId).select().single();
+    res.json(final);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 세션 히스토리
+app.get('/api/students/:studentId/session/history', async (req, res) => {
+  if (!requireSB(res)) return;
+  const days = parseInt(req.query.days) || 30;
+  const since = new Date(); since.setDate(since.getDate() - days);
+  try {
+    const data = sbCheck(await supabase.from('daily_sessions')
+      .select('session_date, cards_drawn, cards_target, completed')
+      .eq('student_id', req.params.studentId)
+      .gte('session_date', since.toISOString().split('T')[0])
+      .order('session_date', { ascending: true }));
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 이번 주 현황
+app.get('/api/students/:studentId/session/weekly', async (req, res) => {
+  if (!requireSB(res)) return;
+  const today = new Date();
+  const day = today.getDay();
+  const monday = new Date(today); monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
+  const mondayStr = monday.toISOString().split('T')[0];
+  const sundayStr = new Date(monday.getTime() + 6 * 86400000).toISOString().split('T')[0];
+  const todayStr = today.toISOString().split('T')[0];
+  try {
+    const { data } = await supabase.from('daily_sessions')
+      .select('session_date, completed').eq('student_id', req.params.studentId)
+      .gte('session_date', mondayStr).lte('session_date', sundayStr);
+    const map = new Map((data || []).map(s => [s.session_date, s.completed]));
+    const week = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday); d.setDate(monday.getDate() + i);
+      const ds = d.toISOString().split('T')[0];
+      if (ds > todayStr) return null;
+      return map.get(ds) === true;
+    });
+    res.json(week);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ============ 인쇄 API ============
@@ -697,11 +618,12 @@ function inferTopic(card) {
 
 function injectCards(template, cards) {
   const lines = shuffle(cards).slice(0, 8).map(c => {
-    const imgPath = c.questionImage ? `/public/assets/${c.questionImage}` : '';
+    // Supabase snake_case 필드 지원 (question_image, success_count, fail_count)
+    const imgPath = (c.question_image || c.questionImage) ? `/public/assets/${c.question_image || c.questionImage}` : '';
     const topic = inferTopic(c);
     let pq = '', pa = '';
     if (topic) [pq, pa] = TOPIC_GENERATORS[topic]();
-    return `  ("${escapeTypst(c.question)}", "${escapeTypst(c.answer)}", ${c.box || 1}, ${c.successCount || 0}, ${c.failCount || 0}, "${imgPath}", "${escapeTypst(pq)}", "${escapeTypst(pa)}"),`;
+    return `  ("${escapeTypst(c.question)}", "${escapeTypst(c.answer)}", ${c.box || 1}, ${c.success_count ?? c.successCount ?? 0}, ${c.fail_count ?? c.failCount ?? 0}, "${imgPath}", "${escapeTypst(pq)}", "${escapeTypst(pa)}"),`;
   }).join('\n');
   let out = template.replace(
     /\/\/ ─── AUTO_CARDS_START[\s\S]*?\/\/ ─── AUTO_CARDS_END/,
@@ -721,58 +643,55 @@ function injectItems(template, cards) {
   return injectDate(out);
 }
 
+// ── Supabase에서 학생+카드 로드 헬퍼 ────────────────────────
+async function loadStudentCards(studentId, boxFilter) {
+  if (!supabase) throw new Error('Supabase 미설정');
+  const [{ data: student, error: se }, { data: cards, error: ce }] = await Promise.all([
+    supabase.from('students').select('id, name').eq('id', studentId).single(),
+    supabase.from('cards').select('*').eq('student_id', studentId),
+  ]);
+  if (se || !student) throw new Error('학생을 찾을 수 없습니다');
+  if (ce) throw new Error(ce.message);
+  let filtered = cards || [];
+  if (boxFilter?.length) filtered = filtered.filter(c => boxFilter.includes(c.box));
+  return { student, cards: filtered };
+}
+
 // POST /api/print/flashcard-sheet
 app.post('/api/print/flashcard-sheet', async (req, res) => {
   const { studentId, boxFilter } = req.body;
-  const data = loadData();
-  const student = data.students.find(s => s.id === studentId);
-  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
-
-  let cards = data.cards.filter(c => c.studentId === studentId);
-  if (boxFilter && boxFilter.length > 0) cards = cards.filter(c => boxFilter.includes(c.box));
-  if (cards.length === 0) return res.status(400).json({ error: '카드가 없습니다' });
-
   try {
-    const buf = await buildPDF(
-      path.join(PRINT_DIR, 'flashcard-sheet.typ'),
-      (t) => injectCards(t, cards)
-    );
+    const { student, cards } = await loadStudentCards(studentId, boxFilter);
+    if (!cards.length) return res.status(400).json({ error: '카드가 없습니다' });
+    const buf = await buildPDF(path.join(PRINT_DIR, 'flashcard-sheet.typ'), (t) => injectCards(t, cards));
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${date}_${encodeURIComponent(student.name)}-flashcard.pdf`);
     res.send(buf);
   } catch (e) {
     console.error('PDF 오류:', e.message);
-    res.status(500).json({ error: 'PDF 생성 실패', detail: e.message });
+    res.status(e.message === '학생을 찾을 수 없습니다' ? 404 : 500).json({ error: e.message });
   }
 });
 
 // POST /api/print/quiz-sheet
 app.post('/api/print/quiz-sheet', async (req, res) => {
   const { studentId, chapter } = req.body;
-  const data = loadData();
-  const student = data.students.find(s => s.id === studentId);
-  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
-
-  const cards = data.cards.filter(c => c.studentId === studentId);
-  if (cards.length === 0) return res.status(400).json({ error: '카드가 없습니다' });
-
   try {
-    const buf = await buildPDF(
-      path.join(PRINT_DIR, 'quiz-sheet.typ'),
-      (t) => {
-        let out = injectItems(t, cards);
-        if (chapter) out = out.replace(/chapter\s*=\s*"[^"]*"/, `chapter = "${escapeTypst(chapter)}"`);
-        return out;
-      }
-    );
+    const { student, cards } = await loadStudentCards(studentId);
+    if (!cards.length) return res.status(400).json({ error: '카드가 없습니다' });
+    const buf = await buildPDF(path.join(PRINT_DIR, 'quiz-sheet.typ'), (t) => {
+      let out = injectItems(t, cards);
+      if (chapter) out = out.replace(/chapter\s*=\s*"[^"]*"/, `chapter = "${escapeTypst(chapter)}"`);
+      return out;
+    });
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${date}_${encodeURIComponent(student.name)}-quiz.pdf`);
     res.send(buf);
   } catch (e) {
     console.error('PDF 오류:', e.message);
-    res.status(500).json({ error: 'PDF 생성 실패', detail: e.message });
+    res.status(e.message === '학생을 찾을 수 없습니다' ? 404 : 500).json({ error: e.message });
   }
 });
 
@@ -1091,9 +1010,14 @@ function injectProblems(template, problems, topic) {
 // POST /api/print/practice-sheet
 app.post('/api/print/practice-sheet', async (req, res) => {
   const { studentId, topic = '순환소수', count = 10 } = req.body;
-  const data = loadData();
-  const student = data.students.find(s => s.id === studentId);
-  if (!student) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
+  let student;
+  try {
+    const { data, error } = await (supabase
+      ? supabase.from('students').select('id, name').eq('id', studentId).single()
+      : Promise.resolve({ data: null, error: new Error('Supabase 미설정') }));
+    if (error || !data) return res.status(404).json({ error: '학생을 찾을 수 없습니다' });
+    student = data;
+  } catch (e) { return res.status(500).json({ error: e.message }); }
 
   // 수체계는 트리 전용 PDF
   if (topic === '수체계') {
@@ -1150,7 +1074,6 @@ app.post('/api/print/bulk', async (req, res) => {
   const { studentIds, type, boxFilter } = req.body;
   if (!studentIds || studentIds.length === 0) return res.status(400).json({ error: '학생을 선택하세요' });
 
-  const data = loadData();
   const date = new Date().toISOString().slice(0, 10);
   const typLabel = type === 'quiz' ? '퀴즈' : '플래시카드';
 
@@ -1163,12 +1086,11 @@ app.post('/api/print/bulk', async (req, res) => {
   const templateFile = path.join(PRINT_DIR, type === 'quiz' ? 'quiz-sheet.typ' : 'flashcard-sheet.typ');
 
   for (const sid of studentIds) {
-    const student = data.students.find(s => s.id === sid);
-    if (!student) continue;
-
-    let cards = data.cards.filter(c => c.studentId === sid);
-    if (boxFilter && boxFilter.length > 0) cards = cards.filter(c => boxFilter.includes(c.box));
-    if (cards.length === 0) continue;
+    let student, cards;
+    try {
+      ({ student, cards } = await loadStudentCards(sid, boxFilter));
+    } catch (_) { continue; }
+    if (!cards.length) continue;
 
     try {
       let pdfBuf;

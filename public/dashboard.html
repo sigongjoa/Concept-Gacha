@@ -249,7 +249,6 @@
 
 
     <script type="module">
-        import { supabase } from './js/supabase-client.js'
         import {
             getOrCreateTodaySession,
             getSessionHistory,
@@ -349,20 +348,17 @@
         async function loadBoxStats(studentId) {
             const container = document.getElementById('boxBars')
             try {
-                const { data: cards } = await supabase
-                    .from('cards')
-                    .select('box')
-                    .eq('student_id', studentId)
+                const stats = await fetch(`/api/students/${studentId}/stats`).then(r => r.json())
 
-                if (!cards?.length) {
+                const dist = stats.distribution || {}
+                const total = stats.total || 0
+                if (!total) {
                     container.innerHTML = '<p class="text-sm text-outline text-center py-2">카드가 없습니다</p>'
                     document.getElementById('totalCardsLabel').textContent = '총 0장'
                     return
                 }
 
-                const boxCount = [0, 0, 0, 0, 0, 0]
-                cards.forEach(c => { if (c.box >= 1 && c.box <= 5) boxCount[c.box]++ })
-                const total = cards.length
+                const boxCount = [0, dist[1]||0, dist[2]||0, dist[3]||0, dist[4]||0, dist[5]||0]
                 document.getElementById('totalCardsLabel').textContent = `총 ${total}장`
 
                 container.innerHTML = [1,2,3,4,5].map(box => {
