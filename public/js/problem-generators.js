@@ -57,7 +57,7 @@ const PROBLEM_GENERATORS = {
                         `x = 0.${d}${d}${d}… 로 놓으면`,
                         `10x = ${d}.${d}${d}…`,
                         `10x − x = ${d}   →   9x = ${d}`,
-                        `x = ${d}/9` + (gcd(d, 9) > 1 ? `  =  ${n}/${de}` : ''),
+                        gcd(d, 9) > 1 ? `$x = \\frac{${d}}{9} = \\frac{${n}}{${de}}$` : `$x = \\frac{${d}}{9}$`,
                     ],
                 };
             }
@@ -76,7 +76,7 @@ const PROBLEM_GENERATORS = {
                         `x = 0.${d1}${d2}${d1}${d2}… 로 놓으면`,
                         `100x = ${d1}${d2}.${d1}${d2}…`,
                         `100x − x = ${raw}   →   99x = ${raw}`,
-                        `x = ${raw}/99` + (gcd(raw, 99) > 1 ? `  =  ${n}/${de}` : ''),
+                        gcd(raw, 99) > 1 ? `$x = \\frac{${raw}}{99} = \\frac{${n}}{${de}}$` : `$x = \\frac{${raw}}{99}$`,
                     ],
                 };
             }
@@ -95,7 +95,7 @@ const PROBLEM_GENERATORS = {
                     `10x = ${a}.${b}${b}${b}…`,
                     `100x = ${a}${b}.${b}${b}…`,
                     `100x − 10x = ${a}${b} − ${a}   →   90x = ${raw_n}`,
-                    `x = ${raw_n}/90` + (gcd(raw_n, 90) > 1 ? `  =  ${n}/${de}` : ''),
+                    gcd(raw_n, 90) > 1 ? `$x = \\frac{${raw_n}}{90} = \\frac{${n}}{${de}}$` : `$x = \\frac{${raw_n}}{90}$`,
                 ],
             };
         },
@@ -277,9 +277,9 @@ const PROBLEM_GENERATORS = {
             const exp  = EXP[Math.floor(Math.random()*EXP.length)];
             const val  = Math.pow(base, exp);
             const type = Math.floor(Math.random()*3);
-            if (type === 0) return { question: `${base}^${exp}`, questionSub: '거듭제곱 값을 계산하세요', answer: `${val}`, steps: [`${base}를 ${exp}번 곱하면`, `${Array(exp).fill(base).join(' × ')} = ${val}`] };
-            if (type === 1) return { question: `${val} = ${base}^□`, questionSub: '□에 알맞은 수(지수)를 구하세요', answer: `${exp}`, steps: [`${base}^? = ${val}`, `${base}를 ${exp}번 곱하면 ${val}`] };
-            return { question: `${val} = □^${exp}`, questionSub: '□에 알맞은 수(밑)를 구하세요', answer: `${base}`, steps: [`?^${exp} = ${val}`, `${val}의 ${exp}제곱근 = ${base}`] };
+            if (type === 0) return { question: `$${base}^{${exp}}$`, questionSub: '거듭제곱 값을 계산하세요', answer: `${val}`, steps: [`${base}를 ${exp}번 곱하면`, `$${Array(exp).fill(base).join(' \\times ')} = ${val}$`] };
+            if (type === 1) return { question: `$${val} = ${base}^{\\square}$`, questionSub: '□에 알맞은 수(지수)를 구하세요', answer: `${exp}`, steps: [`$${base}^{?} = ${val}$`, `${base}를 ${exp}번 곱하면 ${val}`] };
+            return { question: `$\\square^{${exp}} = ${val}$`, questionSub: '□에 알맞은 수(밑)를 구하세요', answer: `${base}`, steps: [`$?^{${exp}} = ${val}$`, `${val}의 ${exp}제곱근 = ${base}`] };
         },
     },
 
@@ -291,14 +291,14 @@ const PROBLEM_GENERATORS = {
             const type = Math.floor(Math.random()*3);
             if (type === 0) {
                 const n = Math.floor(Math.random()*7)+2, d = Math.floor(Math.random()*7)+2;
-                return { question: `${n}/${d}의 역수`, questionSub: '분자와 분모를 바꾸세요', answer: `${d}/${n}`, steps: [`역수 = 분자↔분모`, `${n}/${d} → ${d}/${n}`] };
+                return { question: `$\\frac{${n}}{${d}}$의 역수`, questionSub: '분자와 분모를 바꾸세요', answer: `${d}/${n}`, steps: [`역수 = 분자↔분모`, `$\\frac{${n}}{${d}} \\to \\frac{${d}}{${n}}$`] };
             }
             if (type === 1) {
                 const n = Math.floor(Math.random()*8)+2;
-                return { question: `${n}의 역수`, questionSub: '정수를 분수로 나타낸 뒤 뒤집으세요', answer: `1/${n}`, steps: [`${n} = ${n}/1`, `역수 = 1/${n}`] };
+                return { question: `${n}의 역수`, questionSub: '정수를 분수로 나타낸 뒤 뒤집으세요', answer: `1/${n}`, steps: [`$${n} = \\frac{${n}}{1}$`, `역수 = $\\frac{1}{${n}}$`] };
             }
             const n = Math.floor(Math.random()*7)+2, d = Math.floor(Math.random()*7)+2;
-            return { question: `${n}/${d} × □ = 1`, questionSub: '□에 역수를 넣으세요', answer: `${d}/${n}`, steps: [`역수 = ${d}/${n}`, `${n}/${d} × ${d}/${n} = 1`] };
+            return { question: `$\\frac{${n}}{${d}} \\times \\square = 1$`, questionSub: '□에 역수를 넣으세요', answer: `${d}/${n}`, steps: [`역수 = $\\frac{${d}}{${n}}$`, `$\\frac{${n}}{${d}} \\times \\frac{${d}}{${n}} = 1$`] };
         },
     },
 
@@ -312,7 +312,7 @@ const PROBLEM_GENERATORS = {
             let n, d;
             do { n = Math.floor(Math.random()*7)+2; d = Math.floor(Math.random()*7)+2; } while(n===d);
             const [rn,rd] = simplify(n*g, d*g);
-            return { question: `${n*g}/${d*g}`, questionSub: '기약분수로 나타내세요', answer: `${rn}/${rd}`, steps: [`GCD(${n*g},${d*g}) = ${g}`, `${n*g}÷${g} / ${d*g}÷${g} = ${rn}/${rd}`] };
+            return { question: `$\\dfrac{${n*g}}{${d*g}}$`, questionSub: '기약분수로 나타내세요', answer: `${rn}/${rd}`, steps: [`GCD(${n*g}, ${d*g}) = ${g}`, `$\\dfrac{${n*g} \\div ${g}}{${d*g} \\div ${g}} = \\dfrac{${rn}}{${rd}}$`] };
         },
     },
 
@@ -352,8 +352,8 @@ const PROBLEM_GENERATORS = {
             const n = PERFECT[Math.floor(Math.random()*PERFECT.length)];
             const sq = Math.sqrt(n);
             const type = Math.floor(Math.random()*2);
-            if (type === 0) return { question: `√${n}`, questionSub: '양의 제곱근을 구하세요', answer: `${sq}`, steps: [`${sq}² = ${n}`, `∴ √${n} = ${sq}`] };
-            return { question: `제곱해서 ${n}이 되는 양수는?`, questionSub: '양의 제곱근을 구하세요', answer: `${sq}`, steps: [`□² = ${n}`, `□ = ${sq}`] };
+            if (type === 0) return { question: `$\\sqrt{${n}}$`, questionSub: '양의 제곱근을 구하세요', answer: `${sq}`, steps: [`$${sq}^2 = ${n}$`, `$\\therefore \\sqrt{${n}} = ${sq}$`] };
+            return { question: `제곱해서 ${n}이 되는 양수는?`, questionSub: '양의 제곱근을 구하세요', answer: `${sq}`, steps: [`$\\square^2 = ${n}$`, `$\\square = ${sq}$`] };
         },
     },
 
@@ -371,7 +371,7 @@ const PROBLEM_GENERATORS = {
             } while(n1===n2 && d1===d2);
             const v1=n1/d1, v2=n2/d2;
             const sym = v1>v2 ? '>' : v1<v2 ? '<' : '=';
-            return { question: `${n1}/${d1}  ○  ${n2}/${d2}`, questionSub: '○ 안에 >, <, = 를 쓰세요', answer: sym, steps: [`통분: ${n1*d2}/${d1*d2}  vs  ${n2*d1}/${d1*d2}`, `${n1*d2} ${sym} ${n2*d1}  →  ${sym}`] };
+            return { question: `$\\dfrac{${n1}}{${d1}}$ ○ $\\dfrac{${n2}}{${d2}}$`, questionSub: '○ 안에 >, <, = 를 쓰세요', answer: sym, steps: [`통분: $\\dfrac{${n1*d2}}{${d1*d2}}$ vs $\\dfrac{${n2*d1}}{${d1*d2}}$`, `${n1*d2} ${sym} ${n2*d1}  →  ${sym}`] };
         },
     },
 
@@ -754,25 +754,25 @@ const PROBLEM_GENERATORS = {
 
             if (type === 0) {
                 const n = Math.floor(Math.random()*5)+1;
-                return { question: `${n}km² = ______ m²`, questionSub: '1km=1000m 이므로 1km²=1000²=1,000,000m²', answer: `${fmt(n*1_000_000)}m²`, steps: [`1km² = 1000×1000 = 1,000,000m²`, `${n}km² = ${n}×1,000,000 = ${fmt(n*1_000_000)}m²`] };
+                return { question: `${n}km² = ______ m²`, questionSub: '$1\\text{km}=1000\\text{m}$ 이므로 $1\\text{km}^2=1000^2=1{,}000{,}000\\text{m}^2$', answer: `${fmt(n*1_000_000)}m²`, steps: [`$1\\text{km}^2 = 1000 \\times 1000 = 1{,}000{,}000\\text{m}^2$`, `$${n}\\text{km}^2 = ${n} \\times 1{,}000{,}000 = ${fmt(n*1_000_000)}\\text{m}^2$`] };
             }
             if (type === 1) {
                 const vals = [500_000, 1_000_000, 2_000_000, 3_000_000];
                 const n = vals[Math.floor(Math.random()*vals.length)];
-                return { question: `${fmt(n)}m² = ______ km²`, questionSub: '1,000,000m² = 1km²', answer: `${n/1_000_000}km²`, steps: [`${fmt(n)} ÷ 1,000,000 = ${n/1_000_000}km²`] };
+                return { question: `${fmt(n)}m² = ______ km²`, questionSub: '$1{,}000{,}000\\text{m}^2 = 1\\text{km}^2$', answer: `${n/1_000_000}km²`, steps: [`$${fmt(n)} \\div 1{,}000{,}000 = ${n/1_000_000}\\text{km}^2$`] };
             }
             if (type === 2) {
                 const n = Math.floor(Math.random()*5)+1;
-                return { question: `${n}m² = ______ cm²`, questionSub: '1m=100cm 이므로 1m²=100²=10,000cm²', answer: `${fmt(n*10_000)}cm²`, steps: [`1m² = 100×100 = 10,000cm²`, `${n}m² = ${n}×10,000 = ${fmt(n*10_000)}cm²`] };
+                return { question: `${n}m² = ______ cm²`, questionSub: '$1\\text{m}=100\\text{cm}$ 이므로 $1\\text{m}^2=100^2=10{,}000\\text{cm}^2$', answer: `${fmt(n*10_000)}cm²`, steps: [`$1\\text{m}^2 = 100 \\times 100 = 10{,}000\\text{cm}^2$`, `$${n}\\text{m}^2 = ${n} \\times 10{,}000 = ${fmt(n*10_000)}\\text{cm}^2$`] };
             }
             if (type === 3) {
                 const vals = [10_000, 20_000, 50_000];
                 const n = vals[Math.floor(Math.random()*vals.length)];
-                return { question: `${fmt(n)}cm² = ______ m²`, questionSub: '10,000cm² = 1m²', answer: `${n/10_000}m²`, steps: [`${fmt(n)} ÷ 10,000 = ${n/10_000}m²`] };
+                return { question: `${fmt(n)}cm² = ______ m²`, questionSub: '$10{,}000\\text{cm}^2 = 1\\text{m}^2$', answer: `${n/10_000}m²`, steps: [`$${fmt(n)} \\div 10{,}000 = ${n/10_000}\\text{m}^2$`] };
             }
             if (type === 4) {
                 const n = Math.floor(Math.random()*5)+1;
-                return { question: `${n}cm² = ______ mm²`, questionSub: '1cm=10mm 이므로 1cm²=10²=100mm²', answer: `${n*100}mm²`, steps: [`1cm² = 10×10 = 100mm²`, `${n}cm² = ${n}×100 = ${n*100}mm²`] };
+                return { question: `${n}cm² = ______ mm²`, questionSub: '$1\\text{cm}=10\\text{mm}$ 이므로 $1\\text{cm}^2=10^2=100\\text{mm}^2$', answer: `${n*100}mm²`, steps: [`$1\\text{cm}^2 = 10 \\times 10 = 100\\text{mm}^2$`, `$${n}\\text{cm}^2 = ${n} \\times 100 = ${n*100}\\text{mm}^2$`] };
             }
             // 원리 확인 — type 0으로 재귀 (빈칸 두 개짜리 문제 제거)
             return PROBLEM_GENERATORS['단위변환'].generate();
@@ -820,19 +820,19 @@ const PROBLEM_GENERATORS = {
                 const a = r(2, 9);
                 const ans = poly(2*a, a*a);
                 return {
-                    question: `(x+${a})²`,
-                    questionSub: '(a+b)² = a²+2ab+b²  — 전개하시오',
+                    question: `$(x+${a})^2$`,
+                    questionSub: '$(a+b)^2 = a^2+2ab+b^2$ — 전개하시오',
                     answer: ans,
                     distractors: [
-                        `x²+${a*a}`,          // ★가장 흔한 실수: 2ax 항 통째 누락
-                        poly(a, a*a),          // 2a 대신 a (절반 계수)
-                        poly(-2*a, a*a),       // 중간항 부호 반대
-                        poly(2*a, -a*a),       // 상수항 부호 반대
-                        poly(2*a, a),          // a² 대신 a (제곱 안 함)
+                        `x²+${a*a}`,
+                        poly(a, a*a),
+                        poly(-2*a, a*a),
+                        poly(2*a, -a*a),
+                        poly(2*a, a),
                     ].filter(d => d !== ans),
                     steps: [
-                        `(x+${a})² = x² + 2·x·${a} + ${a}²`,
-                        `= x² + ${2*a}x + ${a*a}`,
+                        `$(x+${a})^2 = x^2 + 2 \\cdot x \\cdot ${a} + ${a}^2$`,
+                        `$= x^2 + ${2*a}x + ${a*a}$`,
                         `⚠ x²+${a*a} 아님! 중간 항 ${2*a}x 빠뜨리지 말 것`,
                     ],
                 };
@@ -843,19 +843,19 @@ const PROBLEM_GENERATORS = {
                 const a = r(2, 9);
                 const ans = poly(-2*a, a*a);
                 return {
-                    question: `(x-${a})²`,
-                    questionSub: '(a-b)² = a²-2ab+b²  — 전개하시오',
+                    question: `$(x-${a})^2$`,
+                    questionSub: '$(a-b)^2 = a^2-2ab+b^2$ — 전개하시오',
                     answer: ans,
                     distractors: [
-                        `x²-${a*a}`,           // ★합차공식 (x+a)(x-a)와 혼동
-                        poly(2*a, a*a),         // 부호 전부 +로 (sq_plus와 혼동)
-                        poly(-a, a*a),          // 2a 대신 a
-                        poly(-2*a, -a*a),       // 상수항 부호 반대 (−a² 착각)
-                        poly(2*a, -a*a),        // 중간·상수 모두 부호 반대
+                        `x²-${a*a}`,
+                        poly(2*a, a*a),
+                        poly(-a, a*a),
+                        poly(-2*a, -a*a),
+                        poly(2*a, -a*a),
                     ].filter(d => d !== ans),
                     steps: [
-                        `(x-${a})² = x² - 2·x·${a} + ${a}²`,
-                        `= x² - ${2*a}x + ${a*a}`,
+                        `$(x-${a})^2 = x^2 - 2 \\cdot x \\cdot ${a} + ${a}^2$`,
+                        `$= x^2 - ${2*a}x + ${a*a}$`,
                         `⚠ x²-${a*a}는 (x+${a})(x-${a}) 결과! 헷갈리지 말 것`,
                     ],
                 };
@@ -866,20 +866,20 @@ const PROBLEM_GENERATORS = {
                 const a = r(2, 9);
                 const ans = `x²-${a*a}`;
                 return {
-                    question: `(x+${a})(x-${a})`,
-                    questionSub: '합차공식 (a+b)(a-b) = a²-b²  — 전개하시오',
+                    question: `$(x+${a})(x-${a})$`,
+                    questionSub: '합차공식 $(a+b)(a-b) = a^2-b^2$ — 전개하시오',
                     answer: ans,
                     distractors: [
-                        poly(2*a, -a*a),        // ★중간항 소거 안 된다고 착각
-                        poly(-2*a, a*a),        // (x-a)²와 혼동
-                        `x²+${a*a}`,            // 부호 반대
-                        poly(a, -a*a),          // 중간항 소거 절반만
-                        poly(0, a*a),           // 부호 반대 (+ 착각)
+                        poly(2*a, -a*a),
+                        poly(-2*a, a*a),
+                        `x²+${a*a}`,
+                        poly(a, -a*a),
+                        poly(0, a*a),
                     ].filter(d => d !== ans),
                     steps: [
-                        `(x+${a})(x-${a}) = x² - ${a}x + ${a}x - ${a*a}`,
-                        `중간항: -${a}x + ${a}x = 0  → 소거!`,
-                        `= x² - ${a*a}`,
+                        `$(x+${a})(x-${a}) = x^2 - ${a}x + ${a}x - ${a*a}$`,
+                        `중간항: $-${a}x + ${a}x = 0$ → 소거!`,
+                        `$= x^2 - ${a*a}$`,
                     ],
                 };
             }
@@ -890,19 +890,19 @@ const PROBLEM_GENERATORS = {
                 const s = a + b, p = a * b;
                 const ans = poly(s, p);
                 return {
-                    question: `(x+${a})(x+${b})`,
-                    questionSub: '(x+a)(x+b) = x²+(a+b)x+ab  — 전개하시오',
+                    question: `$(x+${a})(x+${b})$`,
+                    questionSub: '$(x+a)(x+b) = x^2+(a+b)x+ab$ — 전개하시오',
                     answer: ans,
                     distractors: [
-                        poly(p, s),             // ★합·곱 자리 뒤바뀜
-                        poly(s, -p),            // 상수항 부호 반대
-                        poly(a, p),             // a+b 대신 a만
-                        poly(s, a),             // ab 대신 a만
-                        poly(s+1, p),           // 계산 실수 (+1)
+                        poly(p, s),
+                        poly(s, -p),
+                        poly(a, p),
+                        poly(s, a),
+                        poly(s+1, p),
                     ].filter(d => d !== ans),
                     steps: [
-                        `(x+${a})(x+${b}) = x² + (${a}+${b})x + ${a}×${b}`,
-                        `= x² + ${s}x + ${p}`,
+                        `$(x+${a})(x+${b}) = x^2 + (${a}+${b})x + ${a} \\times ${b}$`,
+                        `$= x^2 + ${s}x + ${p}$`,
                         `합 ${s} → x 계수 / 곱 ${p} → 상수항`,
                     ],
                 };
@@ -910,23 +910,23 @@ const PROBLEM_GENERATORS = {
 
             // ── (x+a)(x-b) = x²+(a-b)x-ab ──────────────────────────────────
             let a = r(2, 7), b = r(2, 7);
-            while (a === b) b = r(2, 7);   // diff_sq와 중복 방지
+            while (a === b) b = r(2, 7);
             const s = a - b, p = a * b;
             const ans = poly(s, -p);
             return {
-                question: `(x+${a})(x-${b})`,
-                questionSub: '(x+a)(x+b) 공식 — 부호 주의하며 전개하시오',
+                question: `$(x+${a})(x-${b})$`,
+                questionSub: '$(x+a)(x+b)$ 공식 — 부호 주의하며 전개하시오',
                 answer: ans,
                 distractors: [
-                    poly(a+b, -p),          // ★부호 무시하고 합 계산
-                    poly(s, p),             // 상수항 부호 반대
-                    poly(-s, -p),           // 중간항 부호 반대
-                    poly(a, -p),            // a-b 대신 a만
-                    poly(s, -b),            // ab 대신 b만
+                    poly(a+b, -p),
+                    poly(s, p),
+                    poly(-s, -p),
+                    poly(a, -p),
+                    poly(s, -b),
                 ].filter(d => d !== ans),
                 steps: [
-                    `(x+${a})(x-${b}) = x² + (${a}+(-${b}))x + ${a}×(-${b})`,
-                    `= x² + ${s >= 0 ? s : s}x - ${p}`,
+                    `$(x+${a})(x-${b}) = x^2 + (${a}+(-${b}))x + ${a} \\times (-${b})$`,
+                    `$= x^2 + ${s}x - ${p}$`,
                     `합: ${a}+(-${b}) = ${s} / 곱: ${a}×(-${b}) = -${p}`,
                 ],
             };

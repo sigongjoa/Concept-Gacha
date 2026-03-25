@@ -8,6 +8,9 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -635,6 +638,22 @@
         let currentProblem = null;
         let _mcqCorrect = null;  // MCQ 선택 결과 (연습문제 채점 후 피드백 전달용)
 
+        // KaTeX 수식 렌더링 헬퍼 — $...$ 포함 시 KaTeX, 아니면 textContent
+        function renderMath(el, text) {
+            el.textContent = text || '';
+            if (typeof renderMathInElement !== 'undefined') {
+                try {
+                    renderMathInElement(el, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '$',  right: '$',  display: false },
+                        ],
+                        throwOnError: false,
+                    });
+                } catch(e) { /* KaTeX 아직 로드 전 — textContent 유지 */ }
+            }
+        }
+
         // 상자별 accent 컬러 (CSS 변수 기반)
         const BOX_ACCENT_COLORS = ['#d8dadc', '#f87171', '#facc15', '#60a5fa', '#34d399', '#f97316'];
 
@@ -831,7 +850,7 @@
             const box = document.getElementById('cardExplanation');
             const txt = document.getElementById('cardExplanationText');
             if (card && card.explanation) {
-                txt.textContent = card.explanation;
+                renderMath(txt, card.explanation);
                 box.classList.remove('hidden');
             } else {
                 box.classList.add('hidden');
@@ -914,10 +933,10 @@
             } else {
                 qTxt.classList.remove('hidden');
                 qImgBox.classList.add('hidden');
-                qTxt.textContent = card.question || '(질문 없음)';
+                renderMath(qTxt, card.question || '(질문 없음)');
             }
 
-            document.getElementById('cardAnswer').textContent = card.answer || '-';
+            renderMath(document.getElementById('cardAnswer'), card.answer || '-');
 
             // 상자 accent bar 색상 업데이트
             document.getElementById('boxAccentBar').style.background = BOX_ACCENT_COLORS[card.box] || '#d8dadc';
@@ -936,12 +955,12 @@
                 mcqChoices.innerHTML = '';
                 // "25 — 설명" 타입: answerBox엔 전체 설명, 선택지엔 숫자만
                 if (mcqResult.fullAnswer) {
-                    document.getElementById('cardAnswer').textContent = mcqResult.fullAnswer;
+                    renderMath(document.getElementById('cardAnswer'), mcqResult.fullAnswer);
                 }
                 mcqResult.choices.forEach(choice => {
                     const btn = document.createElement('button');
                     btn.className = 'mcq-btn';
-                    btn.textContent = choice.replace(/\s*\([^)]*\)/g, '').trim();
+                    renderMath(btn, choice.replace(/\s*\([^)]*\)/g, '').trim());
                     btn.dataset.value = choice;
                     btn.onclick = () => handleMcqChoice(btn, choice, mcqResult.correctAnswer, mcqChoices);
                     mcqChoices.appendChild(btn);
@@ -1061,12 +1080,12 @@
                 document.getElementById('practiceTreeView').classList.add('hidden');
                 document.getElementById('practiceTreeSubmitRow').classList.add('hidden');
                 document.getElementById('practiceFractionView').classList.remove('hidden');
-                document.getElementById('practiceQuestion').textContent = currentProblem.question;
+                renderMath(document.getElementById('practiceQuestion'), currentProblem.question);
                 const sub = currentProblem.questionSub || '';
-                document.getElementById('practiceQuestionSub').textContent = sub;
+                renderMath(document.getElementById('practiceQuestionSub'), sub);
                 document.getElementById('practiceHintArea').classList.add('hidden');
                 document.getElementById('practiceHintBtnWrap').classList.toggle('hidden', !sub);
-                document.getElementById('practiceInstruction').textContent = gen.instruction || '답을 구하시오';
+                renderMath(document.getElementById('practiceInstruction'), gen.instruction || '답을 구하시오');
                 const shapeView = document.getElementById('practiceShapeView');
                 if (currentProblem.shape && window.ShapeRenderer) {
                     shapeView.innerHTML = ShapeRenderer.render(currentProblem.shape, { width: 320, height: 220 });
@@ -1116,7 +1135,7 @@
                     currentProblem.steps.forEach(step => {
                         const p = document.createElement('p');
                         p.className = 'text-sm text-on-surface-variant font-mono';
-                        p.textContent = step;
+                        renderMath(p, step);
                         stepsBox.appendChild(p);
                     });
                     stepsBox.classList.remove('hidden');
@@ -1129,10 +1148,12 @@
                 resultMsg.className = 'font-semibold text-center mb-2 text-tertiary font-headline';
             } else {
                 resultBox.classList.add('result-wrong');
-                resultMsg.textContent = currentProblem.type === 'fillblank'
-                    ? '✗ 다시 확인해볼까요?'
-                    : `✗ 정답: ${currentProblem.answer}`;
                 resultMsg.className = 'font-semibold text-center mb-2 text-on-error-container font-headline';
+                if (currentProblem.type === 'fillblank') {
+                    resultMsg.textContent = '✗ 다시 확인해볼까요?';
+                } else {
+                    renderMath(resultMsg, `✗ 정답: ${currentProblem.answer}`);
+                }
             }
 
             // 채점 완료 → "다음 →" 버튼 표시
