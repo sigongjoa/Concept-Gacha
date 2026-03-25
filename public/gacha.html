@@ -354,6 +354,19 @@
                             id="cardAnswer"></p>
                     </div>
 
+                    <!-- 개념 설명 (explanation 있을 때) -->
+                    <div class="hidden" id="cardExplanation">
+                        <div class="px-4 py-3 bg-surface-container-low rounded-lg">
+                            <div class="flex items-center gap-1.5 mb-1.5">
+                                <span class="material-symbols-outlined text-secondary text-[14px]"
+                                    style="font-variation-settings:'FILL' 1">info</span>
+                                <span class="text-xs font-bold text-secondary font-label">개념 설명</span>
+                            </div>
+                            <p class="text-sm text-on-surface-variant leading-relaxed"
+                               id="cardExplanationText"></p>
+                        </div>
+                    </div>
+
                     <!-- MCQ 선택지 (distractors 있을 때) -->
                     <div class="hidden" id="mcqGrid">
                         <div class="flex flex-col gap-2" id="mcqChoices"></div>
@@ -814,6 +827,17 @@
 
         // ─────────────────────────────────────────────────────────
 
+        function _showExplanation(card) {
+            const box = document.getElementById('cardExplanation');
+            const txt = document.getElementById('cardExplanationText');
+            if (card && card.explanation) {
+                txt.textContent = card.explanation;
+                box.classList.remove('hidden');
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
         function backToAdmin() {
             sessionStorage.removeItem('fromAdmin');
             window.location.href = 'admin.html';
@@ -844,6 +868,7 @@
                 document.getElementById('answerBox').classList.remove('hidden');
                 document.getElementById('showAnswerBtn').classList.add('hidden');
                 document.getElementById('feedbackBtns').classList.remove('hidden');
+                _showExplanation(currentCard);
             });
             document.getElementById('successBtn').addEventListener('click', () => submitFeedback(true));
             document.getElementById('failBtn').addEventListener('click',    () => submitFeedback(false));
@@ -908,7 +933,8 @@
                 mcqResult.choices.forEach(choice => {
                     const btn = document.createElement('button');
                     btn.className = 'mcq-btn';
-                    btn.textContent = choice;
+                    btn.textContent = choice.replace(/\s*\([^)]*\)/g, '').trim();
+                    btn.dataset.value = choice;
                     btn.onclick = () => handleMcqChoice(btn, choice, mcqResult.correctAnswer, mcqChoices);
                     mcqChoices.appendChild(btn);
                 });
@@ -1154,14 +1180,15 @@
                 _addMcqIcon(btn, 'wrong');
                 // 정답 버튼 하이라이트
                 container.querySelectorAll('.mcq-btn').forEach(b => {
-                    if (b.textContent.trim() === correct.trim()) {
+                    if (b.dataset.value.trim() === correct.trim()) {
                         b.classList.add('correct');
                         _addMcqIcon(b, 'correct');
                     }
                 });
             }
-            // 정답 박스 표시
+            // 정답 박스 + 개념 설명 표시
             document.getElementById('answerBox').classList.remove('hidden');
+            _showExplanation(currentCard);
 
             // 연습문제가 있으면 활성화 후 스크롤 → 없으면 기존처럼 자동 진행
             const hasPractice = currentCard && currentCard._inferredTopic;
@@ -1202,6 +1229,7 @@
                 document.getElementById('showAnswerBtn').classList.add('hidden');
                 document.getElementById('mcqGrid').classList.add('hidden');
                 document.getElementById('feedbackBtns').classList.add('hidden');
+                document.getElementById('cardExplanation').classList.add('hidden');
                 document.getElementById('boxAccentBar').style.background = '#e0c0b1';
                 document.getElementById('practiceSection').classList.add('hidden');
 

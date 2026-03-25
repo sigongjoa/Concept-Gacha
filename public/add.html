@@ -183,6 +183,17 @@
                         placeholder="예: 산소" />
                 </div>
 
+                <!-- Explanation -->
+                <div>
+                    <label class="block text-[10px] font-bold text-primary uppercase tracking-widest mb-2 font-label">
+                        개념 설명 <span class="normal-case font-normal text-outline ml-1">(선택)</span>
+                    </label>
+                    <textarea id="inputExplanation"
+                        class="field-input resize-none"
+                        rows="3" placeholder="예: 복소수는 실수와 허수의 합 a+bi 형태로 나타낸다"></textarea>
+                    <p class="text-xs text-outline mt-2">입력하면 학습 시 정답 확인 후 개념 설명이 표시됩니다</p>
+                </div>
+
                 <!-- Topic -->
                 <div>
                     <label class="block text-[10px] font-bold text-primary uppercase tracking-widest mb-2 font-label">
@@ -322,6 +333,7 @@
             if (!currentStudentId) { alert('학생 정보가 없습니다.'); return; }
             const answer = document.getElementById('inputAnswer').value.trim();
             const question = document.getElementById('inputQuestion').value.trim();
+            const explanation = document.getElementById('inputExplanation').value.trim();
             const topic = document.getElementById('inputTopic').value;
             const distractorsRaw = document.getElementById('inputDistractors').value.trim();
             const distractors = distractorsRaw
@@ -339,6 +351,7 @@
                 const data = {
                     type: cardType,
                     answer,
+                    explanation: explanation || null,
                     question: cardType === 'text' ? question : '',
                     questionImage: cardType === 'image' ? uploadedFilename : null,
                     topic: topic || null,
@@ -348,6 +361,7 @@
                 Layout.showToast('추가되었습니다!');
                 document.getElementById('inputAnswer').value = '';
                 document.getElementById('inputQuestion').value = '';
+                document.getElementById('inputExplanation').value = '';
                 document.getElementById('inputTopic').value = '';
                 document.getElementById('inputDistractors').value = '';
                 uploadedFilename = null;
