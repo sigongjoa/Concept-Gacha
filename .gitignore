@@ -8,7 +8,6 @@ node_modules/
 .env.production
 
 # Supabase credentials (use template instead)
-public/js/supabase-client.js
 
 # Build output (if using Vite)
 dist/duction

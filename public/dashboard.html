@@ -249,12 +249,15 @@
 
 
     <script type="module">
+        import { supabase } from './js/supabase-client.js'
         import {
             getOrCreateTodaySession,
             getSessionHistory,
             getStreak,
             getWeeklyStatus
         } from './js/daily-session.js'
+
+        const GH = window.location.hostname.includes('github.io');
 
         // 박스별 Tailwind 클래스 (다크모드 자동 처리)
         const BOX_TEXT_CLASSES = ['', 'text-red-500', 'text-yellow-500', 'text-blue-400', 'text-emerald-500', 'text-primary-container']
@@ -348,10 +351,18 @@
         async function loadBoxStats(studentId) {
             const container = document.getElementById('boxBars')
             try {
-                const stats = await fetch(`/api/students/${studentId}/stats`).then(r => r.json())
+                let dist, total
+                if (GH) {
+                    const { data: cards } = await supabase.from('cards').select('box').eq('student_id', studentId)
+                    total = cards?.length || 0
+                    dist = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+                    ;(cards || []).forEach(c => { if (c.box >= 1 && c.box <= 5) dist[c.box]++ })
+                } else {
+                    const stats = await fetch(`/api/students/${studentId}/stats`).then(r => r.json())
+                    dist = stats.distribution || {}
+                    total = stats.total || 0
+                }
 
-                const dist = stats.distribution || {}
-                const total = stats.total || 0
                 if (!total) {
                     container.innerHTML = '<p class="text-sm text-outline text-center py-2">카드가 없습니다</p>'
                     document.getElementById('totalCardsLabel').textContent = '총 0장'
