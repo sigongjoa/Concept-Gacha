@@ -221,10 +221,24 @@ const API = {
     },
 
     // ── 오늘/날짜별 학습 결과 ────────────────────────────────
-    async getTodayResults(studentId) { return this.getResultsByDate(studentId); },
+    async getTodayResults(studentId) { return this.getResultsByDate(studentId, new Date().toISOString().slice(0, 10)); },
     async getResultsByDate(studentId, date) {
-        // 추후 구현
-        return { session: null, cards: [] };
+        const d = date || new Date().toISOString().slice(0, 10);
+        if (GH) {
+            const { data: session, error: se } = await supabase
+                .from('daily_sessions').select('*')
+                .eq('student_id', studentId).eq('session_date', d).maybeSingle();
+            if (se) throw new Error(se.message);
+            if (!session) return { session: null, cards: [] };
+            const { data: cards, error: ce } = await supabase
+                .from('session_cards')
+                .select('*, cards(id, topic, question)')
+                .eq('session_id', session.id)
+                .order('reviewed_at');
+            if (ce) throw new Error(ce.message);
+            return { session, cards: cards || [] };
+        }
+        return srv('GET', `/api/students/${studentId}/session/date/${d}`);
     },
 
     // ── 이미지 업로드 ─────────────────────────────────────────

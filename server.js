@@ -497,6 +497,26 @@ app.post('/api/sessions/:sessionId/record', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// 날짜별 세션 + 카드 결과 조회 (관리자 대시보드용)
+app.get('/api/students/:studentId/session/date/:date', async (req, res) => {
+  if (!requireSB(res)) return;
+  const { studentId, date } = req.params;
+  try {
+    const { data: session, error: se } = await supabase
+      .from('daily_sessions').select('*')
+      .eq('student_id', studentId).eq('session_date', date).maybeSingle();
+    if (se) return res.status(500).json({ error: se.message });
+    if (!session) return res.json({ session: null, cards: [] });
+    const { data: cards, error: ce } = await supabase
+      .from('session_cards')
+      .select('*, cards(id, topic, question)')
+      .eq('session_id', session.id)
+      .order('reviewed_at');
+    if (ce) return res.status(500).json({ error: ce.message });
+    res.json({ session, cards: cards || [] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // 세션 히스토리
 app.get('/api/students/:studentId/session/history', async (req, res) => {
   if (!requireSB(res)) return;
