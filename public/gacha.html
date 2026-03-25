@@ -246,11 +246,13 @@
         <div class="flex justify-between items-center px-5 h-14 max-w-2xl mx-auto">
             <div class="flex items-center gap-3">
                 <!-- Admin 백버튼 (fromAdmin 세션일 때만 표시) -->
-                <button id="backToAdminBtn" onclick="backToAdmin()"
+                <button id="backToAdminBtn"
                     class="hidden items-center gap-1 px-2.5 py-1.5 rounded-lg
                            bg-primary-fixed text-primary text-xs font-bold
-                           hover:bg-primary-fixed-dim transition-all active:scale-90">
-                    <span class="material-symbols-outlined text-sm">arrow_back</span>
+                           hover:bg-primary-fixed-dim transition-all active:scale-90
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    aria-label="관리자 페이지로 돌아가기">
+                    <span class="material-symbols-outlined text-sm" aria-hidden="true">arrow_back</span>
                     Admin
                 </button>
                 <div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center flex-shrink-0">
@@ -259,8 +261,9 @@
                 <span class="font-headline font-bold text-primary tracking-tight" id="studentNameLabel">Concept Gacha</span>
             </div>
             <button onclick="document.documentElement.classList.toggle('dark')"
-                class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-surface-container-low transition-colors active:scale-90">
-                <span class="material-symbols-outlined text-[20px] text-on-surface-variant">dark_mode</span>
+                class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-surface-container-low transition-colors active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                aria-label="다크모드 전환">
+                <span class="material-symbols-outlined text-[20px] text-on-surface-variant" aria-hidden="true">dark_mode</span>
             </button>
         </div>
     </header>
@@ -345,10 +348,9 @@
                             <h2 class="font-headline text-[1.6rem] font-bold leading-[1.25] text-on-surface dark:text-inverse-on-surface"
                                 id="cardQuestion">카드를 뽑아보세요!</h2>
                             <div id="cardQuestionImage" class="hidden">
-                                <img src="" class="max-h-56 mx-auto rounded-lg shadow-sm" id="cardQuestionImg" />
+                                <img src="" class="max-h-56 mx-auto rounded-lg shadow-sm" id="cardQuestionImg" alt="" />
                             </div>
-                            <div class="w-8 h-[3px] rounded-full" id="accentLine"
-                                 style="background: rgba(249,115,22,0.35)"></div>
+                            <div class="w-8 h-[3px] rounded-full bg-primary-fixed" id="accentLine"></div>
                         </div>
 
                         <!-- 정답 박스 -->
@@ -373,7 +375,8 @@
                         <!-- 정답 보기 버튼 (distractors 없을 때 fallback) -->
                         <button class="w-full py-3 rounded-lg bg-surface-container-low dark:bg-surface-container
                                        text-on-surface-variant text-sm font-semibold hidden
-                                       transition-all active:scale-[0.98] hover:bg-surface-container"
+                                       transition-all active:scale-[0.98] hover:bg-surface-container
+                                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                             id="showAnswerBtn">정답 보기</button>
 
                         <!-- 피드백 버튼 -->
@@ -381,17 +384,19 @@
                             <button class="flex-1 py-3 rounded-lg border border-outline-variant
                                            hover:border-tertiary hover:bg-tertiary/5 hover:text-tertiary
                                            text-sm font-semibold transition-all
-                                           text-on-surface-variant active:scale-[0.97] flex items-center justify-center gap-1.5"
-                                id="successBtn">
-                                <span class="material-symbols-outlined text-[16px]">check</span>
+                                           text-on-surface-variant active:scale-[0.97] flex items-center justify-center gap-1.5
+                                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary"
+                                id="successBtn" aria-label="알았다 — 다음 박스로 이동">
+                                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">check</span>
                                 알았다
                             </button>
                             <button class="flex-1 py-3 rounded-lg border border-outline-variant
                                            hover:border-error/50 hover:bg-error-container/40 hover:text-on-error-container
                                            text-sm font-semibold transition-all
-                                           text-on-surface-variant active:scale-[0.97] flex items-center justify-center gap-1.5"
-                                id="failBtn">
-                                <span class="material-symbols-outlined text-[16px]">close</span>
+                                           text-on-surface-variant active:scale-[0.97] flex items-center justify-center gap-1.5
+                                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error"
+                                id="failBtn" aria-label="몰랐다 — 박스 1로 돌아가기">
+                                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">close</span>
                                 몰랐다
                             </button>
                         </div>
@@ -566,11 +571,6 @@
         </a>
     </nav>
 
-    <!-- ── Ambient Orbs ───────────────────────────────────────── -->
-    <div class="fixed top-0 -left-24 w-72 h-72 rounded-full pointer-events-none -z-10"
-        style="background:rgba(255,219,202,0.25); filter:blur(80px);"></div>
-    <div class="fixed bottom-32 -right-20 w-72 h-72 rounded-full pointer-events-none -z-10"
-        style="background:rgba(225,224,255,0.18); filter:blur(80px);"></div>
 
     <script type="module" src="js/api.js"></script>
     <!-- Daily Session module -->
@@ -646,8 +646,8 @@
         let currentProblem = null;
         let _mcqCorrect = null;  // MCQ 선택 결과 (연습문제 채점 후 피드백 전달용)
 
-        // 상자별 컬러
-        const BOX_COLORS = ['#d8dadc', '#f87171', '#facc15', '#60a5fa', '#34d399', '#f97316'];
+        // 상자별 accent 컬러 (CSS 변수 기반)
+        const BOX_ACCENT_COLORS = ['#d8dadc', '#f87171', '#facc15', '#60a5fa', '#34d399', '#f97316'];
 
         // ─── InputController (IC) ────────────────────────────────
         const IC = {
@@ -860,19 +860,20 @@
                 const btn = document.getElementById('backToAdminBtn');
                 btn.classList.remove('hidden');
                 btn.classList.add('flex');
+                btn.addEventListener('click', backToAdmin);
             }
 
-            document.getElementById('gachaBtn').onclick = pullCard;
-            document.getElementById('showAnswerBtn').onclick = () => {
+            document.getElementById('gachaBtn').addEventListener('click', pullCard);
+            document.getElementById('showAnswerBtn').addEventListener('click', () => {
                 document.getElementById('answerBox').classList.remove('hidden');
                 document.getElementById('showAnswerBtn').classList.add('hidden');
                 document.getElementById('feedbackBtns').classList.remove('hidden');
-            };
-            document.getElementById('successBtn').onclick = () => submitFeedback(true);
-            document.getElementById('failBtn').onclick   = () => submitFeedback(false);
-            document.getElementById('newProblemBtn').onclick = () => loadPractice(currentCard._inferredTopic || currentCard.topic);
-            document.getElementById('practiceSubmitBtn').onclick = submitPractice;
-            document.getElementById('practiceTreeSubmitBtn').onclick = submitPractice;
+            });
+            document.getElementById('successBtn').addEventListener('click', () => submitFeedback(true));
+            document.getElementById('failBtn').addEventListener('click',    () => submitFeedback(false));
+            document.getElementById('newProblemBtn').addEventListener('click', () => loadPractice(currentCard._inferredTopic || currentCard.topic));
+            document.getElementById('practiceSubmitBtn').addEventListener('click', submitPractice);
+            document.getElementById('practiceTreeSubmitBtn').addEventListener('click', submitPractice);
         });
 
         async function pullCard() {
@@ -900,6 +901,7 @@
                 qTxt.classList.add('hidden');
                 qImgBox.classList.remove('hidden');
                 qImg.src = `/assets/${card.questionImage}`;
+                qImg.alt = card.question || '문제 이미지';
             } else {
                 qTxt.classList.remove('hidden');
                 qImgBox.classList.add('hidden');
@@ -909,7 +911,7 @@
             document.getElementById('cardAnswer').textContent = card.answer || '-';
 
             // 상자 accent bar 색상 업데이트
-            document.getElementById('boxAccentBar').style.background = BOX_COLORS[card.box] || '#d8dadc';
+            document.getElementById('boxAccentBar').style.background = BOX_ACCENT_COLORS[card.box] || '#d8dadc';
 
             document.getElementById('answerBox').classList.add('hidden');
             document.getElementById('feedbackBtns').classList.add('hidden');
@@ -1152,6 +1154,17 @@
             }
         }
 
+        function _addMcqIcon(btn, type) {
+            // 색상 외 아이콘으로도 정오답 표시 (접근성)
+            const icon = document.createElement('span');
+            icon.className = 'material-symbols-outlined text-[14px] ml-1 align-middle';
+            icon.setAttribute('aria-hidden', 'true');
+            icon.style.fontVariationSettings = "'FILL' 1";
+            icon.textContent = type === 'correct' ? 'check_circle' : 'cancel';
+            btn.appendChild(icon);
+            btn.setAttribute('aria-label', btn.textContent.replace(icon.textContent, '').trim() + (type === 'correct' ? ' (정답)' : ' (오답)'));
+        }
+
         function handleMcqChoice(btn, selected, correct, container) {
             // 모든 버튼 비활성화
             container.querySelectorAll('.mcq-btn').forEach(b => b.disabled = true);
@@ -1159,11 +1172,16 @@
             const isCorrect = selected.trim() === correct.trim();
             if (isCorrect) {
                 btn.classList.add('correct');
+                _addMcqIcon(btn, 'correct');
             } else {
                 btn.classList.add('wrong');
+                _addMcqIcon(btn, 'wrong');
                 // 정답 버튼 하이라이트
                 container.querySelectorAll('.mcq-btn').forEach(b => {
-                    if (b.textContent.trim() === correct.trim()) b.classList.add('correct');
+                    if (b.textContent.trim() === correct.trim()) {
+                        b.classList.add('correct');
+                        _addMcqIcon(b, 'correct');
+                    }
                 });
             }
             // 정답 박스 표시

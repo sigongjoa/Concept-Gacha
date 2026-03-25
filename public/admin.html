@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="light">
 
 <head>
     <meta charset="utf-8" />
@@ -8,6 +8,48 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'surface':                    '#f7f9fb',
+                        'surface-container-lowest':   '#ffffff',
+                        'surface-container-low':      '#f2f4f6',
+                        'surface-container':          '#eceef0',
+                        'surface-container-high':     '#e6e8ea',
+                        'primary':                    '#9d4300',
+                        'primary-container':          '#f97316',
+                        'primary-fixed':              '#ffdbca',
+                        'on-primary':                 '#ffffff',
+                        'on-primary-container':       '#582200',
+                        'secondary':                  '#4648d4',
+                        'secondary-fixed':            '#e1e0ff',
+                        'on-secondary':               '#ffffff',
+                        'tertiary':                   '#006c49',
+                        'tertiary-container':         '#00b07a',
+                        'on-tertiary':                '#ffffff',
+                        'error':                      '#ba1a1a',
+                        'error-container':            '#ffdad6',
+                        'on-error':                   '#ffffff',
+                        'on-error-container':         '#93000a',
+                        'on-surface':                 '#191c1e',
+                        'on-surface-variant':         '#584237',
+                        'outline':                    '#8c7164',
+                        'outline-variant':            '#e0c0b1',
+                    },
+                    fontFamily: {
+                        'headline': ['Plus Jakarta Sans', 'Noto Sans KR', 'sans-serif'],
+                        'body':     ['Inter', 'Noto Sans KR', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        'DEFAULT': '0.75rem', 'lg': '1rem', 'xl': '1.25rem', '2xl': '1.5rem', 'full': '9999px',
+                    },
+                },
+            },
+        };
+    </script>
     <style>
         body { font-family: 'Inter', 'Noto Sans KR', sans-serif; }
         .key-btn { transition: transform 0.08s, background 0.08s; user-select: none; }
@@ -25,53 +67,53 @@
     </style>
 </head>
 
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 min-h-screen">
+<body class="bg-surface dark:bg-on-surface text-on-surface dark:text-surface min-h-screen">
 
     <!-- ── Teacher PIN Gate Overlay ──────────────────────────── -->
-    <div id="pinGate" class="fixed inset-0 z-50 bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
-        <div class="w-full max-w-xs bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800">
+    <div id="pinGate" class="fixed inset-0 z-50 bg-surface flex items-center justify-center p-4">
+        <div class="w-full max-w-xs bg-surface-container-lowest rounded-2xl shadow-2xl overflow-hidden border border-outline-variant/30">
             <!-- Header -->
             <div class="px-6 pt-6 pb-4 text-center">
-                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full mb-3"
-                    style="background: linear-gradient(135deg, #9d4300, #f97316)">
-                    <span class="material-symbols-outlined text-white text-xl" style="font-variation-settings:'FILL' 1">shield_person</span>
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-full mb-3 bg-primary">
+                    <span class="material-symbols-outlined text-on-primary text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">shield_person</span>
                 </div>
-                <h2 class="font-bold text-lg text-slate-800 dark:text-slate-100">선생님 인증</h2>
-                <p class="text-slate-400 text-xs mt-1">4자리 PIN을 입력하세요</p>
+                <h1 class="font-headline font-bold text-lg text-on-surface">선생님 인증</h1>
+                <p class="text-on-surface-variant text-xs mt-1">4자리 PIN을 입력하세요</p>
             </div>
 
             <!-- PIN dots -->
-            <div id="gatePinDots" class="flex justify-center gap-4 py-3">
-                <div class="pin-dot w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-700"></div>
-                <div class="pin-dot w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-700"></div>
-                <div class="pin-dot w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-700"></div>
-                <div class="pin-dot w-4 h-4 rounded-full border-2 border-slate-200 dark:border-slate-700"></div>
+            <div id="gatePinDots" class="flex justify-center gap-4 py-3"
+                 role="status" aria-live="polite" aria-label="PIN 0자리 입력됨">
+                <div class="pin-dot w-4 h-4 rounded-full border-2 border-outline-variant"></div>
+                <div class="pin-dot w-4 h-4 rounded-full border-2 border-outline-variant"></div>
+                <div class="pin-dot w-4 h-4 rounded-full border-2 border-outline-variant"></div>
+                <div class="pin-dot w-4 h-4 rounded-full border-2 border-outline-variant"></div>
             </div>
 
             <!-- Error -->
-            <div id="gateError" class="hidden mx-5 mb-3 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold text-center"></div>
+            <div id="gateError" class="hidden mx-5 mb-3 px-3 py-2 rounded-DEFAULT bg-error-container text-on-error-container text-xs font-bold text-center" role="alert"></div>
 
             <!-- Keypad -->
             <div class="px-5 pb-5">
-                <div class="grid grid-cols-3 gap-2">
-                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('1')">1</button>
-                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('2')">2</button>
-                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('3')">3</button>
-                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('4')">4</button>
-                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('5')">5</button>
-                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('6')">6</button>
-                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('7')">7</button>
-                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('8')">8</button>
-                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('9')">9</button>
-                    <div></div>
-                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold text-lg" onclick="gateKey('0')">0</button>
-                    <button class="key-btn h-12 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-400" onclick="gateBackspace()">
-                        <span class="material-symbols-outlined text-lg">backspace</span>
+                <div class="grid grid-cols-3 gap-2" id="gateKeypad" role="group" aria-label="숫자 키패드">
+                    <button class="key-btn h-12 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-lg text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-gate-key="1">1</button>
+                    <button class="key-btn h-12 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-lg text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-gate-key="2">2</button>
+                    <button class="key-btn h-12 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-lg text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-gate-key="3">3</button>
+                    <button class="key-btn h-12 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-lg text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-gate-key="4">4</button>
+                    <button class="key-btn h-12 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-lg text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-gate-key="5">5</button>
+                    <button class="key-btn h-12 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-lg text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-gate-key="6">6</button>
+                    <button class="key-btn h-12 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-lg text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-gate-key="7">7</button>
+                    <button class="key-btn h-12 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-lg text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-gate-key="8">8</button>
+                    <button class="key-btn h-12 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-lg text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-gate-key="9">9</button>
+                    <div aria-hidden="true"></div>
+                    <button class="key-btn h-12 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-lg text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-gate-key="0">0</button>
+                    <button class="key-btn h-12 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-outline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-gate-key="backspace" aria-label="지우기">
+                        <span class="material-symbols-outlined text-lg" aria-hidden="true">backspace</span>
                     </button>
                 </div>
             </div>
             <div class="px-5 pb-5 text-center">
-                <a href="index.html" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                <a href="index.html" class="text-xs text-outline hover:text-on-surface-variant transition-colors focus-visible:outline-none focus-visible:underline">
                     ← 학생 로그인 페이지로
                 </a>
             </div>
@@ -88,23 +130,24 @@
             <!-- Header -->
             <div class="flex justify-between items-center mb-8">
                 <div>
-                    <p class="text-xs font-bold text-orange-500 uppercase tracking-widest mb-1">Admin</p>
-                    <h1 class="text-2xl font-black text-slate-800 dark:text-slate-100">관리자 대시보드</h1>
+                    <p class="text-xs font-bold text-primary uppercase tracking-widest mb-1">Admin</p>
+                    <h1 class="font-headline text-2xl font-black text-on-surface">관리자 대시보드</h1>
                 </div>
                 <div class="flex items-center gap-2">
                     <a href="admin-dashboard.html"
-                        class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all active:scale-95"
-                        style="background: linear-gradient(135deg, #9d4300, #f97316); color: white;">
-                        <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">bar_chart</span>
+                        class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 bg-primary text-on-primary hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                        <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1" aria-hidden="true">bar_chart</span>
                         학습 현황
                     </a>
-                    <button onclick="document.documentElement.classList.toggle('dark')"
-                        class="p-2.5 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-                        <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">dark_mode</span>
+                    <button id="darkModeBtn"
+                        class="p-2.5 rounded-full bg-surface-container-low border border-outline-variant/30 hover:bg-surface-container transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        aria-label="다크모드 전환">
+                        <span class="material-symbols-outlined text-on-surface-variant" aria-hidden="true">dark_mode</span>
                     </button>
-                    <button onclick="logout()"
-                        class="p-2.5 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
-                        <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">logout</span>
+                    <button id="logoutBtn"
+                        class="p-2.5 rounded-full bg-surface-container-low border border-outline-variant/30 hover:bg-surface-container transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        aria-label="로그아웃">
+                        <span class="material-symbols-outlined text-on-surface-variant" aria-hidden="true">logout</span>
                     </button>
                 </div>
             </div>
@@ -112,92 +155,92 @@
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
                 <!-- ── Student Management ──────────────────────── -->
-                <section class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-100 dark:border-slate-800">
-                    <h2 class="text-base font-bold mb-4 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-orange-500 text-xl" style="font-variation-settings:'FILL' 1">group</span>
+                <section class="bg-surface-container-lowest rounded-2xl p-6 shadow-[0px_4px_20px_rgba(88,66,55,0.09)] border border-outline-variant/30">
+                    <h2 class="font-headline text-base font-bold mb-4 flex items-center gap-2 text-on-surface"
+                        <span class="material-symbols-outlined text-primary text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">group</span>
                         학생 관리
                     </h2>
                     <div class="space-y-3" id="adminStudentList">
-                        <div class="text-center py-8 text-slate-400 text-sm">학생 목록을 불러오는 중...</div>
+                        <div class="text-center py-8 text-outline text-sm">학생 목록을 불러오는 중...</div>
                     </div>
 
                     <!-- Add Student -->
-                    <div class="flex gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <div class="flex gap-2 mt-4 pt-4 border-t border-outline-variant/30">
+                        <label for="newStudentNameInput" class="sr-only">새 학생 이름</label>
                         <input
                             type="text"
-                            id="newStudentName"
+                            id="newStudentNameInput"
                             placeholder="새 학생 이름"
-                            class="flex-1 px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border-0 outline-none text-sm font-bold focus:ring-2 focus:ring-orange-200 transition-all"
-                            onkeydown="if(event.key==='Enter') addStudent()"
+                            class="flex-1 px-3 py-2.5 rounded-DEFAULT bg-surface-container-low border-0 outline-none text-sm font-bold text-on-surface focus:ring-2 focus:ring-primary/30 focus-visible:ring-2 focus-visible:ring-primary transition-all"
                         />
-                        <button onclick="addStudent()"
-                            class="px-4 py-2.5 rounded-lg text-white font-bold text-sm transition-all active:scale-95"
-                            style="background: linear-gradient(135deg, #9d4300, #f97316)">
+                        <button id="addStudentBtn"
+                            class="px-4 py-2.5 rounded-DEFAULT bg-primary text-on-primary font-bold text-sm transition-all active:scale-95 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                             추가
                         </button>
                     </div>
                 </section>
 
                 <!-- ── Card Management ─────────────────────────── -->
-                <section class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-100 dark:border-slate-800">
+                <section class="bg-surface-container-lowest rounded-2xl p-6 shadow-[0px_4px_20px_rgba(88,66,55,0.09)] border border-outline-variant/30">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-base font-bold flex items-center gap-2">
-                            <span class="material-symbols-outlined text-teal-500 text-xl">style</span>
+                            <span class="material-symbols-outlined text-tertiary text-xl" aria-hidden="true">style</span>
                             카드 관리
                         </h2>
                         <select id="studentFilter"
-                            class="bg-slate-50 dark:bg-slate-950 border-none rounded-lg text-sm p-2 outline-none">
+                            class="bg-surface-container-low border-none rounded-DEFAULT text-sm p-2 outline-none text-on-surface focus-visible:ring-2 focus-visible:ring-primary">
                             <option value="">학생 선택</option>
                         </select>
                     </div>
                     <div class="space-y-3" id="adminCardList">
-                        <div class="text-center py-8 text-slate-400 text-sm">학생을 선택하여 카드를 관리하세요.</div>
+                        <div class="text-center py-8 text-outline text-sm">학생을 선택하여 카드를 관리하세요.</div>
                     </div>
                 </section>
 
                 <!-- ── PIN Management ──────────────────────────── -->
-                <section class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-100 dark:border-slate-800">
-                    <h2 class="text-base font-bold mb-4 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-indigo-500 text-xl" style="font-variation-settings:'FILL' 1">pin</span>
+                <section class="bg-surface-container-lowest rounded-2xl p-6 shadow-[0px_4px_20px_rgba(88,66,55,0.09)] border border-outline-variant/30">
+                    <h2 class="font-headline text-base font-bold mb-4 flex items-center gap-2 text-on-surface"
+                        <span class="material-symbols-outlined text-secondary text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">pin</span>
                         학생 PIN 관리
                     </h2>
                     <div class="space-y-3" id="pinStudentList">
-                        <div class="text-center py-8 text-slate-400 text-sm">학생 목록을 불러오는 중...</div>
+                        <div class="text-center py-8 text-outline text-sm">학생 목록을 불러오는 중...</div>
                     </div>
                 </section>
 
                 <!-- ── Teacher PIN Change ──────────────────────── -->
-                <section class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-100 dark:border-slate-800">
-                    <h2 class="text-base font-bold mb-4 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-purple-500 text-xl" style="font-variation-settings:'FILL' 1">shield_person</span>
+                <section class="bg-surface-container-lowest rounded-2xl p-6 shadow-[0px_4px_20px_rgba(88,66,55,0.09)] border border-outline-variant/30">
+                    <h2 class="font-headline text-base font-bold mb-4 flex items-center gap-2 text-on-surface"
+                        <span class="material-symbols-outlined text-secondary text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">shield_person</span>
                         선생님 PIN 변경
                     </h2>
-                    <p class="text-xs text-slate-400 mb-4">현재 PIN: <span id="currentPinMask">••••</span></p>
+                    <p class="text-xs text-outline mb-4">현재 PIN: <span id="currentPinMask">••••</span></p>
                     <div class="flex gap-2">
+                        <label for="newTeacherPin" class="sr-only">새 PIN 4자리</label>
                         <input type="password" id="newTeacherPin" placeholder="새 PIN 4자리" maxlength="4"
-                            class="flex-1 px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border-0 outline-none text-sm font-bold focus:ring-2 focus:ring-purple-200 tracking-widest"
+                            class="flex-1 px-3 py-2.5 rounded-DEFAULT bg-surface-container-low border-0 outline-none text-sm font-bold text-on-surface focus:ring-2 focus:ring-secondary/30 focus-visible:ring-2 focus-visible:ring-secondary tracking-widest"
                             pattern="\d{4}" inputmode="numeric" />
-                        <button onclick="changeTeacherPin()"
-                            class="px-4 py-2.5 rounded-lg bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 font-bold text-sm hover:bg-purple-200 dark:hover:bg-purple-900/40 transition-all active:scale-95">
+                        <button id="changePinBtn"
+                            class="px-4 py-2.5 rounded-DEFAULT bg-secondary text-on-secondary font-bold text-sm hover:bg-secondary/90 transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary">
                             변경
                         </button>
                     </div>
                 </section>
 
                 <!-- ── Today's Learning Dashboard ─────────────── -->
-                <section class="xl:col-span-2 bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-100 dark:border-slate-800">
+                <section class="xl:col-span-2 bg-surface-container-lowest rounded-2xl p-6 shadow-[0px_4px_20px_rgba(88,66,55,0.09)] border border-outline-variant/30">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-base font-bold flex items-center gap-2">
-                            <span class="material-symbols-outlined text-green-500 text-xl" style="font-variation-settings:'FILL' 1">bar_chart</span>
+                        <h2 class="font-headline text-base font-bold flex items-center gap-2 text-on-surface">
+                            <span class="material-symbols-outlined text-tertiary text-xl" style="font-variation-settings:'FILL' 1" aria-hidden="true">bar_chart</span>
                             오늘의 학습 현황
-                            <span id="todayDateBadge" class="text-xs font-normal text-slate-400 ml-1"></span>
+                            <span id="todayDateBadge" class="text-xs font-normal text-outline ml-1"></span>
                         </h2>
-                        <button onclick="loadTodayResults()" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="새로고침">
-                            <span class="material-symbols-outlined text-slate-400 text-xl">refresh</span>
+                        <button id="refreshBtn" class="p-2 rounded-full hover:bg-surface-container-low transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label="새로고침">
+                            <span class="material-symbols-outlined text-outline text-xl" aria-hidden="true">refresh</span>
                         </button>
                     </div>
                     <div class="space-y-2" id="todayResultsList">
-                        <div class="text-center py-8 text-slate-400 text-sm">학습 현황을 불러오는 중...</div>
+                        <div class="text-center py-8 text-outline text-sm">학습 현황을 불러오는 중...</div>
                     </div>
                 </section>
 
@@ -238,15 +281,20 @@
         function updateGateDots() {
             const dots = document.querySelectorAll('#gatePinDots .pin-dot');
             dots.forEach((dot, i) => {
-                if (i < gatePin.length) {
-                    dot.classList.add('filled');
-                    dot.style.borderColor = '#9d4300';
-                } else {
-                    dot.classList.remove('filled');
-                    dot.style.borderColor = '';
-                }
+                if (i < gatePin.length) dot.classList.add('filled');
+                else dot.classList.remove('filled');
             });
+            document.getElementById('gatePinDots').setAttribute('aria-label', `PIN ${gatePin.length}자리 입력됨`);
         }
+
+        // Event delegation for gate keypad
+        document.getElementById('gateKeypad').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-gate-key]');
+            if (!btn) return;
+            const key = btn.dataset.gateKey;
+            if (key === 'backspace') gateBackspace();
+            else gateKey(key);
+        });
 
         async function doTeacherLogin() {
             try {
@@ -281,7 +329,7 @@
         function showToast(msg, isError = false) {
             const t = document.getElementById('toast');
             t.textContent = msg;
-            t.style.background = isError ? '#ba1a1a' : '#1a6b3c';
+            t.className = `fixed top-4 right-4 z-40 px-4 py-3 rounded-xl text-sm font-bold shadow-lg text-white ${isError ? 'bg-error' : 'bg-tertiary'}`;
             t.classList.remove('hidden');
             setTimeout(() => t.classList.add('hidden'), 2500);
         }
@@ -291,11 +339,22 @@
             Layout.init();
             loadAllStudents();
             loadTodayResults();
-            document.getElementById('studentFilter').onchange = (e) => {
+
+            document.getElementById('darkModeBtn').addEventListener('click', () =>
+                document.documentElement.classList.toggle('dark'));
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('refreshBtn').addEventListener('click', loadTodayResults);
+            document.getElementById('addStudentBtn').addEventListener('click', addStudent);
+            document.getElementById('changePinBtn').addEventListener('click', changeTeacherPin);
+            document.getElementById('newStudentNameInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') addStudent();
+            });
+
+            document.getElementById('studentFilter').addEventListener('change', (e) => {
                 const sid = e.target.value;
                 if (sid) loadStudentCards(sid);
-                else document.getElementById('adminCardList').innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">학생을 선택하여 카드를 관리하세요.</div>';
-            };
+                else document.getElementById('adminCardList').innerHTML = '<div class="text-center py-8 text-outline text-sm">학생을 선택하여 카드를 관리하세요.</div>';
+            });
             // 오늘 날짜 배지
             document.getElementById('todayDateBadge').textContent =
                 new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
@@ -304,11 +363,11 @@
         // ── 오늘의 학습 현황 ──────────────────────────────────────
         async function loadTodayResults() {
             const container = document.getElementById('todayResultsList');
-            container.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">불러오는 중...</div>';
+            container.innerHTML = '<div class="text-center py-8 text-outline text-sm">불러오는 중...</div>';
             try {
                 const students = await API.getStudents();
                 if (students.length === 0) {
-                    container.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">등록된 학생이 없습니다.</div>';
+                    container.innerHTML = '<div class="text-center py-8 text-outline text-sm">등록된 학생이 없습니다.</div>';
                     return;
                 }
                 const allResults = await Promise.all(
@@ -334,15 +393,15 @@
                 const successRows = success.map(c => `
                     <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/10">
                         <span class="text-xs font-bold text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full flex-shrink-0">${escHtml(c.cards?.topic || '?')}</span>
-                        <span class="text-xs text-slate-600 dark:text-slate-400 flex-1 truncate">${escHtml(c.cards?.question || '')}</span>
-                        <span class="text-xs text-slate-400 flex-shrink-0 font-mono">Box ${c.box_before}→${c.box_after}</span>
+                        <span class="text-xs text-on-surface-variant flex-1 truncate">${escHtml(c.cards?.question || '')}</span>
+                        <span class="text-xs text-outline flex-shrink-0 font-mono">Box ${c.box_before}→${c.box_after}</span>
                     </div>`).join('');
 
                 const failRows = fail.map(c => `
                     <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/10">
                         <span class="text-xs font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-full flex-shrink-0">${escHtml(c.cards?.topic || '?')}</span>
-                        <span class="text-xs text-slate-600 dark:text-slate-400 flex-1 truncate">${escHtml(c.cards?.question || '')}</span>
-                        <span class="text-xs text-slate-400 flex-shrink-0 font-mono">Box ${c.box_before}→${c.box_after}</span>
+                        <span class="text-xs text-on-surface-variant flex-1 truncate">${escHtml(c.cards?.question || '')}</span>
+                        <span class="text-xs text-outline flex-shrink-0 font-mono">Box ${c.box_before}→${c.box_after}</span>
                         ${c.cards?.id ? `
                         <button onclick="resetCardBox('${escHtml(c.cards.id)}')"
                             class="text-xs px-2 py-1 rounded-lg bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 font-bold hover:bg-orange-200 dark:hover:bg-orange-900/40 transition-all active:scale-95 flex-shrink-0 flex items-center gap-0.5">
@@ -351,33 +410,33 @@
                     </div>`).join('');
 
                 return `
-                <div class="rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+                <div class="rounded-xl border border-outline-variant/30 overflow-hidden">
                     <button onclick="toggleStudentDetail(${idx})"
-                        class="w-full flex items-center gap-3 px-4 py-3 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors text-left">
+                        class="w-full flex items-center gap-3 px-4 py-3 bg-surface-container-low hover:bg-surface-container transition-colors text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl">
                         <div class="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center font-bold text-sm flex-shrink-0">${escHtml(student.name.charAt(0))}</div>
                         <span class="font-bold text-sm w-20 flex-shrink-0 truncate">${escHtml(student.name)}</span>
                         ${notStarted
-                            ? `<span class="text-xs text-slate-400 flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span>아직 시작 안 함</span>`
+                            ? `<span class="text-xs text-outline flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span>아직 시작 안 함</span>`
                             : `<div class="flex items-center gap-3 flex-1 min-w-0">
-                                <span class="text-xs font-bold text-slate-500 flex-shrink-0">${drawn}/${target}</span>
+                                <span class="text-xs font-bold text-on-surface-variant flex-shrink-0">${drawn}/${target}</span>
                                 <span class="text-xs font-bold text-green-600 flex items-center gap-0.5 flex-shrink-0">
                                     <span class="material-symbols-outlined text-xs" style="font-variation-settings:'FILL' 1">check_circle</span>${success.length}
                                 </span>
                                 <span class="text-xs font-bold text-red-500 flex items-center gap-0.5 flex-shrink-0">
                                     <span class="material-symbols-outlined text-xs" style="font-variation-settings:'FILL' 1">cancel</span>${fail.length}
                                 </span>
-                                <div class="flex-1 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 hidden sm:block min-w-0">
+                                <div class="flex-1 h-1.5 rounded-full bg-surface-container-high hidden sm:block min-w-0">
                                     <div class="h-1.5 rounded-full" style="width:${pct}%; background:linear-gradient(to right,#fb923c,#22c55e)"></div>
                                 </div>
-                                <span class="text-xs text-slate-400 font-bold flex-shrink-0">${pct}%</span>
+                                <span class="text-xs text-outline font-bold flex-shrink-0">${pct}%</span>
                                 ${session?.completed ? `<span class="material-symbols-outlined text-green-500 text-base flex-shrink-0" style="font-variation-settings:'FILL' 1">task_alt</span>` : ''}
                                </div>`
                         }
-                        <span class="material-symbols-outlined text-slate-300 text-sm transition-transform flex-shrink-0" id="chevron-${idx}">expand_more</span>
+                        <span class="material-symbols-outlined text-outline text-sm transition-transform flex-shrink-0" id="chevron-${idx}">expand_more</span>
                     </button>
-                    <div id="detail-${idx}" class="hidden px-4 pb-4 pt-2 space-y-1.5 bg-white dark:bg-slate-900">
+                    <div id="detail-${idx}" class="hidden px-4 pb-4 pt-2 space-y-1.5 bg-surface-container-lowest">
                         ${notStarted
-                            ? '<p class="text-sm text-slate-400 text-center py-4">오늘 학습 기록이 없습니다.</p>'
+                            ? '<p class="text-sm text-outline text-center py-4">오늘 학습 기록이 없습니다.</p>'
                             : `${success.length > 0 ? `
                                 <p class="text-xs font-bold text-green-600 mt-2 mb-1 flex items-center gap-1">
                                     <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">check_circle</span>맞춘 카드 (${success.length}개)
@@ -386,7 +445,7 @@
                                 <p class="text-xs font-bold text-red-500 mt-3 mb-1 flex items-center gap-1">
                                     <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">cancel</span>틀린 카드 (${fail.length}개)
                                 </p>${failRows}` : ''}
-                             ${success.length === 0 && fail.length === 0 ? '<p class="text-sm text-slate-400 text-center py-4">기록된 카드가 없습니다.</p>' : ''}`
+                             ${success.length === 0 && fail.length === 0 ? '<p class="text-sm text-outline text-center py-4">기록된 카드가 없습니다.</p>' : ''}`
                         }
                     </div>
                 </div>`;
@@ -413,7 +472,7 @@
         }
 
         async function addStudent() {
-            const input = document.getElementById('newStudentName');
+            const input = document.getElementById('newStudentNameInput');
             const name = input.value.trim();
             if (!name) return;
             try {
@@ -434,9 +493,9 @@
                 const students = await API.getStudents();
 
                 list.innerHTML = students.length === 0
-                    ? '<div class="text-center py-8 text-slate-400 text-sm">등록된 학생이 없습니다.</div>'
+                    ? '<div class="text-center py-8 text-outline text-sm">등록된 학생이 없습니다.</div>'
                     : students.map(s => `
-                        <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-outline-variant/30">
                             <div class="flex items-center gap-3 flex-1 min-w-0">
                                 <div class="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center font-bold cursor-pointer hover:scale-110 active:scale-95 transition-all text-sm flex-shrink-0"
                                     data-action="select" data-id="${escHtml(s.id)}">${escHtml(s.name.charAt(0))}</div>
@@ -450,7 +509,7 @@
                                     <span class="material-symbols-outlined text-sm">open_in_new</span>
                                     이동
                                 </button>
-                                <button data-action="delete" data-id="${escHtml(s.id)}" class="p-1.5 text-slate-300 hover:text-red-500 transition-colors">
+                                <button data-action="delete" data-id="${escHtml(s.id)}" class="p-1.5 text-outline-variant hover:text-error transition-colors">
                                     <span class="material-symbols-outlined text-xl">delete</span>
                                 </button>
                             </div>
@@ -458,14 +517,14 @@
                     `).join('');
 
                 pinList.innerHTML = students.length === 0
-                    ? '<div class="text-center py-8 text-slate-400 text-sm">등록된 학생이 없습니다.</div>'
+                    ? '<div class="text-center py-8 text-outline text-sm">등록된 학생이 없습니다.</div>'
                     : students.map(s => `
-                        <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                        <div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low border border-outline-variant/30">
                             <div class="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center font-bold text-sm flex-shrink-0">${escHtml(s.name.charAt(0))}</div>
                             <span class="flex-1 font-bold text-sm">${escHtml(s.name)}</span>
                             <input type="password" placeholder="새 PIN" maxlength="4" inputmode="numeric" pattern="\\d{4}"
                                 id="pin-${escHtml(s.id)}"
-                                class="w-20 px-2 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none text-sm font-bold tracking-widest text-center focus:ring-2 focus:ring-indigo-200"/>
+                                class="w-20 px-2 py-1.5 rounded-lg bg-surface-container-low border border-outline-variant/30 outline-none text-sm font-bold tracking-widest text-center focus:ring-2 focus:ring-secondary/30"/>
                             <button data-action="change-pin" data-id="${escHtml(s.id)}"
                                 class="px-3 py-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-200 dark:hover:bg-indigo-900/40 transition-all active:scale-95">
                                 변경
@@ -527,7 +586,7 @@
                 await API.deleteStudent(id);
                 showToast('삭제되었습니다');
                 loadAllStudents();
-                document.getElementById('adminCardList').innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">학생을 선택하여 카드를 관리하세요.</div>';
+                document.getElementById('adminCardList').innerHTML = '<div class="text-center py-8 text-outline text-sm">학생을 선택하여 카드를 관리하세요.</div>';
             } catch (e) {
                 showToast('삭제 실패', true);
             }
@@ -535,35 +594,35 @@
 
         async function loadStudentCards(sid) {
             const list = document.getElementById('adminCardList');
-            list.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">카드를 불러오는 중...</div>';
+            list.innerHTML = '<div class="text-center py-8 text-outline text-sm">카드를 불러오는 중...</div>';
             try {
                 const cards = await API.getCards(sid);
                 if (cards.length === 0) {
-                    list.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">등록된 카드가 없습니다.</div>';
+                    list.innerHTML = '<div class="text-center py-8 text-outline text-sm">등록된 카드가 없습니다.</div>';
                     return;
                 }
                 list.innerHTML = cards.map(c => `
-                    <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800" data-card-id="${escHtml(c.id)}" data-sid="${escHtml(sid)}">
+                    <div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low border border-outline-variant/30" data-card-id="${escHtml(c.id)}" data-sid="${escHtml(sid)}">
                         <div class="flex-1 min-w-0 space-y-1.5">
                             ${c.type === 'text'
                                 ? `<input type="text" value="${escHtml(c.question)}" data-field="question"
-                                    class="w-full bg-transparent font-bold border-none outline-none focus:ring-1 focus:ring-teal-300 rounded px-1 text-sm"/>`
-                                : `<div class="flex items-center gap-2 px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-xs text-slate-500 font-bold">
+                                    class="w-full bg-transparent font-bold border-none outline-none focus:ring-1 focus:ring-tertiary/50 rounded px-1 text-sm"/>`
+                                : `<div class="flex items-center gap-2 px-2 py-1 bg-surface-container rounded text-xs text-on-surface-variant font-bold">
                                     <span class="material-symbols-outlined text-xs">image</span> 이미지 질문</div>`
                             }
                             <div class="flex items-center gap-2">
-                                <span class="text-xs text-slate-400 font-bold px-1">정답:</span>
+                                <span class="text-xs text-outline font-bold px-1">정답:</span>
                                 <input type="text" value="${escHtml(c.answer)}" data-field="answer"
                                     class="flex-1 bg-transparent text-sm border-none outline-none focus:ring-1 focus:ring-teal-300 rounded px-1"/>
                             </div>
                             <div class="flex items-center gap-2">
-                                <span class="text-xs text-slate-400 font-bold px-1">오답:</span>
+                                <span class="text-xs text-outline font-bold px-1">오답:</span>
                                 <input type="text" value="${escHtml(Array.isArray(c.distractors) ? c.distractors.join(', ') : '')}"
                                     data-field="distractors" placeholder="쉼표로 구분 (비우면 자동생성)"
-                                    class="flex-1 bg-transparent text-xs border-none outline-none focus:ring-1 focus:ring-teal-300 rounded px-1 text-slate-400"/>
+                                    class="flex-1 bg-transparent text-xs border-none outline-none focus:ring-1 focus:ring-tertiary/50 rounded px-1 text-on-surface-variant"/>
                             </div>
                         </div>
-                        <button data-action="delete-card" class="text-slate-300 hover:text-red-500 transition-colors flex-shrink-0">
+                        <button data-action="delete-card" class="text-outline-variant hover:text-error transition-colors flex-shrink-0">
                             <span class="material-symbols-outlined text-xl">delete</span>
                         </button>
                     </div>

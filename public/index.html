@@ -87,7 +87,7 @@
             transition: background 0.15s, transform 0.15s;
         }
         .pin-dot.filled {
-            background: #9d4300;
+            background: var(--color-primary, #9d4300);
             transform: scale(1.15);
         }
         @keyframes shake {
@@ -103,21 +103,15 @@
 
 <body class="bg-surface font-body text-on-surface overflow-x-hidden flex items-center justify-center min-h-dvh p-4">
 
-    <!-- ── Ambient Orbs ───────────────────────────────────────── -->
-    <div class="fixed top-0 -left-24 w-96 h-96 rounded-full pointer-events-none -z-10"
-        style="background:rgba(255,219,202,0.35); filter:blur(100px);"></div>
-    <div class="fixed bottom-0 -right-24 w-80 h-80 rounded-full pointer-events-none -z-10"
-        style="background:rgba(225,224,255,0.25); filter:blur(100px);"></div>
 
     <div class="w-full max-w-sm py-8">
 
         <!-- ── Brand Hero ─────────────────────────────────────── -->
         <div class="text-center mb-8 px-4">
             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4
-                        shadow-[0px_8px_24px_rgba(157,67,0,0.28)]"
-                style="background: linear-gradient(135deg, #9d4300, #f97316)">
-                <span class="material-symbols-outlined text-white text-2xl"
-                    style="font-variation-settings:'FILL' 1">auto_awesome</span>
+                        bg-primary shadow-[0px_8px_24px_rgba(157,67,0,0.28)]">
+                <span class="material-symbols-outlined text-on-primary text-2xl"
+                    style="font-variation-settings:'FILL' 1" aria-hidden="true">auto_awesome</span>
             </div>
             <h1 class="font-headline text-3xl font-bold text-primary mb-1 tracking-tight">Concept Gacha</h1>
             <p class="text-on-surface-variant text-xs">이름과 PIN으로 로그인하세요</p>
@@ -131,7 +125,7 @@
 
                 <!-- Name Input -->
                 <div>
-                    <label class="text-xs font-bold text-outline uppercase tracking-widest mb-2 block">이름</label>
+                    <label for="nameInput" class="text-xs font-bold text-outline uppercase tracking-widest mb-2 block">이름</label>
                     <input
                         type="text"
                         id="nameInput"
@@ -141,14 +135,16 @@
                                bg-surface-container-low border-0 outline-none
                                text-on-surface placeholder-outline text-sm font-bold
                                focus:bg-white focus:ring-2 focus:ring-primary/20
+                               focus-visible:ring-2 focus-visible:ring-primary
                                transition-colors"
                     />
                 </div>
 
                 <!-- PIN Display -->
                 <div>
-                    <label class="text-xs font-bold text-outline uppercase tracking-widest mb-3 block">PIN</label>
-                    <div id="pinDots" class="flex justify-center gap-4 py-2">
+                    <label id="pinLabel" class="text-xs font-bold text-outline uppercase tracking-widest mb-3 block">PIN</label>
+                    <div id="pinDots" class="flex justify-center gap-4 py-2"
+                         role="status" aria-live="polite" aria-labelledby="pinLabel" aria-label="PIN 0자리 입력됨">
                         <div class="pin-dot w-4 h-4 rounded-full border-2 border-outline-variant bg-transparent"></div>
                         <div class="pin-dot w-4 h-4 rounded-full border-2 border-outline-variant bg-transparent"></div>
                         <div class="pin-dot w-4 h-4 rounded-full border-2 border-outline-variant bg-transparent"></div>
@@ -162,22 +158,22 @@
 
             <!-- ── Numeric Keypad ──────────────────────────────── -->
             <div class="px-7 pb-7">
-                <div class="grid grid-cols-3 gap-2.5">
+                <div class="grid grid-cols-3 gap-2.5" id="keypad" role="group" aria-label="숫자 키패드">
                     <!-- 1-9 -->
-                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('1')">1</button>
-                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('2')">2</button>
-                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('3')">3</button>
-                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('4')">4</button>
-                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('5')">5</button>
-                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('6')">6</button>
-                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('7')">7</button>
-                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('8')">8</button>
-                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('9')">9</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-key="1">1</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-key="2">2</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-key="3">3</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-key="4">4</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-key="5">5</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-key="6">6</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-key="7">7</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-key="8">8</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-key="9">9</button>
                     <!-- Bottom row -->
-                    <div></div>
-                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface" onclick="pressKey('0')">0</button>
-                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-outline" onclick="pressBackspace()">
-                        <span class="material-symbols-outlined text-xl">backspace</span>
+                    <div aria-hidden="true"></div>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container font-bold text-xl text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-key="0">0</button>
+                    <button class="key-btn h-14 rounded-DEFAULT bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-outline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-key="backspace" aria-label="지우기">
+                        <span class="material-symbols-outlined text-xl" aria-hidden="true">backspace</span>
                     </button>
                 </div>
             </div>
@@ -212,13 +208,22 @@
             dots.forEach((dot, i) => {
                 if (i < pin.length) {
                     dot.classList.add('filled');
-                    dot.style.borderColor = '#9d4300';
                 } else {
                     dot.classList.remove('filled');
-                    dot.style.borderColor = '';
                 }
             });
+            // 스크린리더에 PIN 입력 상태 공지
+            document.getElementById('pinDots').setAttribute('aria-label', `PIN ${pin.length}자리 입력됨`);
         }
+
+        // Event delegation for keypad
+        document.getElementById('keypad').addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-key]');
+            if (!btn) return;
+            const key = btn.dataset.key;
+            if (key === 'backspace') pressBackspace();
+            else pressKey(key);
+        });
 
         function showError(msg) {
             const el = document.getElementById('errorMsg');

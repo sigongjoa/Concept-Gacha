@@ -27,73 +27,73 @@ const Layout = {
         const studentName = this.currentStudent ? this.currentStudent.name : '-';
 
         sidebar.innerHTML = `
-        <div class="p-8">
+        <div class="p-6">
             <header class="mb-8">
                 <a href="index.html">
-                    <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 korean-text tracking-tight mb-2">개념 가챠</h1>
+                    <h1 class="text-2xl font-black text-primary korean-text tracking-tight mb-2">개념 가챠</h1>
                 </a>
-                <p class="text-xs text-slate-500 dark:text-slate-400 korean-text font-medium leading-relaxed">
+                <p class="text-xs text-on-surface-variant korean-text font-medium leading-relaxed">
                     몰랐던 것을 기록하고,<br/>랜덤으로 꺼내서 기억하자
                 </p>
             </header>
 
-            <div class="mb-8 p-4 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-2xl border border-orange-100 dark:border-orange-800/30">
-                <div class="text-[10px] text-orange-600 dark:text-orange-400 font-bold uppercase mb-1 korean-text">현재 학생</div>
+            <div class="mb-8 p-4 bg-primary-fixed/30 rounded-2xl border border-primary-fixed">
+                <div class="text-[10px] text-primary font-bold uppercase mb-1 korean-text tracking-widest">현재 학생</div>
                 <div class="flex items-center justify-between">
-                    <span class="text-lg font-black text-slate-800 dark:text-white korean-text" id="currentStudentName">${studentName}</span>
-                    <button class="text-xs text-orange-600 dark:text-orange-400 hover:underline korean-text font-bold" id="changeStudentBtn">변경</button>
+                    <span class="text-lg font-black text-on-surface korean-text" id="currentStudentName">${studentName}</span>
+                    <button class="text-xs text-primary hover:underline korean-text font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded" id="changeStudentBtn" aria-label="다른 학생으로 변경">변경</button>
                 </div>
             </div>
 
-            <nav class="space-y-4">
-                <a class="nav-link flex items-center gap-4 px-5 py-4 rounded-2xl font-medium transition-all korean-text border" href="gacha.html">
-                    <span class="material-symbols-outlined">style</span>
+            <nav class="space-y-1" aria-label="주요 메뉴">
+                <a class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all korean-text border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" href="gacha.html">
+                    <span class="material-symbols-outlined text-[20px]" aria-hidden="true">style</span>
                     카드 뽑기
                 </a>
-                <a class="nav-link flex items-center gap-4 px-5 py-4 rounded-2xl font-medium transition-all korean-text border" href="dashboard.html">
-                    <span class="material-symbols-outlined">bar_chart</span>
+                <a class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all korean-text border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" href="dashboard.html">
+                    <span class="material-symbols-outlined text-[20px]" aria-hidden="true">bar_chart</span>
                     학습 현황
                 </a>
-                <a class="nav-link flex items-center gap-4 px-5 py-4 rounded-2xl font-medium transition-all korean-text border" href="add.html">
-                    <span class="material-symbols-outlined">add_circle</span>
+                <a class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all korean-text border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" href="add.html">
+                    <span class="material-symbols-outlined text-[20px]" aria-hidden="true">add_circle</span>
                     카드 추가
                 </a>
-                <a class="nav-link flex items-center gap-4 px-5 py-4 rounded-2xl font-medium transition-all korean-text border" href="list.html">
-                    <span class="material-symbols-outlined">grid_view</span>
+                <a class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all korean-text border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" href="list.html">
+                    <span class="material-symbols-outlined text-[20px]" aria-hidden="true">grid_view</span>
                     전체 목록
                 </a>
-                <a class="nav-link flex items-center gap-4 px-5 py-4 rounded-2xl font-medium transition-all korean-text border" href="admin.html">
-                    <span class="material-symbols-outlined">settings</span>
+                <a class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all korean-text border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" href="admin.html">
+                    <span class="material-symbols-outlined text-[20px]" aria-hidden="true">settings</span>
                     관리자
                 </a>
-                <a class="nav-link flex items-center gap-4 px-5 py-4 rounded-2xl font-medium transition-all korean-text border" href="print.html">
-                    <span class="material-symbols-outlined">print</span>
+                <a class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all korean-text border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" href="print.html">
+                    <span class="material-symbols-outlined text-[20px]" aria-hidden="true">print</span>
                     인쇄 센터
                 </a>
-                <a class="nav-link flex items-center gap-4 px-5 py-4 rounded-2xl font-medium transition-all korean-text border" href="debug-generators.html">
-                    <span class="material-symbols-outlined">bug_report</span>
+                <a class="nav-link flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all korean-text border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" href="debug-generators.html">
+                    <span class="material-symbols-outlined text-[20px]" aria-hidden="true">bug_report</span>
                     제네레이터 디버그
                 </a>
             </nav>
         </div>
-        <div class="p-8 border-t border-slate-100 dark:border-slate-800">
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-5 korean-text">학습 현황</h3>
-            <div class="grid grid-cols-2 gap-3">
-                <div class="p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col">
-                    <div class="text-[10px] text-slate-500 korean-text mb-1 font-bold uppercase">전체 카드</div>
-                    <div class="text-2xl font-black text-slate-800 dark:text-white" id="statTotal">0</div>
+        <div class="p-6 border-t border-outline-variant/30">
+            <h2 class="text-[10px] font-bold text-outline uppercase tracking-wider mb-4 korean-text">학습 현황</h2>
+            <div class="grid grid-cols-2 gap-2">
+                <div class="p-3 bg-surface-container-low rounded-xl border border-outline-variant/30 flex flex-col">
+                    <div class="text-[10px] text-on-surface-variant korean-text mb-1 font-bold uppercase">전체 카드</div>
+                    <div class="text-2xl font-black text-on-surface" id="statTotal">0</div>
                 </div>
-                <div class="p-4 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/20 shadow-sm flex flex-col">
-                    <div class="text-[10px] text-red-500 korean-text mb-1 font-bold uppercase">상자 1</div>
-                    <div class="text-2xl font-black text-red-600 dark:text-red-400" id="statBox1">0</div>
+                <div class="p-3 bg-error-container/30 rounded-xl border border-error/20 flex flex-col">
+                    <div class="text-[10px] text-on-error-container korean-text mb-1 font-bold uppercase">상자 1</div>
+                    <div class="text-2xl font-black text-error" id="statBox1">0</div>
                 </div>
-                <div class="p-4 bg-yellow-50 dark:bg-yellow-900/10 rounded-xl border border-yellow-100 dark:border-yellow-900/20 shadow-sm flex flex-col">
-                    <div class="text-[10px] text-yellow-600 korean-text mb-1 font-bold uppercase">상자 2</div>
-                    <div class="text-2xl font-black text-yellow-600 dark:text-yellow-400" id="statBox2">0</div>
+                <div class="p-3 bg-secondary-fixed/30 rounded-xl border border-secondary/20 flex flex-col">
+                    <div class="text-[10px] text-on-surface-variant korean-text mb-1 font-bold uppercase">상자 2</div>
+                    <div class="text-2xl font-black text-secondary" id="statBox2">0</div>
                 </div>
-                <div class="p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-900/20 shadow-sm flex flex-col">
-                    <div class="text-[10px] text-emerald-600 korean-text mb-1 font-bold uppercase">상자 3-4</div>
-                    <div class="text-2xl font-black text-emerald-600 dark:text-emerald-400" id="statBox34">0</div>
+                <div class="p-3 bg-tertiary-container/20 rounded-xl border border-tertiary/20 flex flex-col">
+                    <div class="text-[10px] text-on-tertiary-container korean-text mb-1 font-bold uppercase">상자 3-4</div>
+                    <div class="text-2xl font-black text-tertiary" id="statBox34">0</div>
                 </div>
             </div>
         </div>
@@ -106,11 +106,13 @@ const Layout = {
         links.forEach(link => {
             const href = link.getAttribute('href');
             if (path.endsWith(href)) {
-                link.classList.add('bg-gradient-to-r', 'from-orange-500/10', 'to-red-500/5', 'dark:from-orange-500/20', 'dark:to-red-500/10', 'text-orange-700', 'dark:text-orange-400', 'border-orange-100', 'dark:border-orange-500/20');
-                link.classList.remove('text-slate-600', 'dark:text-slate-400', 'border-transparent', 'hover:bg-slate-50', 'dark:hover:bg-slate-800');
+                link.classList.add('bg-primary-fixed/40', 'text-primary', 'border-primary-fixed');
+                link.classList.remove('text-on-surface-variant', 'border-transparent', 'hover:bg-surface-container-low');
+                link.setAttribute('aria-current', 'page');
             } else {
-                link.classList.remove('bg-gradient-to-r', 'from-orange-500/10', 'to-red-500/5', 'dark:from-orange-500/20', 'dark:to-red-500/10', 'text-orange-700', 'dark:text-orange-400', 'border-orange-100', 'dark:border-orange-500/20');
-                link.classList.add('text-slate-600', 'dark:text-slate-400', 'border-transparent', 'hover:bg-slate-50', 'dark:hover:bg-slate-800');
+                link.classList.remove('bg-primary-fixed/40', 'text-primary', 'border-primary-fixed');
+                link.classList.add('text-on-surface-variant', 'border-transparent', 'hover:bg-surface-container-low');
+                link.removeAttribute('aria-current');
             }
         });
     },
@@ -160,12 +162,14 @@ const Layout = {
             document.body.appendChild(toast);
         }
         toast.textContent = msg;
-        toast.className = toast.className.replace('opacity-0', 'opacity-100');
-        if (isError) toast.classList.add('bg-red-500');
-        else toast.classList.remove('bg-red-500');
+        toast.classList.remove('opacity-0');
+        toast.classList.add('opacity-100');
+        if (isError) toast.classList.add('bg-error');
+        else toast.classList.remove('bg-error');
 
         setTimeout(() => {
-            toast.className = toast.className.replace('opacity-100', 'opacity-0');
+            toast.classList.remove('opacity-100');
+            toast.classList.add('opacity-0');
         }, 2500);
     },
 
