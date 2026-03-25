@@ -15,52 +15,52 @@
             theme: {
                 extend: {
                     colors: {
-                        'surface':                    '#f7f9fb',
-                        'surface-dim':                '#d8dadc',
+                        'surface':                    '#fdf6ec',
+                        'surface-dim':                '#e8d9c8',
                         'surface-container-lowest':   '#ffffff',
-                        'surface-container-low':      '#f2f4f6',
-                        'surface-container':          '#eceef0',
-                        'surface-container-high':     '#e6e8ea',
-                        'surface-container-highest':  '#e0e3e5',
-                        'primary':                    '#9d4300',
-                        'primary-container':          '#f97316',
-                        'primary-fixed':              '#ffdbca',
-                        'primary-fixed-dim':          '#ffb690',
+                        'surface-container-low':      '#f5ead8',
+                        'surface-container':          '#ecdece',
+                        'surface-container-high':     '#e2d0be',
+                        'surface-container-highest':  '#d8c4b0',
+                        'primary':                    '#c23800',
+                        'primary-container':          '#ff6535',
+                        'primary-fixed':              '#ffe8d9',
+                        'primary-fixed-dim':          '#ffb899',
                         'on-primary':                 '#ffffff',
-                        'secondary':                  '#4648d4',
-                        'secondary-container':        '#6063ee',
-                        'secondary-fixed':            '#e1e0ff',
-                        'secondary-fixed-dim':        '#c0c1ff',
+                        'on-primary-container':       '#5c1500',
+                        'secondary':                  '#2a2b96',
+                        'secondary-container':        '#5254e8',
+                        'secondary-fixed':            '#e0e1ff',
+                        'secondary-fixed-dim':        '#bcbeff',
                         'on-secondary':               '#ffffff',
-                        'on-secondary-container':     '#fffbff',
-                        'tertiary':                   '#006c49',
-                        'tertiary-container':         '#00b07a',
+                        'on-secondary-container':     '#eeeeff',
+                        'tertiary':                   '#00785a',
+                        'tertiary-container':         '#00c893',
                         'on-tertiary':                '#ffffff',
-                        'on-tertiary-container':      '#003b26',
+                        'on-tertiary-container':      '#003828',
                         'error':                      '#ba1a1a',
                         'error-container':            '#ffdad6',
                         'on-error-container':         '#93000a',
-                        'on-surface':                 '#191c1e',
-                        'on-surface-variant':         '#584237',
-                        'outline':                    '#8c7164',
-                        'outline-variant':            '#e0c0b1',
-                        'inverse-surface':            '#2d3133',
-                        'inverse-on-surface':         '#eff1f3',
+                        'on-surface':                 '#1c0a00',
+                        'on-surface-variant':         '#5c3820',
+                        'outline':                    '#9c6840',
+                        'outline-variant':            '#deb896',
+                        'inverse-surface':            '#341c08',
+                        'inverse-on-surface':         '#f5ead8',
                     },
                     fontFamily: {
                         'headline': ['Plus Jakarta Sans', 'Noto Sans KR', 'sans-serif'],
                         'body':     ['Inter', 'Noto Sans KR', 'sans-serif'],
                         'label':    ['Inter', 'Noto Sans KR', 'sans-serif'],
                     },
-                    // 합리적인 라운드 값으로 재정의
                     borderRadius: {
-                        'sm':   '4px',
-                        'DEFAULT': '8px',
-                        'md':   '10px',
-                        'lg':   '12px',
-                        'xl':   '16px',
-                        '2xl':  '20px',
-                        'full': '9999px',
+                        'sm':      '6px',
+                        'DEFAULT': '10px',
+                        'md':      '12px',
+                        'lg':      '14px',
+                        'xl':      '18px',
+                        '2xl':     '24px',
+                        'full':    '9999px',
                     },
                 },
             },
@@ -71,118 +71,113 @@
         body { font-family: 'Inter', 'Noto Sans KR', sans-serif; min-height: max(884px, 100dvh); }
         .font-headline { font-family: 'Plus Jakarta Sans', 'Noto Sans KR', sans-serif; }
 
-        /* ── 글래스 ───────────────────────────────────────── */
-        .glass {
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-        }
-
         /* ── 키패드 버튼 ─────────────────────────────────── */
         .kp-btn {
             height: 3.25rem;
-            border-radius: 8px;
-            background: #f2f4f6;
+            border-radius: 10px;
+            background: #f5ead8;
             font-size: 1.2rem;
             font-weight: 700;
-            color: #191c1e;
-            border: none;
+            color: #1c0a00;
+            border: 1px solid rgba(222,184,150,0.5);
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.07);
             transition: transform 0.08s, background 0.08s;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        .kp-btn:active { transform: scale(0.93); background: #e6e8ea; }
-        .kp-del { background: #ffdad6 !important; color: #93000a !important; }
+        .kp-btn:active { transform: scale(0.93); box-shadow: none; background: #ecdece; }
+        .kp-del { background: #ffdad6 !important; color: #93000a !important; border-color: rgba(186,26,26,0.2) !important; }
         .kp-del:active { background: #ffb4ab !important; }
-        .kp-dot { color: #4648d4; }
+        .kp-dot { color: #2a2b96; }
         .kp-slash {
             height: 2.75rem;
-            background: #e1e0ff !important;
-            color: #4648d4 !important;
+            background: #e0e1ff !important;
+            color: #2a2b96 !important;
             font-size: 0.85rem;
-            border: 1.5px solid #c0c1ff !important;
+            border: 1.5px solid #bcbeff !important;
         }
-        .kp-slash:active { background: #c0c1ff !important; }
-        .dark .kp-btn { background: #2d3133; color: #eff1f3; }
-        .dark .kp-btn:active { background: #3a3f42; }
+        .kp-slash:active { background: #bcbeff !important; }
+        .dark .kp-btn { background: #2a1500; color: #f5ead8; border-color: rgba(90,50,20,0.5); }
+        .dark .kp-btn:active { background: #3d2000; }
         .dark .kp-del { background: #93000a !important; color: #ffdad6 !important; }
-        .dark .kp-slash { background: #2f2ebe !important; color: #e1e0ff !important; }
+        .dark .kp-slash { background: #1e1f7a !important; color: #e0e1ff !important; }
 
         /* ── 단위·선택·대수·fillblank 버튼 ─────────────── */
         .unit-btn {
             padding: 0.45rem 0.9rem;
             border-radius: 8px;
-            border: 1.5px solid #e0c0b1;
+            border: 1.5px solid #deb896;
             font-size: 0.9rem;
             font-weight: 600;
-            color: #584237;
+            color: #5c3820;
             background: transparent;
             transition: all 0.12s;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        .unit-btn.selected { border-color: #4648d4; background: #e1e0ff; color: #4648d4; }
-        .dark .unit-btn { border-color: #584237; color: #8c7164; }
-        .dark .unit-btn.selected { border-color: #6063ee; background: #2f2ebe; color: #e1e0ff; }
+        .unit-btn.selected { border-color: #2a2b96; background: #e0e1ff; color: #2a2b96; }
+        .dark .unit-btn { border-color: #5c3820; color: #9c6840; }
+        .dark .unit-btn.selected { border-color: #5254e8; background: #1e1f7a; color: #e0e1ff; }
 
         .alg-btn {
             padding: 0.45rem 0.9rem;
             border-radius: 8px;
-            border: 1.5px solid #c0c1ff;
+            border: 1.5px solid #bcbeff;
             font-size: 1rem;
             font-weight: 700;
-            color: #4648d4;
-            background: #e1e0ff;
+            color: #2a2b96;
+            background: #e0e1ff;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             transition: transform 0.08s;
         }
         .alg-btn:active { transform: scale(0.92); }
-        .alg-op { border-color: #e0c0b1; color: #584237; background: #f2f4f6; }
-        .dark .alg-btn { background: #2f2ebe; border-color: #4648d4; color: #e1e0ff; }
-        .dark .alg-op { background: #2d3133; border-color: #584237; color: #8c7164; }
+        .alg-op { border-color: #deb896; color: #5c3820; background: #f5ead8; }
+        .dark .alg-btn { background: #1e1f7a; border-color: #2a2b96; color: #e0e1ff; }
+        .dark .alg-op { background: #2a1500; border-color: #5c3820; color: #9c6840; }
 
         .choice-btn {
             flex: 1;
             padding: 0.875rem;
             border-radius: 10px;
-            border: 1.5px solid #e0c0b1;
+            border: 1.5px solid #deb896;
             font-size: 1.1rem;
             font-weight: 600;
-            color: #584237;
+            color: #5c3820;
             background: transparent;
             transition: all 0.12s;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        .choice-btn.selected { border-color: #4648d4; background: #e1e0ff; color: #4648d4; }
-        .dark .choice-btn { border-color: #584237; color: #8c7164; }
-        .dark .choice-btn.selected { border-color: #6063ee; background: #2f2ebe; color: #e1e0ff; }
+        .choice-btn.selected { border-color: #2a2b96; background: #e0e1ff; color: #2a2b96; }
+        .dark .choice-btn { border-color: #5c3820; color: #9c6840; }
+        .dark .choice-btn.selected { border-color: #5254e8; background: #1e1f7a; color: #e0e1ff; }
 
         .word-chip {
             padding: 0.35rem 0.75rem;
             border-radius: 8px;
-            border: 1.5px solid #c0c1ff;
+            border: 1.5px solid #bcbeff;
             font-size: 0.85rem;
             font-weight: 600;
-            color: #4648d4;
-            background: #e1e0ff;
+            color: #2a2b96;
+            background: #e0e1ff;
             touch-action: manipulation;
             transition: all 0.12s;
         }
         .word-chip:active { transform: scale(0.93); }
         .word-chip.used { opacity: 0.3; pointer-events: none; }
-        .dark .word-chip { background: #2f2ebe; border-color: #4648d4; color: #e1e0ff; }
+        .dark .word-chip { background: #1e1f7a; border-color: #2a2b96; color: #e0e1ff; }
 
         /* MCQ 선택지 버튼 */
         .mcq-btn {
             padding: 0.65rem 0.75rem;
             border-radius: 10px;
-            border: 1.5px solid var(--md-sys-color-outline-variant, #cac4d0);
+            border: 1.5px solid #deb896;
             font-size: 0.875rem;
             font-weight: 600;
             text-align: center;
             background: transparent;
-            color: var(--md-sys-color-on-surface-variant, #49454f);
+            color: #5c3820;
             transition: all 0.15s;
             touch-action: manipulation;
             cursor: pointer;
@@ -190,59 +185,59 @@
             line-height: 1.3;
         }
         .mcq-btn:hover:not(:disabled) {
-            border-color: #4648d4;
-            background: rgba(70,72,212,0.07);
-            color: #4648d4;
+            border-color: #2a2b96;
+            background: rgba(42,43,150,0.06);
+            color: #2a2b96;
         }
         .mcq-btn:active:not(:disabled) { transform: scale(0.95); }
         .mcq-btn.correct {
-            border-color: #00b07a;
-            background: rgba(0,176,122,0.13);
-            color: #00703e;
+            border-color: #00785a;
+            background: rgba(0,120,90,0.10);
+            color: #00523e;
             pointer-events: none;
         }
         .mcq-btn.wrong {
-            border-color: #e53935;
-            background: rgba(229,57,53,0.1);
-            color: #c62828;
+            border-color: #ba1a1a;
+            background: rgba(186,26,26,0.08);
+            color: #93000a;
             pointer-events: none;
         }
         .mcq-btn:disabled { pointer-events: none; opacity: 0.5; }
-        .dark .mcq-btn { color: #cac4d0; border-color: #49454f; }
-        .dark .mcq-btn.correct { border-color: #00b07a; background: rgba(0,176,122,0.18); color: #4dd8a0; }
-        .dark .mcq-btn.wrong   { border-color: #ef9a9a; background: rgba(229,57,53,0.15); color: #ef9a9a; }
+        .dark .mcq-btn { color: #deb896; border-color: #5c3820; }
+        .dark .mcq-btn.correct { border-color: #00c893; background: rgba(0,200,147,0.14); color: #5de8b8; }
+        .dark .mcq-btn.wrong   { border-color: #ff8a80; background: rgba(186,26,26,0.15); color: #ff8a80; }
 
         .blank-slot {
             display: inline-block;
             min-width: 6rem;
             padding: 0.1rem 0.5rem;
             border-radius: 6px;
-            border: 2px dashed #c0c1ff;
-            background: #e1e0ff;
-            color: #4648d4;
+            border: 2px dashed #bcbeff;
+            background: #e0e1ff;
+            color: #2a2b96;
             font-weight: 600;
             font-size: 0.85rem;
             cursor: pointer;
             transition: all 0.12s;
             touch-action: manipulation;
         }
-        .blank-slot.focused { border-style: solid; border-color: #4648d4; background: #c0c1ff; }
-        .blank-slot.filled { color: #191c1e; background: #f2f4f6; border-color: #8c7164; border-style: solid; }
-        .blank-slot.correct { border-color: #006c49 !important; background: #d1fae5 !important; color: #006c49 !important; }
+        .blank-slot.focused { border-style: solid; border-color: #2a2b96; background: #bcbeff; }
+        .blank-slot.filled { color: #1c0a00; background: #f5ead8; border-color: #9c6840; border-style: solid; }
+        .blank-slot.correct { border-color: #00785a !important; background: #ccfbe8 !important; color: #00523e !important; }
         .blank-slot.wrong { border-color: #ba1a1a !important; background: #ffdad6 !important; color: #93000a !important; }
-        .dark .blank-slot { background: #2f2ebe; border-color: #4648d4; color: #e1e0ff; }
-        .dark .blank-slot.filled { background: #2d3133; color: #eff1f3; border-color: #584237; }
+        .dark .blank-slot { background: #1e1f7a; border-color: #2a2b96; color: #e0e1ff; }
+        .dark .blank-slot.filled { background: #2a1500; color: #f5ead8; border-color: #5c3820; }
 
         /* ── 채점 결과 ─────────────────────────────────────── */
-        .result-correct { background: rgba(0,176,122,0.10); border-radius: 10px; }
-        .result-wrong   { background: rgba(255,218,214,0.55); border-radius: 10px; }
+        .result-correct { background: rgba(0,120,90,0.08); border-radius: 10px; }
+        .result-wrong   { background: rgba(186,26,26,0.07); border-radius: 10px; }
     </style>
 </head>
 
 <body class="bg-surface font-body text-on-surface overflow-x-hidden">
 
     <!-- ── TopAppBar ──────────────────────────────────────────── -->
-    <header class="fixed top-0 w-full z-50 glass bg-surface/80 border-b border-outline-variant/20">
+    <header class="fixed top-0 w-full z-50 bg-surface-container-lowest border-b border-outline-variant/30">
         <div class="flex justify-between items-center px-5 h-14 max-w-2xl mx-auto">
             <div class="flex items-center gap-3">
                 <!-- Admin 백버튼 (fromAdmin 세션일 때만 표시) -->
@@ -288,8 +283,8 @@
                     </div>
                     <div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
                         <div id="dailyBar"
-                            class="h-full rounded-full transition-all duration-500"
-                            style="width:0%; background: linear-gradient(90deg, #9d4300, #f97316)"></div>
+                            class="h-full rounded-full transition-all duration-500 bg-primary"
+                            style="width:0%"></div>
                     </div>
                 </div>
                 <a href="dashboard.html"
@@ -300,8 +295,8 @@
             </div>
 
             <!-- 오늘 완료 -->
-            <div id="dailyDone" class="hidden rounded-xl px-4 py-3 flex items-center gap-3"
-                style="background: rgba(0,176,122,0.10); border: 1px solid rgba(0,176,122,0.20)">
+            <div id="dailyDone" class="hidden rounded-xl px-4 py-3 flex items-center gap-3
+                bg-tertiary-container/15 border border-tertiary/20">
                 <span class="material-symbols-outlined text-tertiary text-[20px]"
                     style="font-variation-settings:'FILL' 1">task_alt</span>
                 <div class="flex-1">
@@ -316,10 +311,10 @@
         <!-- ── Draw Zone (카드 없을 때 표시) ─────────────────── -->
         <div id="drawZone" class="pt-1">
             <button id="gachaBtn"
-                class="w-full h-13 rounded-full font-label font-semibold text-sm uppercase tracking-[0.08em]
-                       text-on-primary shadow-[0_6px_20px_rgba(157,67,0,0.22)]
+                class="w-full rounded-full font-label font-semibold text-sm uppercase tracking-[0.08em]
+                       bg-primary text-on-primary shadow-[0_4px_16px_rgba(194,56,0,0.28)]
                        transition-all active:scale-[0.97] flex items-center justify-center gap-2.5"
-                style="background: linear-gradient(135deg, #9d4300, #f97316); height: 3.25rem;">
+                style="height: 3.25rem;">
                 <span class="material-symbols-outlined text-[18px]" style="font-variation-settings:'FILL' 1">auto_awesome</span>
                 카드 뽑기
             </button>
@@ -354,8 +349,7 @@
                         </div>
 
                         <!-- 정답 박스 -->
-                        <div class="hidden rounded-lg p-4" id="answerBox"
-                            style="background:rgba(0,176,122,0.12); border: 1px solid rgba(0,176,122,0.22)">
+                        <div class="hidden rounded-lg p-4 bg-tertiary-container/15 border border-tertiary/20" id="answerBox">
                             <div class="flex items-center gap-2 mb-2">
                                 <span class="material-symbols-outlined text-tertiary text-[16px]"
                                     style="font-variation-settings:'FILL' 1">check_circle</span>
@@ -501,9 +495,8 @@
                         <!-- 채점 버튼 -->
                         <button id="practiceSubmitBtn"
                             class="w-full h-12 rounded-full font-label font-semibold text-sm uppercase tracking-[0.08em]
-                                   text-on-primary shadow-[0_6px_16px_rgba(157,67,0,0.22)]
-                                   transition-all active:scale-[0.97] disabled:opacity-40"
-                            style="background: linear-gradient(135deg, #9d4300, #f97316)">
+                                   bg-primary text-on-primary shadow-[0_4px_14px_rgba(194,56,0,0.25)]
+                                   transition-all active:scale-[0.97] disabled:opacity-40">
                             채점
                         </button>
                     </div>
@@ -512,9 +505,8 @@
                     <div class="hidden mt-4" id="practiceTreeSubmitRow">
                         <button id="practiceTreeSubmitBtn"
                             class="w-full h-12 rounded-full font-label font-semibold text-sm uppercase tracking-[0.08em]
-                                   text-on-primary shadow-[0_6px_16px_rgba(157,67,0,0.22)]
-                                   transition-all active:scale-[0.97] disabled:opacity-40"
-                            style="background: linear-gradient(135deg, #9d4300, #f97316)">
+                                   bg-primary text-on-primary shadow-[0_4px_14px_rgba(194,56,0,0.25)]
+                                   transition-all active:scale-[0.97] disabled:opacity-40">
                             채점
                         </button>
                     </div>
@@ -527,9 +519,8 @@
                         </div>
                         <button id="nextCardBtn"
                             class="hidden w-full mt-3 py-3 rounded-lg font-label font-semibold text-sm
-                                   text-on-primary shadow-[0_4px_16px_rgba(157,67,0,0.20)]
-                                   transition-all active:scale-[0.97] flex items-center justify-center gap-2"
-                            style="background: linear-gradient(135deg, #9d4300, #f97316)">
+                                   bg-primary text-on-primary shadow-[0_4px_14px_rgba(194,56,0,0.22)]
+                                   transition-all active:scale-[0.97] flex items-center justify-center gap-2">
                             <span class="material-symbols-outlined text-[16px]" style="font-variation-settings:'FILL' 1">auto_awesome</span>
                             다음 카드 뽑기
                         </button>
@@ -544,7 +535,7 @@
     <nav class="fixed bottom-0 left-0 w-full z-40
                 flex justify-around items-center
                 px-4 pb-7 pt-3
-                glass bg-surface/80 border-t border-outline-variant/20">
+                bg-surface-container-lowest border-t border-outline-variant/30">
         <a href="index.html"
             class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150">
             <span class="material-symbols-outlined text-[22px]">group</span>

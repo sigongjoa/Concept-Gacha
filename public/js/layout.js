@@ -158,7 +158,7 @@ const Layout = {
         if (!toast) {
             toast = document.createElement('div');
             toast.id = 'toast';
-            toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold korean-text shadow-xl transition-all duration-300 z-[100] opacity-0';
+            toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl bg-inverse-surface text-inverse-on-surface font-bold korean-text shadow-xl transition-all duration-300 z-[100] opacity-0';
             document.body.appendChild(toast);
         }
         toast.textContent = msg;

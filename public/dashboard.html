@@ -15,37 +15,38 @@
             theme: {
                 extend: {
                     colors: {
-                        'surface':                    '#f7f9fb',
-                        'surface-dim':                '#d8dadc',
+                        'surface':                    '#fdf6ec',
+                        'surface-dim':                '#e8d9c8',
                         'surface-container-lowest':   '#ffffff',
-                        'surface-container-low':      '#f2f4f6',
-                        'surface-container':          '#eceef0',
-                        'surface-container-high':     '#e6e8ea',
-                        'surface-container-highest':  '#e0e3e5',
-                        'primary':                    '#9d4300',
-                        'primary-container':          '#f97316',
-                        'primary-fixed':              '#ffdbca',
-                        'primary-fixed-dim':          '#ffb690',
+                        'surface-container-low':      '#f5ead8',
+                        'surface-container':          '#ecdece',
+                        'surface-container-high':     '#e2d0be',
+                        'surface-container-highest':  '#d8c4b0',
+                        'primary':                    '#c23800',
+                        'primary-container':          '#ff6535',
+                        'primary-fixed':              '#ffe8d9',
+                        'primary-fixed-dim':          '#ffb899',
                         'on-primary':                 '#ffffff',
-                        'secondary':                  '#4648d4',
-                        'secondary-container':        '#6063ee',
-                        'secondary-fixed':            '#e1e0ff',
-                        'secondary-fixed-dim':        '#c0c1ff',
+                        'on-primary-container':       '#5c1500',
+                        'secondary':                  '#2a2b96',
+                        'secondary-container':        '#5254e8',
+                        'secondary-fixed':            '#e0e1ff',
+                        'secondary-fixed-dim':        '#bcbeff',
                         'on-secondary':               '#ffffff',
-                        'on-secondary-container':     '#fffbff',
-                        'tertiary':                   '#006c49',
-                        'tertiary-container':         '#00b07a',
+                        'on-secondary-container':     '#eeeeff',
+                        'tertiary':                   '#00785a',
+                        'tertiary-container':         '#00c893',
                         'on-tertiary':                '#ffffff',
-                        'on-tertiary-container':      '#003b26',
+                        'on-tertiary-container':      '#003828',
                         'error':                      '#ba1a1a',
                         'error-container':            '#ffdad6',
                         'on-error-container':         '#93000a',
-                        'on-surface':                 '#191c1e',
-                        'on-surface-variant':         '#584237',
-                        'outline':                    '#8c7164',
-                        'outline-variant':            '#e0c0b1',
-                        'inverse-surface':            '#2d3133',
-                        'inverse-on-surface':         '#eff1f3',
+                        'on-surface':                 '#1c0a00',
+                        'on-surface-variant':         '#5c3820',
+                        'outline':                    '#9c6840',
+                        'outline-variant':            '#deb896',
+                        'inverse-surface':            '#341c08',
+                        'inverse-on-surface':         '#f5ead8',
                     },
                     fontFamily: {
                         'headline': ['Plus Jakarta Sans', 'Noto Sans KR', 'sans-serif'],
@@ -63,7 +64,6 @@
 
     <style>
         body { font-family: 'Inter', 'Noto Sans KR', sans-serif; min-height: 100dvh; }
-        .glass { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
 
         /* 히트맵 셀 */
         .heatmap-cell {
@@ -97,7 +97,7 @@
 <body class="bg-surface font-body text-on-surface overflow-x-hidden">
 
     <!-- TopAppBar -->
-    <header class="fixed top-0 w-full z-50 glass bg-surface/80 border-b border-outline-variant/20">
+    <header class="fixed top-0 w-full z-50 bg-surface-container-lowest border-b border-outline-variant/30">
         <div class="flex justify-between items-center px-5 h-14 max-w-2xl mx-auto">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center flex-shrink-0">
@@ -117,39 +117,42 @@
     <main class="pt-16 pb-32 px-4 max-w-lg mx-auto space-y-4">
 
         <!-- ── 오늘의 학습 카드 ── -->
-        <section class="mt-4 bg-surface-container-lowest rounded-xl p-5 shadow-[0px_4px_20px_rgba(88,66,55,0.09)]">
-            <div class="flex items-start justify-between mb-4">
-                <div>
-                    <p class="text-[10px] font-bold text-primary uppercase tracking-[0.12em] font-label mb-1">오늘의 학습</p>
-                    <div class="flex items-baseline gap-1.5">
-                        <span class="text-4xl font-black font-headline text-on-surface" id="drawnCount">—</span>
-                        <span class="text-lg text-outline font-bold">/</span>
-                        <span class="text-2xl font-bold text-outline font-headline" id="targetCount">10</span>
-                    </div>
-                </div>
-                <div class="text-right">
+        <section class="mt-4 bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0px_2px_12px_rgba(28,10,0,0.07)]">
+            <!-- Top accent stripe -->
+            <div class="h-1 bg-primary-fixed"></div>
+            <div class="p-5">
+                <!-- Label + streak row -->
+                <div class="flex items-center justify-between mb-3">
+                    <p class="text-[11px] font-bold text-outline uppercase tracking-[0.12em] font-label">오늘의 학습</p>
                     <div id="streakBadge"
-                        class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary-fixed text-primary text-sm font-bold font-label"
-                        aria-label="연속 학습일">
+                         class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-fixed/60 text-primary text-[11px] font-bold font-label"
+                         aria-label="연속 학습일">
                         <span aria-hidden="true">🔥</span> <span id="streakCount">0</span>일 연속
                     </div>
                 </div>
-            </div>
 
-            <!-- 프로그레스 바 -->
-            <div class="w-full h-3 rounded-full bg-surface-container-high overflow-hidden mb-2">
-                <div id="progressBar"
-                    class="h-full rounded-full transition-all duration-700 bg-primary-container"
-                    style="width: 0%"></div>
-            </div>
-            <div class="flex justify-between items-center">
-                <p class="text-xs text-outline font-label" id="progressLabel">오늘 학습을 시작해보세요!</p>
-                <p class="text-xs font-bold text-primary font-label" id="progressPct">0%</p>
-            </div>
+                <!-- Progress bar -->
+                <div class="w-full h-2.5 rounded-full bg-surface-container-high overflow-hidden mb-3">
+                    <div id="progressBar"
+                         class="h-full rounded-full transition-all duration-700 bg-primary"
+                         style="width: 0%"></div>
+                </div>
 
-            <!-- 완료 배너 -->
-            <div id="completedBanner" class="hidden mt-3 p-3 rounded-lg text-center bg-tertiary-container/20 border border-tertiary/20">
-                <p class="text-sm font-bold text-tertiary"><span aria-hidden="true">🎉</span> 오늘 목표 달성! 내일 또 만나요</p>
+                <!-- Stats row -->
+                <div class="flex items-center justify-between">
+                    <p class="text-sm text-on-surface-variant font-label" id="progressLabel">오늘 학습을 시작해보세요!</p>
+                    <div class="flex items-baseline gap-1 font-headline">
+                        <span class="text-2xl font-black text-on-surface" id="drawnCount">—</span>
+                        <span class="text-sm text-outline font-bold">/</span>
+                        <span class="text-base font-bold text-outline" id="targetCount">10</span>
+                        <span class="text-xs text-outline font-label ml-0.5">장</span>
+                    </div>
+                </div>
+
+                <!-- 완료 배너 -->
+                <div id="completedBanner" class="hidden mt-3 p-3 rounded-lg text-center bg-tertiary-container/20 border border-tertiary/20">
+                    <p class="text-sm font-bold text-tertiary"><span aria-hidden="true">🎉</span> 오늘 목표 달성! 내일 또 만나요</p>
+                </div>
             </div>
         </section>
 
@@ -220,7 +223,7 @@
     <nav class="fixed bottom-0 left-0 w-full z-40
                 flex justify-around items-center
                 px-4 pb-7 pt-3
-                glass bg-surface/80 border-t border-outline-variant/20"
+                bg-surface-container-lowest border-t border-outline-variant/30"
          aria-label="주요 메뉴">
         <a href="index.html"
             class="flex flex-col items-center justify-center text-outline p-2 hover:text-primary transition-all active:scale-90 duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg">
