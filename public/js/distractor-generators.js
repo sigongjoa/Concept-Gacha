@@ -292,8 +292,8 @@ function toLatex(text) {
         .replace(/⁸/g, '^{8}').replace(/⁹/g, '^{9}').replace(/⁰/g, '^{0}');
     // 연산자
     s = s
-        .replace(/×/g, '\\times').replace(/÷/g, '\\div')
-        .replace(/·/g, '\\cdot').replace(/±/g, '\\pm')
+        .replace(/×/g, ' \\times ').replace(/÷/g, ' \\div ')
+        .replace(/·/g, ' \\cdot ').replace(/±/g, ' \\pm ')
         .replace(/≤/g, '\\leq').replace(/≥/g, '\\geq')
         .replace(/≠/g, '\\neq').replace(/≈/g, '\\approx')
         .replace(/∞/g, '\\infty');
