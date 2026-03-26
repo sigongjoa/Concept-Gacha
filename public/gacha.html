@@ -206,9 +206,22 @@
             pointer-events: none;
         }
         .mcq-btn:disabled { pointer-events: none; opacity: 0.5; }
+        .mcq-btn.selected {
+            border-color: #2a2b96;
+            background: rgba(42,43,150,0.10);
+            color: #2a2b96;
+        }
+        .mcq-btn.missed {
+            border-color: #0057a8;
+            background: rgba(0,87,168,0.08);
+            color: #0057a8;
+            pointer-events: none;
+        }
         .dark .mcq-btn { color: #deb896; border-color: #5c3820; }
         .dark .mcq-btn.correct { border-color: #00c893; background: rgba(0,200,147,0.14); color: #5de8b8; }
         .dark .mcq-btn.wrong   { border-color: #ff8a80; background: rgba(186,26,26,0.15); color: #ff8a80; }
+        .dark .mcq-btn.selected { border-color: #5254e8; background: rgba(82,84,232,0.15); color: #c0c1ff; }
+        .dark .mcq-btn.missed   { border-color: #5ab0ff; background: rgba(90,176,255,0.10); color: #5ab0ff; }
 
         .blank-slot {
             display: inline-block;
@@ -373,6 +386,12 @@
                     <!-- MCQ 선택지 (distractors 있을 때) -->
                     <div class="hidden" id="mcqGrid">
                         <div class="flex flex-col gap-2" id="mcqChoices"></div>
+                        <!-- 다중정답 확인 버튼 (isMulti 모드일 때만 표시) -->
+                        <button id="mcqSubmitBtn"
+                            class="hidden w-full mt-2 py-3 rounded-lg bg-primary text-on-primary font-bold text-sm
+                                   transition-all active:scale-[0.98] hover:opacity-90 focus-visible:outline-none
+                                   focus-visible:ring-2 focus-visible:ring-primary"
+                            onclick="submitMultiAnswer()">확인</button>
                     </div>
 
                     <!-- 정답 보기 버튼 (distractors 없을 때 fallback) -->
@@ -936,7 +955,13 @@
                 renderMath(qTxt, card.question || '(질문 없음)');
             }
 
-            renderMath(document.getElementById('cardAnswer'), card.answer || '-');
+            // 정답 표시 (다중정답 배열이면 bullet list, 아니면 단일)
+            if (Array.isArray(card.answers) && card.answers.length > 1) {
+                const el = document.getElementById('cardAnswer');
+                el.innerHTML = card.answers.map(a => `• ${a}`).join('<br>');
+            } else {
+                renderMath(document.getElementById('cardAnswer'), card.answer || '-');
+            }
 
             // 상자 accent bar 색상 업데이트
             document.getElementById('boxAccentBar').style.background = BOX_ACCENT_COLORS[card.box] || '#d8dadc';
@@ -953,18 +978,36 @@
             if (mcqResult) {
                 // MCQ 모드: 선택지 그리드 표시
                 mcqChoices.innerHTML = '';
-                // "25 — 설명" 타입: answerBox엔 전체 설명, 선택지엔 숫자만
+                const mcqSubmitBtn = document.getElementById('mcqSubmitBtn');
+
                 if (mcqResult.fullAnswer) {
                     renderMath(document.getElementById('cardAnswer'), mcqResult.fullAnswer);
                 }
-                mcqResult.choices.forEach(choice => {
-                    const btn = document.createElement('button');
-                    btn.className = 'mcq-btn';
-                    renderMath(btn, choice.replace(/\s*\([^)]*\)/g, '').trim());
-                    btn.dataset.value = choice;
-                    btn.onclick = () => handleMcqChoice(btn, choice, mcqResult.correctAnswer, mcqChoices);
-                    mcqChoices.appendChild(btn);
-                });
+
+                if (mcqResult.isMulti) {
+                    // 다중정답 모드: 체크박스 스타일 토글 버튼 + 확인 버튼
+                    mcqResult.choices.forEach(choice => {
+                        const btn = document.createElement('button');
+                        btn.className = 'mcq-btn';
+                        renderMath(btn, choice);
+                        btn.dataset.value = choice;
+                        btn.onclick = () => btn.classList.toggle('selected');
+                        mcqChoices.appendChild(btn);
+                    });
+                    mcqSubmitBtn.classList.remove('hidden');
+                } else {
+                    // 단일정답 모드 (기존)
+                    mcqResult.choices.forEach(choice => {
+                        const btn = document.createElement('button');
+                        btn.className = 'mcq-btn';
+                        renderMath(btn, choice.replace(/\s*\([^)]*\)/g, '').trim());
+                        btn.dataset.value = choice;
+                        btn.onclick = () => handleMcqChoice(btn, choice, mcqResult.correctAnswer, mcqChoices);
+                        mcqChoices.appendChild(btn);
+                    });
+                    mcqSubmitBtn.classList.add('hidden');
+                }
+
                 mcqGrid.classList.remove('hidden');
                 showAnswerBtn.classList.add('hidden');
             } else {
@@ -1196,6 +1239,56 @@
             btn.setAttribute('aria-label', btn.textContent.replace(icon.textContent, '').trim() + (type === 'correct' ? ' (정답)' : ' (오답)'));
         }
 
+        // 다중정답 모드 제출 처리
+        function submitMultiAnswer() {
+            const mcqChoices  = document.getElementById('mcqChoices');
+            const mcqSubmitBtn = document.getElementById('mcqSubmitBtn');
+            if (!currentCard || !Array.isArray(currentCard.answers)) return;
+
+            const correctSet  = new Set(currentCard.answers.map(a => a.trim()));
+            const selectedSet = new Set(
+                [...mcqChoices.querySelectorAll('.mcq-btn.selected')].map(b => b.dataset.value.trim())
+            );
+            const isCorrect = selectedSet.size === correctSet.size &&
+                [...correctSet].every(c => selectedSet.has(c));
+
+            mcqChoices.querySelectorAll('.mcq-btn').forEach(b => {
+                b.disabled = true;
+                const val        = b.dataset.value.trim();
+                const inCorrect  = correctSet.has(val);
+                const inSelected = selectedSet.has(val);
+
+                b.classList.remove('selected');
+                if (inCorrect && inSelected) {
+                    b.classList.add('correct');
+                    _addMcqIcon(b, 'correct');
+                } else if (!inCorrect && inSelected) {
+                    b.classList.add('wrong');
+                    _addMcqIcon(b, 'wrong');
+                } else if (inCorrect && !inSelected) {
+                    // 놓친 정답 — 파란 테두리
+                    b.classList.add('missed');
+                    _addMcqIcon(b, 'correct');
+                }
+            });
+            mcqSubmitBtn.classList.add('hidden');
+
+            document.getElementById('answerBox').classList.remove('hidden');
+            _showExplanation(currentCard);
+            _mcqCorrect = isCorrect;
+
+            const hasPractice = currentCard && currentCard._inferredTopic;
+            if (hasPractice) {
+                _setPracticeActive(true);
+                setTimeout(() => {
+                    document.getElementById('practiceSection')
+                        .scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 300);
+            } else {
+                document.getElementById('feedbackBtns').classList.remove('hidden');
+            }
+        }
+
         function handleMcqChoice(btn, selected, correct, container) {
             // 모든 버튼 비활성화
             container.querySelectorAll('.mcq-btn').forEach(b => b.disabled = true);
@@ -1257,6 +1350,7 @@
                 document.getElementById('answerBox').classList.add('hidden');
                 document.getElementById('showAnswerBtn').classList.add('hidden');
                 document.getElementById('mcqGrid').classList.add('hidden');
+                document.getElementById('mcqSubmitBtn').classList.add('hidden');
                 document.getElementById('feedbackBtns').classList.add('hidden');
                 document.getElementById('cardExplanation').classList.add('hidden');
                 document.getElementById('boxAccentBar').style.background = '#e0c0b1';

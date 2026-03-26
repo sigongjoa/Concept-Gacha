@@ -272,6 +272,20 @@ function pickBestSubBank(bankEntry, card) {
  *   null이면 distractors 생성 불가 → 기존 "정답 보기" 방식 사용
  */
 function getDistractors(card, count = 5) {
+    // 다중정답 모드: card.answers 배열이 2개 이상이면 N:M 모드
+    if (Array.isArray(card.answers) && card.answers.length > 1) {
+        const corrects = card.answers.map(a => String(a).trim()).filter(Boolean);
+        const pool = Array.isArray(card.distractors)
+            ? card.distractors.map(d => String(d).trim()).filter(d => d && !corrects.includes(d))
+            : [];
+        if (pool.length < 1) return null;
+        const wrongCount = Math.min(pool.length, Math.max(count - corrects.length, 1));
+        const shuffledPool = pool.slice().sort(() => Math.random() - 0.5);
+        const choices = [...corrects, ...shuffledPool.slice(0, wrongCount)]
+            .sort(() => Math.random() - 0.5);
+        return { choices, correctAnswers: corrects, isMulti: true, source: 'db' };
+    }
+
     const correct = (card.answer || '').trim();
     if (!correct) return null;
 
