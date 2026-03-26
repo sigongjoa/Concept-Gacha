@@ -9,6 +9,10 @@ node_modules/
 
 # Supabase credentials (use template instead)
 
+# Playwright 테스트 픽스처 (PIN, API key 포함 — example.js 만 커밋)
+tests/fixtures.local.js
+tests/*.local.js
+
 # Build output (if using Vite)
 dist/duction
 
@@ -35,3 +39,14 @@ Thumbs.db
 *.tmp
 *.temp
 .claude/
+
+# Playwright 결과물
+playwright-report/
+test-results/
+
+# Print 출력물
+print/*.png
+print/*.pdf
+
+# Skills lock
+skills-lock.json
