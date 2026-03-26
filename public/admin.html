@@ -8,6 +8,9 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -842,6 +845,22 @@
 
         const BOX_COLORS = { 1:'#e0c0b1', 2:'#f0c060', 3:'#80c8a0', 4:'#6098e8', 5:'#c060c0' };
 
+        // KaTeX 렌더링 헬퍼
+        function renderMath(el, text) {
+            el.textContent = text || '';
+            if (typeof renderMathInElement !== 'undefined') {
+                try {
+                    renderMathInElement(el, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '$',  right: '$',  display: false },
+                        ],
+                        throwOnError: false,
+                    });
+                } catch(e) {}
+            }
+        }
+
         function openPreview(card) {
             _pvCard = card;
             document.getElementById('previewOverlay').classList.add('open');
@@ -863,7 +882,7 @@
             // 카테고리
             document.getElementById('pvCategory').textContent = card.topic || '개념 카드';
             // 질문
-            document.getElementById('pvQuestion').textContent = card.question || '(질문 없음)';
+            renderMath(document.getElementById('pvQuestion'), card.question || '(질문 없음)');
 
             // 초기화
             document.getElementById('pvAnswerBox').classList.add('hidden');
@@ -875,9 +894,14 @@
             // 정답 표시 (다중 or 단일)
             const pvAnswer = document.getElementById('pvAnswer');
             if (Array.isArray(card.answers) && card.answers.length > 1) {
-                pvAnswer.innerHTML = card.answers.map(a => `• ${a}`).join('<br>');
+                pvAnswer.innerHTML = '';
+                card.answers.forEach(a => {
+                    const line = document.createElement('div');
+                    renderMath(line, '• ' + a);
+                    pvAnswer.appendChild(line);
+                });
             } else {
-                pvAnswer.textContent = card.answer || '-';
+                renderMath(pvAnswer, card.answer || '-');
             }
 
             // MCQ 생성
@@ -889,7 +913,7 @@
                     mcqResult.choices.forEach(c => {
                         const btn = document.createElement('button');
                         btn.className = 'prev-mcq-btn';
-                        btn.textContent = c;
+                        renderMath(btn, c);
                         btn.dataset.value = c;
                         btn.onclick = () => btn.classList.toggle('selected');
                         choices.appendChild(btn);
@@ -899,7 +923,7 @@
                     mcqResult.choices.forEach(c => {
                         const btn = document.createElement('button');
                         btn.className = 'prev-mcq-btn';
-                        btn.textContent = c;
+                        renderMath(btn, c);
                         btn.dataset.value = c;
                         btn.onclick = () => handlePreviewMcq(btn, c, mcqResult.correctAnswer);
                         choices.appendChild(btn);
