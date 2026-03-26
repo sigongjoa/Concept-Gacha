@@ -355,10 +355,14 @@ function getDistractors(card, count = 5) {
         pool = pool.map(d => toLatex(d));
     }
 
-    const mcqCorrect = correct;
+    // LaTeX 카드: 정답도 toLatex() 변환 (pool 항목과 폰트 통일)
+    const mcqCorrect = latex ? toLatex(correct) : correct;
 
     // 중복 제거, 정답 제외, 셔플
-    const unique = [...new Set(pool)].filter(d => d !== mcqCorrect);
+    // 정규화 비교: 공백 제거 + ^{n} → ^n 통일 (LaTeX 표기 불일치 방지)
+    const normStr = s => s.replace(/\s+/g, '').replace(/\^\{(\d+)\}/g, '^$1');
+    const correctNorm = normStr(mcqCorrect);
+    const unique = [...new Set(pool)].filter(d => normStr(d) !== correctNorm);
     const shuffled = unique.sort(() => Math.random() - 0.5);
 
     const selected = shuffled.slice(0, count - 1);
