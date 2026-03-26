@@ -356,7 +356,9 @@ function getDistractors(card, count = 5) {
     }
 
     // LaTeX 카드: 정답도 toLatex() 변환 (pool 항목과 폰트 통일)
-    const mcqCorrect = latex ? toLatex(correct) : correct;
+    // 단, 한국어 포함 정답은 KaTeX 파싱 불가 → 변환 생략
+    const hasKorean = /[\uAC00-\uD7AF\u3130-\u318F]/.test(correct);
+    const mcqCorrect = (latex && !hasKorean) ? toLatex(correct) : correct;
 
     // 중복 제거, 정답 제외, 셔플
     // 정규화 비교: 공백 제거 + ^{n} → ^n 통일 (LaTeX 표기 불일치 방지)
