@@ -271,7 +271,41 @@ function pickBestSubBank(bankEntry, card) {
  * @returns {{ choices: string[], correctAnswer: string, source: string } | null}
  *   null이면 distractors 생성 불가 → 기존 "정답 보기" 방식 사용
  */
+// ── 카드가 LaTeX 수식 카드인지 판별 ─────────────────────────────────────────
+function isLatexCard(card) {
+    return /\$/.test((card.question || '') + (card.answer || ''));
+}
+
+// ── 유니코드 수식 → LaTeX 변환 (뱅크 항목을 수식 카드에 맞게 통일) ───────────
+// plain distractor bank 항목을 LaTeX 카드의 MCQ 보기로 쓸 때 사용
+function toLatex(text) {
+    if (!text) return text;
+    const t = String(text).trim();
+    if (t.startsWith('$')) return t;  // 이미 LaTeX
+    // 유니코드 위첨자 (복합 먼저)
+    let s = t
+        .replace(/ᵐ\+ⁿ/g, '^{m+n}').replace(/ᵐ⁻ⁿ/g, '^{m-n}')
+        .replace(/ᵐⁿ/g, '^{mn}').replace(/ᵐ/g, '^{m}')
+        .replace(/ⁿ/g, '^{n}')
+        .replace(/²/g, '^{2}').replace(/³/g, '^{3}').replace(/⁴/g, '^{4}')
+        .replace(/⁵/g, '^{5}').replace(/⁶/g, '^{6}').replace(/⁷/g, '^{7}')
+        .replace(/⁸/g, '^{8}').replace(/⁹/g, '^{9}').replace(/⁰/g, '^{0}');
+    // 연산자
+    s = s
+        .replace(/×/g, '\\times').replace(/÷/g, '\\div')
+        .replace(/·/g, '\\cdot').replace(/±/g, '\\pm')
+        .replace(/≤/g, '\\leq').replace(/≥/g, '\\geq')
+        .replace(/≠/g, '\\neq').replace(/≈/g, '\\approx')
+        .replace(/∞/g, '\\infty');
+    // √ → \sqrt
+    s = s.replace(/√\(([^)]+)\)/g, '\\sqrt{$1}')
+         .replace(/√([a-zA-Z0-9])/g, '\\sqrt{$1}');
+    return `$${s}$`;
+}
+
 function getDistractors(card, count = 5) {
+    const latex = isLatexCard(card);
+
     // 다중정답 모드: card.answers 배열이 2개 이상이면 N:M 모드
     if (Array.isArray(card.answers) && card.answers.length > 1) {
         const corrects = card.answers.map(a => String(a).trim()).filter(Boolean);
@@ -313,35 +347,20 @@ function getDistractors(card, count = 5) {
     if (pool.length < 3) {
         const patternPool = generateFromPattern(correct);
         pool = [...pool, ...patternPool];
-
-        // "25 — 설명..." 형태: 앞 숫자로 numeric distractors 보충
-        const leadingNum = correct.match(/^(-?\d+(?:,\d+)*(?:\.\d+)?)\s*[—\-–]/);
-        if (leadingNum && pool.length < 3) {
-            const n = parseFloat(leadingNum[1].replace(/,/g, ''));
-            if (!isNaN(n)) {
-                const numPool = [n+1,n-1,n*2,n/2,n+2,n-2,n+5,n-5,n*3,n+10]
-                    .filter(v => v !== n && Number.isFinite(v))
-                    .map(v => Number.isInteger(v) ? String(v) : v.toFixed(1));
-                pool = [...pool, ...numPool];
-            }
-        }
-
-        if (source === 'pattern' && pool.length < 2) return null; // 생성 불가
+        if (source === 'pattern' && pool.length < 2) return null;
     }
 
-    // "NUM — 설명" 패턴: MCQ 선택지는 숫자만 표시 (answerBox엔 전체 표시)
-    let mcqCorrect = correct;
-    const leadingNumDisplay = correct.match(/^(-?\d+(?:,\d+)*(?:\.\d+)?)\s*[—\-–]/);
-    if (leadingNumDisplay && pool.some(d => /^-?\d/.test(d))) {
-        mcqCorrect = leadingNumDisplay[1];
-        pool = pool.filter(d => /^-?\d/.test(d) || d === mcqCorrect);
+    // LaTeX 카드: pool 항목을 모두 LaTeX로 통일 (시각 일관성)
+    if (latex) {
+        pool = pool.map(d => toLatex(d));
     }
+
+    const mcqCorrect = correct;
 
     // 중복 제거, 정답 제외, 셔플
     const unique = [...new Set(pool)].filter(d => d !== mcqCorrect);
     const shuffled = unique.sort(() => Math.random() - 0.5);
 
-    // count-1개 오답 + 정답 → 셔플
     const selected = shuffled.slice(0, count - 1);
     const choices = [...selected, mcqCorrect].sort(() => Math.random() - 0.5);
 

@@ -980,10 +980,6 @@
                 mcqChoices.innerHTML = '';
                 const mcqSubmitBtn = document.getElementById('mcqSubmitBtn');
 
-                if (mcqResult.fullAnswer) {
-                    renderMath(document.getElementById('cardAnswer'), mcqResult.fullAnswer);
-                }
-
                 if (mcqResult.isMulti) {
                     // 다중정답 모드: 체크박스 스타일 토글 버튼 + 확인 버튼
                     mcqResult.choices.forEach(choice => {
@@ -1000,7 +996,7 @@
                     mcqResult.choices.forEach(choice => {
                         const btn = document.createElement('button');
                         btn.className = 'mcq-btn';
-                        renderMath(btn, choice.replace(/\s*\([^)]*\)/g, '').trim());
+                        renderMath(btn, choice);
                         btn.dataset.value = choice;
                         btn.onclick = () => handleMcqChoice(btn, choice, mcqResult.correctAnswer, mcqChoices);
                         mcqChoices.appendChild(btn);
