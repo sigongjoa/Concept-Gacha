@@ -25,6 +25,20 @@ function requireSB(res) {
   if (!supabase) { res.status(503).json({ error: 'Supabase 환경변수 미설정 (.env 확인)' }); return false; }
   return true;
 }
+
+// KST (UTC+9) 기준 오늘 날짜 YYYY-MM-DD
+function todayKST() {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+}
+
+// 주어진 날짜(YYYY-MM-DD)가 속한 주의 월요일 반환 (UTC 기준 날짜 연산)
+function mondayOfWeek(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  const day = date.getUTCDay();
+  date.setUTCDate(d - (day === 0 ? 6 : day - 1));
+  return date.toISOString().slice(0, 10);
+}
 function sbCheck({ data, error }) {
   if (error) throw new Error(error.message);
   return data;
@@ -532,27 +546,62 @@ app.get('/api/students/:studentId/session/history', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 이번 주 현황
+// 이번 주(또는 지정 주) 현황
 app.get('/api/students/:studentId/session/weekly', async (req, res) => {
   if (!requireSB(res)) return;
-  const today = new Date();
-  const day = today.getDay();
-  const monday = new Date(today); monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
-  const mondayStr = monday.toISOString().split('T')[0];
-  const sundayStr = new Date(monday.getTime() + 6 * 86400000).toISOString().split('T')[0];
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = todayKST();
+  const mondayStr = mondayOfWeek(req.query.week || todayStr);
+  const [my, mm, md] = mondayStr.split('-').map(Number);
+  const sundayDate = new Date(Date.UTC(my, mm - 1, md + 6));
+  const sundayStr = sundayDate.toISOString().slice(0, 10);
   try {
     const { data } = await supabase.from('daily_sessions')
-      .select('session_date, completed').eq('student_id', req.params.studentId)
+      .select('session_date, cards_drawn, cards_target, completed')
+      .eq('student_id', req.params.studentId)
       .gte('session_date', mondayStr).lte('session_date', sundayStr);
-    const map = new Map((data || []).map(s => [s.session_date, s.completed]));
+    const map = new Map((data || []).map(s => [s.session_date, s]));
     const week = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(monday); d.setDate(monday.getDate() + i);
-      const ds = d.toISOString().split('T')[0];
-      if (ds > todayStr) return null;
-      return map.get(ds) === true;
+      const d = new Date(Date.UTC(my, mm - 1, md + i));
+      const ds = d.toISOString().slice(0, 10);
+      if (ds > todayStr) return { date: ds, future: true };
+      const s = map.get(ds);
+      if (!s) return { date: ds, not_started: true, cards_drawn: 0, cards_target: 10, completed: false };
+      return { date: ds, cards_drawn: s.cards_drawn, cards_target: s.cards_target, completed: s.completed };
     });
     res.json(week);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// 관리자용 주간 전체 학생 현황 (1쿼리로 일괄 조회)
+app.get('/api/admin/weekly-summary', async (req, res) => {
+  if (!requireSB(res)) return;
+  const todayStr = todayKST();
+  const mondayStr = mondayOfWeek(req.query.week || todayStr);
+  const [wy, wm, wd] = mondayStr.split('-').map(Number);
+  const sundayStr = new Date(Date.UTC(wy, wm - 1, wd + 6)).toISOString().slice(0, 10);
+  try {
+    const students = sbCheck(await supabase.from('students').select('id, name').order('name'));
+    const { data: sessions } = await supabase.from('daily_sessions')
+      .select('student_id, session_date, cards_drawn, cards_target, completed')
+      .in('student_id', students.map(s => s.id))
+      .gte('session_date', mondayStr).lte('session_date', sundayStr);
+    const byStudent = new Map();
+    (sessions || []).forEach(s => {
+      if (!byStudent.has(s.student_id)) byStudent.set(s.student_id, new Map());
+      byStudent.get(s.student_id).set(s.session_date, s);
+    });
+    const result = students.map(student => ({
+      student,
+      week: Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(Date.UTC(wy, wm - 1, wd + i));
+        const ds = d.toISOString().slice(0, 10);
+        if (ds > todayStr) return { date: ds, future: true };
+        const s = byStudent.get(student.id)?.get(ds);
+        if (!s) return { date: ds, not_started: true, cards_drawn: 0, cards_target: 10, completed: false };
+        return { date: ds, cards_drawn: s.cards_drawn, cards_target: s.cards_target, completed: s.completed };
+      }),
+    }));
+    res.json({ weekStart: mondayStr, weekEnd: sundayStr, students: result });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

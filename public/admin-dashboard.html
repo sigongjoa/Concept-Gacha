@@ -105,8 +105,20 @@
 
     <div class="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-5">
 
-        <!-- Date Navigator -->
-        <div class="flex items-center justify-between bg-white dark:bg-slate-900 rounded-2xl px-4 py-3 shadow-sm border border-slate-100 dark:border-slate-800">
+        <!-- View Toggle -->
+        <div class="flex gap-1 bg-white dark:bg-slate-900 rounded-2xl p-1 shadow-sm border border-slate-100 dark:border-slate-800">
+            <button id="viewDailyBtn" onclick="setView('daily')"
+                class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-bold transition-all">
+                <span class="material-symbols-outlined text-base">today</span>일별
+            </button>
+            <button id="viewWeeklyBtn" onclick="setView('weekly')"
+                class="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-bold transition-all">
+                <span class="material-symbols-outlined text-base">calendar_view_week</span>주간
+            </button>
+        </div>
+
+        <!-- Date Navigator (일별) -->
+        <div id="dailyNav" class="flex items-center justify-between bg-white dark:bg-slate-900 rounded-2xl px-4 py-3 shadow-sm border border-slate-100 dark:border-slate-800">
             <button onclick="changeDate(-1)" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-90">
                 <span class="material-symbols-outlined text-slate-500">chevron_left</span>
             </button>
@@ -115,6 +127,20 @@
                 <p id="dateSubDisplay" class="text-xs text-slate-400 font-medium"></p>
             </div>
             <button id="nextDateBtn" onclick="changeDate(1)" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-90">
+                <span class="material-symbols-outlined text-slate-500">chevron_right</span>
+            </button>
+        </div>
+
+        <!-- Week Navigator (주간) -->
+        <div id="weeklyNav" class="hidden flex items-center justify-between bg-white dark:bg-slate-900 rounded-2xl px-4 py-3 shadow-sm border border-slate-100 dark:border-slate-800">
+            <button onclick="changeWeek(-1)" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-90">
+                <span class="material-symbols-outlined text-slate-500">chevron_left</span>
+            </button>
+            <div class="text-center">
+                <p id="weekDisplay" class="font-bold text-slate-800 dark:text-slate-100"></p>
+                <p id="weekSubDisplay" class="text-xs text-slate-400 font-medium"></p>
+            </div>
+            <button id="nextWeekBtn" onclick="changeWeek(1)" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors active:scale-90">
                 <span class="material-symbols-outlined text-slate-500">chevron_right</span>
             </button>
         </div>
@@ -131,7 +157,7 @@
             </div>
             <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800 text-center">
                 <p class="text-2xl font-black text-orange-500" id="statAvgPct">—</p>
-                <p class="text-xs text-slate-400 font-medium mt-0.5">평균 달성률</p>
+                <p class="text-xs text-slate-400 font-medium mt-0.5" id="statAvgLabel">평균 달성률</p>
             </div>
         </div>
 
@@ -139,7 +165,7 @@
         <section class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
             <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center gap-2">
                 <span class="material-symbols-outlined text-orange-500 text-xl" style="font-variation-settings:'FILL' 1">group</span>
-                <h2 class="font-bold text-sm">학생별 학습 결과</h2>
+                <h2 class="font-bold text-sm" id="sectionTitle">학생별 학습 결과</h2>
             </div>
             <div id="studentList" class="divide-y divide-slate-100 dark:divide-slate-800">
                 <div class="text-center py-10 text-slate-400 text-sm">불러오는 중...</div>
@@ -158,30 +184,97 @@
             .replace(/'/g,'&#39;');
     }
 
-    // ── 날짜 ──────────────────────────────────────────────────
-    let currentDate = new Date().toISOString().slice(0, 10);
+    // ── 날짜 헬퍼 ─────────────────────────────────────────────
+    function todayKST() {
+        return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+    }
+    function mondayOfWeek(dateStr) {
+        const [y, m, d] = dateStr.split('-').map(Number);
+        const date = new Date(Date.UTC(y, m - 1, d));
+        const day = date.getUTCDay();
+        date.setUTCDate(d - (day === 0 ? 6 : day - 1));
+        return date.toISOString().slice(0, 10);
+    }
 
+    // ── 뷰 상태 ───────────────────────────────────────────────
+    let currentView = 'daily';
+    let currentDate = todayKST();
+    let currentWeek = mondayOfWeek(todayKST()); // 이번 주 월요일
+
+    function setView(view) {
+        currentView = view;
+        const isDaily = view === 'daily';
+        document.getElementById('dailyNav').classList.toggle('hidden', !isDaily);
+        document.getElementById('weeklyNav').classList.toggle('hidden', isDaily);
+        document.getElementById('statCompleted').parentElement.style.display = isDaily ? '' : 'none';
+        document.getElementById('statAvgLabel').textContent = isDaily ? '평균 달성률' : '주간 활성';
+        document.getElementById('statAvgPct').textContent = '—';
+        document.getElementById('sectionTitle').textContent = isDaily ? '학생별 학습 결과' : '학생별 주간 현황';
+
+        // 토글 버튼 스타일
+        const activeClass = ['bg-orange-500', 'text-white', 'shadow-sm'];
+        const inactiveClass = ['text-slate-500'];
+        const dailyBtn  = document.getElementById('viewDailyBtn');
+        const weeklyBtn = document.getElementById('viewWeeklyBtn');
+        if (isDaily) {
+            dailyBtn.classList.add(...activeClass);
+            dailyBtn.classList.remove(...inactiveClass);
+            weeklyBtn.classList.remove(...activeClass);
+            weeklyBtn.classList.add(...inactiveClass);
+        } else {
+            weeklyBtn.classList.add(...activeClass);
+            weeklyBtn.classList.remove(...inactiveClass);
+            dailyBtn.classList.remove(...activeClass);
+            dailyBtn.classList.add(...inactiveClass);
+        }
+        loadDashboard();
+    }
+
+    // ── 일별 탐색 ─────────────────────────────────────────────
     function changeDate(delta) {
-        const d = new Date(currentDate + 'T00:00:00');
-        d.setDate(d.getDate() + delta);
-        const next = d.toISOString().slice(0, 10);
-        const today = new Date().toISOString().slice(0, 10);
-        if (next > today) return;
+        const [y, m, d] = currentDate.split('-').map(Number);
+        const next = new Date(Date.UTC(y, m - 1, d + delta)).toISOString().slice(0, 10);
+        if (next > todayKST()) return;
         currentDate = next;
         updateDateUI();
         loadDashboard();
     }
 
     function updateDateUI() {
-        const d = new Date(currentDate + 'T00:00:00');
-        const today = new Date().toISOString().slice(0, 10);
-        const isToday = currentDate === today;
+        const [y, m, d] = currentDate.split('-').map(Number);
+        const dt = new Date(Date.UTC(y, m - 1, d));
+        const isToday = currentDate === todayKST();
         document.getElementById('dateDisplay').textContent =
-            d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+            dt.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
         document.getElementById('dateSubDisplay').textContent =
-            d.toLocaleDateString('ko-KR', { weekday: 'long' }) + (isToday ? ' · 오늘' : '');
+            dt.toLocaleDateString('ko-KR', { weekday: 'long', timeZone: 'UTC' }) + (isToday ? ' · 오늘' : '');
         document.getElementById('nextDateBtn').disabled = isToday;
         document.getElementById('nextDateBtn').style.opacity = isToday ? '0.3' : '1';
+    }
+
+    // ── 주간 탐색 ─────────────────────────────────────────────
+    function changeWeek(delta) {
+        const [y, m, d] = currentWeek.split('-').map(Number);
+        const next = new Date(Date.UTC(y, m - 1, d + delta * 7)).toISOString().slice(0, 10);
+        const thisMonday = mondayOfWeek(todayKST());
+        if (next > thisMonday) return;
+        currentWeek = next;
+        updateWeekUI();
+        loadDashboard();
+    }
+
+    function updateWeekUI() {
+        const [wy, wm, wd] = currentWeek.split('-').map(Number);
+        const mon = new Date(Date.UTC(wy, wm - 1, wd));
+        const sun = new Date(Date.UTC(wy, wm - 1, wd + 6));
+        const fmt = d => d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', timeZone: 'UTC' });
+        const thisMonday = mondayOfWeek(todayKST());
+        const isThisWeek = currentWeek === thisMonday;
+        document.getElementById('weekDisplay').textContent = `${fmt(mon)} ~ ${fmt(sun)}`;
+        document.getElementById('weekSubDisplay').textContent =
+            wy + '년' + (isThisWeek ? ' · 이번 주' : '');
+        document.getElementById('nextWeekBtn').disabled = isThisWeek;
+        document.getElementById('nextWeekBtn').style.opacity = isThisWeek ? '0.3' : '1';
     }
 
     // ── 인증 ──────────────────────────────────────────────────
@@ -200,6 +293,10 @@
         document.getElementById('pinGate').classList.add('hidden');
         document.getElementById('mainContent').classList.remove('hidden');
         updateDateUI();
+        updateWeekUI();
+        // 일별 뷰 초기 스타일
+        document.getElementById('viewDailyBtn').classList.add('bg-orange-500', 'text-white', 'shadow-sm');
+        document.getElementById('viewWeeklyBtn').classList.add('text-slate-500');
         loadDashboard();
     }
 
@@ -253,6 +350,8 @@
 
     // ── 대시보드 ───────────────────────────────────────────────
     async function loadDashboard() {
+        if (currentView === 'weekly') return loadWeeklySummary();
+
         const list = document.getElementById('studentList');
         list.innerHTML = '<div class="text-center py-10 text-slate-400 text-sm">불러오는 중...</div>';
         ['statTotal','statCompleted','statAvgPct'].forEach(id => document.getElementById(id).textContent = '—');
@@ -268,7 +367,6 @@
                 students.map(async s => ({ student: s, ...(await API.getResultsByDate(s.id, currentDate)) }))
             );
 
-            // 통계
             const completed = allResults.filter(r => r.session?.completed).length;
             const started   = allResults.filter(r => r.session);
             const avgPct    = started.length === 0 ? null
@@ -285,6 +383,90 @@
         } catch (e) {
             list.innerHTML = `<div class="text-center py-10 text-red-400 text-sm">로드 실패: ${escHtml(e.message)}</div>`;
         }
+    }
+
+    async function loadWeeklySummary() {
+        const list = document.getElementById('studentList');
+        list.innerHTML = '<div class="text-center py-10 text-slate-400 text-sm">불러오는 중...</div>';
+        ['statTotal','statAvgPct'].forEach(id => document.getElementById(id).textContent = '—');
+
+        try {
+            const data = await API.getAdminWeeklySummary(currentWeek);
+            const { students, weekStart } = data;
+
+            // 통계: 주간 7일 중 1일이라도 완료한 학생 수
+            const activeCount = students.filter(r => r.week.some(d => d && !d.future && d.completed)).length;
+            document.getElementById('statTotal').textContent  = students.length;
+            document.getElementById('statAvgPct').textContent = activeCount + '명 활성';
+
+            renderWeeklyList(students, weekStart);
+        } catch (e) {
+            list.innerHTML = `<div class="text-center py-10 text-red-400 text-sm">로드 실패: ${escHtml(e.message)}</div>`;
+        }
+    }
+
+    function renderWeeklyList(students, weekStart) {
+        const list = document.getElementById('studentList');
+        const DOW = ['월', '화', '수', '목', '금', '토', '일'];
+
+        // 헤더 행 (요일)
+        const header = `
+        <div class="flex items-center gap-2 px-5 py-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30">
+            <div class="w-9 flex-shrink-0"></div>
+            <div class="w-20 sm:w-28 flex-shrink-0"></div>
+            <div class="flex flex-1 gap-1">
+                ${DOW.map(d => `<div class="flex-1 text-center text-xs font-bold text-slate-400">${d}</div>`).join('')}
+            </div>
+            <div class="w-14 flex-shrink-0 text-right text-xs font-bold text-slate-400">합계</div>
+        </div>`;
+
+        const rows = students.map(({ student, week }) => {
+            const totalDrawn  = week.filter(d => d && !d.future).reduce((s, d) => s + (d.cards_drawn || 0), 0);
+            const completedDays = week.filter(d => d && !d.future && d.completed).length;
+
+            const cells = week.map((day, i) => {
+                if (!day || day.future) {
+                    return `<div class="flex-1 flex items-center justify-center">
+                        <div class="w-7 h-7 rounded-full border-2 border-dashed border-slate-200 dark:border-slate-700"></div>
+                    </div>`;
+                }
+                if (day.not_started) {
+                    return `<div class="flex-1 flex items-center justify-center">
+                        <div class="w-7 h-7 rounded-full border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"></div>
+                    </div>`;
+                }
+                const pct = Math.min(100, Math.round((day.cards_drawn / (day.cards_target || 10)) * 100));
+                if (day.completed) {
+                    return `<div class="flex-1 flex items-center justify-center" title="${day.date}: ${day.cards_drawn}개 완료">
+                        <div class="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center shadow-sm">
+                            <span class="material-symbols-outlined text-white text-sm" style="font-variation-settings:'FILL' 1;font-size:14px">check</span>
+                        </div>
+                    </div>`;
+                }
+                // 진행 중: 파이 느낌의 원형 진행률
+                const deg = Math.round(pct * 3.6);
+                return `<div class="flex-1 flex items-center justify-center" title="${day.date}: ${day.cards_drawn}/${day.cards_target}개">
+                    <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-orange-600 dark:text-orange-400"
+                        style="background: conic-gradient(#fb923c ${deg}deg, #e2e8f0 ${deg}deg)">
+                        <div class="w-5 h-5 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center text-[9px] font-bold text-orange-600">${pct}</div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            const summaryColor = completedDays >= 5 ? 'text-green-600' : completedDays >= 3 ? 'text-orange-500' : 'text-slate-400';
+            return `
+            <div class="flex items-center gap-2 px-5 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors border-b border-slate-100 dark:border-slate-800 last:border-0">
+                <div class="w-9 h-9 rounded-full bg-orange-100 dark:bg-orange-900/20 text-orange-600 flex items-center justify-center font-black text-sm flex-shrink-0">${escHtml(student.name.charAt(0))}</div>
+                <span class="font-bold text-sm w-20 sm:w-28 flex-shrink-0 truncate">${escHtml(student.name)}</span>
+                <div class="flex flex-1 gap-1">${cells}</div>
+                <div class="w-14 flex-shrink-0 text-right">
+                    <p class="text-xs font-black ${summaryColor}">${completedDays}/7일</p>
+                    <p class="text-xs text-slate-400">${totalDrawn}개</p>
+                </div>
+            </div>`;
+        }).join('');
+
+        list.innerHTML = header + rows || '<div class="text-center py-10 text-slate-400 text-sm">등록된 학생이 없습니다.</div>';
     }
 
     function renderList(allResults) {

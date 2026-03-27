@@ -24,6 +24,20 @@ async function srv(method, path, body) {
 // ── Supabase 헬퍼 ────────────────────────────────────────────
 function sbCheck({ data, error }) { if (error) throw new Error(error.message); return data; }
 
+// KST (UTC+9) 기준 오늘 날짜 YYYY-MM-DD
+function todayKST() {
+    return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+}
+
+// 주어진 날짜가 속한 주의 월요일 반환 (UTC 기준 날짜 연산)
+function mondayOfWeek(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(Date.UTC(y, m - 1, d));
+    const day = date.getUTCDay();
+    date.setUTCDate(d - (day === 0 ? 6 : day - 1));
+    return date.toISOString().slice(0, 10);
+}
+
 // ── PIN 해싱 (GitHub Pages용, Web Crypto API) ─────────────────
 async function hashPin(pin, salt) {
     const enc = new TextEncoder();
@@ -221,9 +235,15 @@ const API = {
     },
 
     // ── 오늘/날짜별 학습 결과 ────────────────────────────────
-    async getTodayResults(studentId) { return this.getResultsByDate(studentId, new Date().toISOString().slice(0, 10)); },
+    async getTodayResults(studentId) { return this.getResultsByDate(studentId, todayKST()); },
+    async getAdminWeeklySummary(mondayDate) {
+        if (GH) throw new Error('주간 요약은 로컬 서버에서만 지원됩니다');
+        const q = mondayDate ? `?week=${mondayDate}` : '';
+        return srv('GET', `/api/admin/weekly-summary${q}`);
+    },
+
     async getResultsByDate(studentId, date) {
-        const d = date || new Date().toISOString().slice(0, 10);
+        const d = date || todayKST();
         if (GH) {
             const { data: session, error: se } = await supabase
                 .from('daily_sessions').select('*')
