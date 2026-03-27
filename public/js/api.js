@@ -237,7 +237,35 @@ const API = {
     // ── 오늘/날짜별 학습 결과 ────────────────────────────────
     async getTodayResults(studentId) { return this.getResultsByDate(studentId, todayKST()); },
     async getAdminWeeklySummary(mondayDate) {
-        if (GH) throw new Error('주간 요약은 로컬 서버에서만 지원됩니다');
+        const weekStart = mondayDate || mondayOfWeek(todayKST());
+        const [wy, wm, wd] = weekStart.split('-').map(Number);
+        const weekEnd = new Date(Date.UTC(wy, wm - 1, wd + 6)).toISOString().slice(0, 10);
+        const todayStr = todayKST();
+
+        if (GH) {
+            const students = sbCheck(await supabase.from('students').select('id, name').order('name'));
+            const { data: sessions, error } = await supabase.from('daily_sessions')
+                .select('student_id, session_date, cards_drawn, cards_target, completed')
+                .in('student_id', students.map(s => s.id))
+                .gte('session_date', weekStart).lte('session_date', weekEnd);
+            if (error) throw new Error(error.message);
+            const byStudent = new Map();
+            (sessions || []).forEach(s => {
+                if (!byStudent.has(s.student_id)) byStudent.set(s.student_id, new Map());
+                byStudent.get(s.student_id).set(s.session_date, s);
+            });
+            const result = students.map(student => ({
+                student,
+                week: Array.from({ length: 7 }, (_, i) => {
+                    const ds = new Date(Date.UTC(wy, wm - 1, wd + i)).toISOString().slice(0, 10);
+                    if (ds > todayStr) return { date: ds, future: true };
+                    const s = byStudent.get(student.id)?.get(ds);
+                    if (!s) return { date: ds, not_started: true, cards_drawn: 0, cards_target: 10, completed: false };
+                    return { date: ds, cards_drawn: s.cards_drawn, cards_target: s.cards_target, completed: s.completed };
+                }),
+            }));
+            return { weekStart, weekEnd, students: result };
+        }
         const q = mondayDate ? `?week=${mondayDate}` : '';
         return srv('GET', `/api/admin/weekly-summary${q}`);
     },
