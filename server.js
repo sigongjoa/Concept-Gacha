@@ -78,6 +78,15 @@ function validateTeacherToken(token) {
   if (Date.now() > exp) { teacherSessions.delete(token); return false; }
   return true;
 }
+// ── 선생님 전용 가드 (생성·수정·삭제 등 관리 작업) ──
+// 학생 흐름(읽기·풀이·세션)은 토큰 없이 동작하므로 가드하지 않는다.
+function requireTeacher(req, res) {
+  if (!validateTeacherToken(req.headers['x-teacher-token'])) {
+    res.status(401).json({ error: '선생님 인증이 필요합니다' });
+    return false;
+  }
+  return true;
+}
 
 // ── 로그인 시도 횟수 제한 (5회 / 15분) ───────────────────────
 const loginAttempts = new Map();
@@ -230,6 +239,7 @@ app.get('/api/students/:id', async (req, res) => {
 // ── 학생 추가
 app.post('/api/students', async (req, res) => {
   if (!requireSB(res)) return;
+  if (!requireTeacher(req, res)) return;
   const { name } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: '이름을 입력해주세요' });
   if (name.trim().length > 50) return res.status(400).json({ error: '이름은 50자 이하로 입력해주세요' });
@@ -245,6 +255,7 @@ app.post('/api/students', async (req, res) => {
 // ── 학생 삭제
 app.delete('/api/students/:id', async (req, res) => {
   if (!requireSB(res)) return;
+  if (!requireTeacher(req, res)) return;
   try {
     sbCheck(await supabase.from('students').delete().eq('id', req.params.id));
     res.json({ ok: true });
@@ -254,6 +265,7 @@ app.delete('/api/students/:id', async (req, res) => {
 // ── 학생 업데이트 (PUT / PATCH 모두 지원)
 async function _updateStudent(req, res) {
   if (!requireSB(res)) return;
+  if (!requireTeacher(req, res)) return;
   const { name } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: '이름을 입력해주세요' });
   try {
@@ -348,7 +360,7 @@ app.get('/api/students/:studentId/cards', async (req, res) => {
 });
 
 // 이미지 업로드 (파일 시스템, 변경 없음)
-app.post('/api/upload', upload.single('image'), (req, res) => {
+app.post('/api/upload', (req, res, next) => { if (requireTeacher(req, res)) next(); }, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: '이미지가 없습니다' });
   res.json({ filename: req.file.filename });
 });
@@ -356,6 +368,7 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
 // 카드 추가
 app.post('/api/students/:studentId/cards', async (req, res) => {
   if (!requireSB(res)) return;
+  if (!requireTeacher(req, res)) return;
   const { studentId } = req.params;
   const { question, answer, type, question_image, topic, explanation } = req.body;
   if (question?.length > 2000) return res.status(400).json({ error: '질문은 2000자 이하로 입력해주세요' });
@@ -372,6 +385,7 @@ app.post('/api/students/:studentId/cards', async (req, res) => {
 // 카드 업데이트 (PUT / PATCH)
 async function _updateCard(req, res) {
   if (!requireSB(res)) return;
+  if (!requireTeacher(req, res)) return;
   const { id } = req.params;
   const { question, answer, type, question_image, box, success_count, fail_count, explanation } = req.body;
   const updates = {};
@@ -394,6 +408,7 @@ app.put('/api/cards/:id', _updateCard);
 // 카드 삭제
 app.delete('/api/cards/:id', async (req, res) => {
   if (!requireSB(res)) return;
+  if (!requireTeacher(req, res)) return;
   try {
     sbCheck(await supabase.from('cards').delete().eq('id', req.params.id));
     res.json({ ok: true });
@@ -430,6 +445,7 @@ app.get('/api/students/:studentId/stats', async (req, res) => {
 // 전체 학생 통계 (관리자)
 app.get('/api/stats/all', async (req, res) => {
   if (!requireSB(res)) return;
+  if (!requireTeacher(req, res)) return;
   try {
     const [{ data: students }, { data: cards }] = await Promise.all([
       supabase.from('students').select('id, name, created_at').order('created_at'),
